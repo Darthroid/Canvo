@@ -186,6 +186,6 @@ extension CanvasGridView {
     }
 }
 
-#Preview(windowStyle: .automatic) {
+#Preview {
     CanvasGridView()
 }

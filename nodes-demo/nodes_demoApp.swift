@@ -16,11 +16,11 @@ struct nodes_demoApp: App {
             CanvasGridView()
                 .environment(appModel)
         }
-        
+        #if os(visionOS)
         ImmersiveSpace(id: "ImmersiveNodeMapView") {
             ImmersiveNodeMapView()
                 .environment(appModel)
         }
-
+        #endif
     }
 }

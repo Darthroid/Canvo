@@ -4,8 +4,10 @@ import SwiftData
 struct NodeMapView: View {
     @Environment(AppModel.self) private var appModel
     
+    #if os(visionOS)
     @Environment(\.openImmersiveSpace) var openImmersiveSpace
     @Environment(\.dismissImmersiveSpace) var dismissImmersiveSpace
+    #endif
     
     @State var showNodeForm: Bool = false
     @State var showNodeSpace: Bool = false
@@ -81,7 +83,7 @@ struct NodeMapView: View {
                                     }
                                 }
                         )
-                        .animation(.spring(response: 0.3), value: node.position)
+//                        .animation(.spring(response: 0.3), value: node.position)
                 }
             }
         }
@@ -98,7 +100,7 @@ struct NodeMapView: View {
                 } label: {
                     Image(systemName: "plus")
                 }
-                
+                #if os(visionOS)
                 Button {
                     showNodeSpace.toggle()
                     if showNodeSpace {
@@ -113,6 +115,7 @@ struct NodeMapView: View {
                 } label: {
                     Image(systemName: "graph.3d")
                 }
+                #endif
             }
         }
     }

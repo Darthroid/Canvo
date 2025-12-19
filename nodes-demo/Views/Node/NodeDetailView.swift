@@ -36,7 +36,11 @@ struct NodeDetailView: View {
                     Text("Position:")
                         .font(.title)
                         .padding(.vertical)
+                    #if os(visionOS)
                     Text(node.positionDescriptionMeters)
+                    #else
+                    Text(node.positionDescription)
+                    #endif
                     
                     if appModel.hasConnection(nodeId: node.id) {
                         Text("Connected Nodes")
