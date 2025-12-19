@@ -14,27 +14,84 @@ import SwiftData
 @Observable
 final class AppModel: Sendable {
     var container: ModelContainer?
-    
     var context: ModelContext? {
         container?.mainContext
     }
     
-    var nodes: [Node] = []
-    var connections: [NodeConnection] = []
+    var canvases: [Canvas] = []
+    private(set) var currentCanvas: Canvas?
     var selectedNodeId: String?
     
+    var nodes: [Node] {
+        currentCanvas?.nodes ?? []
+    }
+    
+    var connections: [NodeConnection] {
+        currentCanvas?.connections ?? []
+    }
+    
     init() {
-        self.nodes = MockData.nodes
-        self.connections = MockData.connections
-        
         let configuration = ModelConfiguration(isStoredInMemoryOnly: false, allowsSave: true)
         self.container = try? ModelContainer(
-            for: NodeConnection.self, Node.self,
+            for: Canvas.self, Node.self, NodeConnection.self,
             configurations: configuration
         )
         
-        fetchItems()
+        fetchCanvases()
     }
+    
+    // MARK: - Canvas Management
+    
+    func fetchCanvases() {
+        do {
+            let descriptor = FetchDescriptor<Canvas>(
+                sortBy: [SortDescriptor(\.createdAt)]
+            )
+            canvases = try context?.fetch(descriptor) ?? []
+        } catch {
+            print("Failed to fetch canvases: \(error)")
+            canvases = []
+        }
+    }
+    
+    func createCanvas(name: String) {
+        let canvas = Canvas(name: name)
+        context?.insert(canvas)
+        save()
+        
+        fetchCanvases()
+        currentCanvas = canvas
+    }
+    
+    func switchToCanvas(_ canvas: Canvas) {
+        currentCanvas = canvas
+    }
+    
+    func removeCanvas(_ canvas: Canvas) {
+        context?.delete(canvas)
+        save()
+        fetchCanvases()
+        
+        if currentCanvas?.id == canvas.id {
+            currentCanvas = nil
+        }
+    }
+    
+    func removeCanvas(at indexSet: IndexSet) {
+        let canvasesToDelete = canvases.enumerated()
+            .filter { indexSet.contains($0.offset) }
+            .map { $0.element }
+        
+        canvasesToDelete.forEach { removeCanvas($0) }
+    }
+    
+    func updateCanvasName(_ canvas: Canvas, newName: String) {
+        canvas.name = newName
+        canvas.updatedAt = Date()
+        save()
+    }
+    
+    // MARK: - Node Management (with canvas context)
     
     func node(forId id: String) -> Node? {
         return nodes.first(where: { $0.id == id })
@@ -46,47 +103,49 @@ final class AppModel: Sendable {
     
     func nodesConnectedWith(node: Node) -> [Node] {
         let connections = connections.filter { $0.fromNodeId == node.id || $0.toNodeId == node.id }
-        var nodes: [Node] = []
+        var connectedNodes: [Node] = []
         
-        for c in connections {
-            let otherNodeId = c.fromNodeId == node.id ? c.toNodeId : c.fromNodeId
+        for connection in connections {
+            let otherNodeId = connection.fromNodeId == node.id ? connection.toNodeId : connection.fromNodeId
             if let otherNode = self.node(forId: otherNodeId) {
-                nodes.append(otherNode)
+                connectedNodes.append(otherNode)
             }
         }
         
-        return nodes
+        return connectedNodes
     }
     
     func addNode(name: String, detail: String, position: (x: Float, y: Float, z: Float)?, color: String? = nil) {
+        guard let currentCanvas = currentCanvas else { return }
+        
         let _position: (x: Float, y: Float, z: Float)
+        
+        if let providedPosition = position {
+            _position = providedPosition
+        } else if nodes.isEmpty {
+            // If no nodes exist, place in the center relative to canvas
+            _position = (0, 1.0, -1.5)
+        } else {
+            // Calculate center position of all existing nodes
+            let totalX = nodes.reduce(0.0) { $0 + $1.x }
+            let totalY = nodes.reduce(0.0) { $0 + $1.y }
+            let totalZ = nodes.reduce(0.0) { $0 + $1.z }
             
-            if let providedPosition = position {
-                _position = providedPosition
-            } else if nodes.isEmpty {
-                // If no nodes exist, place in the center
-                _position = (0, 1.0, -1.5)
-            } else {
-                // Calculate center position of all existing nodes
-                let totalX = nodes.reduce(0.0) { $0 + $1.x }
-                let totalY = nodes.reduce(0.0) { $0 + $1.y }
-                let totalZ = nodes.reduce(0.0) { $0 + $1.z }
-                
-                let centerX = totalX / Float(nodes.count)
-                let centerY = totalY / Float(nodes.count)
-                let centerZ = totalZ / Float(nodes.count)
-                
-                _position = (centerX, centerY, centerZ)
-            }
+            let centerX = totalX / Float(nodes.count)
+            let centerY = totalY / Float(nodes.count)
+            let centerZ = totalZ / Float(nodes.count)
+            
+            _position = (centerX, centerY, centerZ)
+        }
         
         let node = Node(
-            id: UUID().uuidString,
             name: name,
             detail: detail,
             x: _position.x,
             y: _position.y,
             z: _position.z,
-            color: color
+            color: color,
+            canvas: currentCanvas
         )
         
         context?.insert(node)
@@ -94,7 +153,9 @@ final class AppModel: Sendable {
     }
     
     func updateNode(id: String, with node: Node) {
-        if let objectToUpdate = try? context?.fetch(FetchDescriptor<Node>(predicate: #Predicate { $0.id == id })).first {
+        if let objectToUpdate = try? context?.fetch(
+            FetchDescriptor<Node>(predicate: #Predicate { $0.id == id })
+        ).first {
             objectToUpdate.x = node.x
             objectToUpdate.y = node.y
             objectToUpdate.z = node.z
@@ -106,7 +167,9 @@ final class AppModel: Sendable {
     }
     
     func updateNode(id: String, name: String, detail: String, color: String? = nil) {
-        if let objectToUpdate = try? context?.fetch(FetchDescriptor<Node>(predicate: #Predicate { $0.id == id })).first {
+        if let objectToUpdate = try? context?.fetch(
+            FetchDescriptor<Node>(predicate: #Predicate { $0.id == id })
+        ).first {
             objectToUpdate.name = name
             objectToUpdate.detail = detail
             objectToUpdate.colorRaw = color
@@ -125,20 +188,18 @@ final class AppModel: Sendable {
     func removeNode(_ node: Node) {
         let nodeId = node.id
         context?.delete(node)
+        
+        // Delete connections involving this node
         try? context?.delete(model: NodeConnection.self, where: #Predicate<NodeConnection> { item in
-            item.fromNodeId == nodeId || item.toNodeId == nodeId
+            (item.fromNodeId == nodeId || item.toNodeId == nodeId) && item.canvas?.id == currentCanvas?.id
         })
         save()
     }
     
-    fileprivate func save() {
-        guard let context, context.hasChanges else { return }
-        try? context.save()
-        fetchItems()
-    }
-    
     func updatePosition(for nodeId: String, newPosition: SIMD3<Float>) {
-        if let objectToUpdate = try? context?.fetch(FetchDescriptor<Node>(predicate: #Predicate { $0.id == nodeId })).first {
+        if let objectToUpdate = try? context?.fetch(
+            FetchDescriptor<Node>(predicate: #Predicate { $0.id == nodeId })
+        ).first {
             objectToUpdate.x = newPosition.x
             objectToUpdate.y = newPosition.y
             objectToUpdate.z = newPosition.z
@@ -146,8 +207,11 @@ final class AppModel: Sendable {
         save()
     }
     
+    // MARK: - Connection Management
+    
     func addConnection(from fromNodeId: String, to toNodeId: String) {
-        guard fromNodeId != toNodeId,
+        guard let currentCanvas = currentCanvas,
+              fromNodeId != toNodeId,
               nodes.contains(where: { $0.id == fromNodeId }),
               nodes.contains(where: { $0.id == toNodeId }) else { return }
         
@@ -157,27 +221,22 @@ final class AppModel: Sendable {
         }) else { return }
         
         let connection = NodeConnection(
-            id: UUID().uuidString,
             fromNodeId: fromNodeId,
-            toNodeId: toNodeId
+            toNodeId: toNodeId,
+            canvas: currentCanvas
         )
         context?.insert(connection)
         save()
     }
     
-    
     func removeConnectionsBetween(_ node1: Node, and node2: Node) {
-        
-        let connections = connections.filter({
-            $0.fromNodeId == node1.id && $0.toNodeId == node2.id
-            || $0.fromNodeId == node2.id && $0.toNodeId == node1.id
-        })
-        
-        connections.forEach {
-            removeConnection($0)
+        let connections = connections.filter {
+            ($0.fromNodeId == node1.id && $0.toNodeId == node2.id) ||
+            ($0.fromNodeId == node2.id && $0.toNodeId == node1.id)
         }
+        
+        connections.forEach { removeConnection($0) }
     }
-    
     
     func removeConnection(_ connection: NodeConnection) {
         context?.delete(connection)
@@ -190,14 +249,16 @@ final class AppModel: Sendable {
         }
     }
     
-    func fetchItems() {
-        do {
-            let nodeDescriptor = FetchDescriptor<Node>(sortBy: [SortDescriptor(\.name)])
-            let connectionsDescriptor = FetchDescriptor<NodeConnection>(sortBy: [SortDescriptor(\.id)])
-            nodes = try context?.fetch(nodeDescriptor) ?? []
-            connections = try context?.fetch(connectionsDescriptor) ?? []
-        } catch {
-            print("Failed to fetch items: \(error)")
-        }
+    // MARK: - Helper Methods
+    
+    fileprivate func save() {
+        guard let context, context.hasChanges else { return }
+        try? context.save()
+        
+        // Update current canvas timestamp
+        currentCanvas?.updatedAt = Date()
+        
+        // Refresh canvases to update lists
+        fetchCanvases()
     }
 }

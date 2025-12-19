@@ -23,6 +23,8 @@ class Node: Identifiable, Codable {
     /// Hex formatted color
     var colorRaw: String?
     
+    var canvas: Canvas?
+    
     var color: Color? {
         return Color(hex: colorRaw ?? "")
     }
@@ -46,7 +48,8 @@ class Node: Identifiable, Codable {
         colorRaw = try values.decodeIfPresent(String.self, forKey: .colorRaw)
     }
     
-    init(id: String, name: String, detail: String, x: Float, y: Float, z: Float, color: String? = nil) {
+    init(id: String = UUID().uuidString, name: String, detail: String,
+         x: Float, y: Float, z: Float, color: String? = nil, canvas: Canvas? = nil) {
         self.id = id
         self.name = name
         self.detail = detail
@@ -54,6 +57,7 @@ class Node: Identifiable, Codable {
         self.y = y
         self.z = z
         self.colorRaw = color
+        self.canvas = canvas
     }
     
     func encode(to encoder: any Encoder) throws {
@@ -74,10 +78,13 @@ class NodeConnection: Identifiable, Equatable {
     var fromNodeId: String
     var toNodeId: String
     
-    init(id: String, fromNodeId: String, toNodeId: String) {
+    var canvas: Canvas?
+    
+    init(id: String = UUID().uuidString, fromNodeId: String, toNodeId: String, canvas: Canvas? = nil) {
         self.id = id
         self.fromNodeId = fromNodeId
         self.toNodeId = toNodeId
+        self.canvas = canvas
     }
 }
 

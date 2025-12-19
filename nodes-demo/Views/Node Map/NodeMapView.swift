@@ -4,6 +4,12 @@ import SwiftData
 struct NodeMapView: View {
     @Environment(AppModel.self) private var appModel
     
+    @Environment(\.openImmersiveSpace) var openImmersiveSpace
+    @Environment(\.dismissImmersiveSpace) var dismissImmersiveSpace
+    
+    @State var showNodeForm: Bool = false
+    @State var showNodeSpace: Bool = false
+    
     private let pointsPerMeter: CGFloat = 100.0
     private let maxHeight: Float = 2.5 // Maximum height (meters)
     
@@ -65,11 +71,50 @@ struct NodeMapView: View {
                         .onTapGesture {
                             appModel.selectedNodeId = appModel.selectedNodeId == node.id ? nil : node.id
                         }
+                        .simultaneousGesture(
+                            TapGesture(count: 2)
+                                .onEnded {
+                                    // Double-tap to connect nodes
+                                    if let selectedNodeId = appModel.selectedNodeId,
+                                       selectedNodeId != node.id {
+                                        appModel.addConnection(from: selectedNodeId, to: node.id)
+                                    }
+                                }
+                        )
                         .animation(.spring(response: 0.3), value: node.position)
                 }
             }
         }
         .background(Color.white)
+        .sheet(isPresented: $showNodeForm) {
+            CreateNodeView()
+                .environment(appModel)
+        }
+        .navigationTitle(Text(appModel.currentCanvas?.name ?? "Nodes Demo"))
+        .toolbar {
+            HStack {
+                Button {
+                    showNodeForm = true
+                } label: {
+                    Image(systemName: "plus")
+                }
+                
+                Button {
+                    showNodeSpace.toggle()
+                    if showNodeSpace {
+                        Task {
+                            await openImmersiveSpace(id: "ImmersiveNodeMapView")
+                        }
+                    } else {
+                        Task {
+                            await dismissImmersiveSpace()
+                        }
+                    }
+                } label: {
+                    Image(systemName: "graph.3d")
+                }
+            }
+        }
     }
     
     /// Convert world coordinates (meters) to view coordinates (points)
