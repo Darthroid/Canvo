@@ -5,8 +5,10 @@
 //  Created by Олег Комаристый on 18.11.2025.
 //
 import Foundation
+#if os(visionOS)
 import RealityKit
 import RealityKitContent
+#endif
 import SwiftData
 import SwiftUI
 
@@ -88,6 +90,7 @@ class NodeConnection: Identifiable, Equatable {
     }
 }
 
+#if os(visionOS)
 struct NodeDataComponent: Component {
     let node: Node
 }
@@ -95,3 +98,4 @@ struct NodeDataComponent: Component {
 struct ConnectionDataComponent: Component {
     let connection: NodeConnection
 }
+#endif

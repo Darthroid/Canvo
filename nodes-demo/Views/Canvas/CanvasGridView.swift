@@ -6,8 +6,10 @@
 //
 
 import SwiftUI
+#if os(visionOS)
 import RealityKit
 import RealityKitContent
+#endif
 
 struct CanvasGridView: View {
     @Environment(AppModel.self) var appModel
@@ -23,8 +25,7 @@ struct CanvasGridView: View {
                         Button {
                             showCreateCanvas = true
                         } label: {
-                            Image(systemName: "plus.circle.fill")
-                                .font(.title2)
+                            Image(systemName: "plus")
                         }
                     }
                 }
@@ -157,32 +158,6 @@ struct CanvasCardView: View {
                 .stroke(.white.opacity(0.1), lineWidth: 1)
         )
         .frame(height: 320)
-    }
-}
-
-// Optional: Add a floating action button for visionOS
-extension CanvasGridView {
-    var floatingActionButton: some View {
-        Button {
-            showCreateCanvas = true
-        } label: {
-            Image(systemName: "plus")
-                .font(.title2.bold())
-                .foregroundColor(.white)
-                .frame(width: 60, height: 60)
-                .background(
-                    Circle()
-                        .fill(
-                            .linearGradient(
-                                colors: [.blue, .purple],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 5)
-                )
-        }
-        .buttonStyle(.plain)
     }
 }
 

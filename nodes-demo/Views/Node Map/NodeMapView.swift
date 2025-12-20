@@ -23,6 +23,7 @@ struct NodeMapView: View {
                     .stroke(Color.gray.opacity(0.3), lineWidth: 1)
                     .allowsHitTesting(false)
                 
+                #if os(visionOS)
                 // Height limit indicator
                 HeightLimitView(maxHeight: maxHeight, pointsPerMeter: pointsPerMeter, geometry: geometry)
                     .stroke(Color.red.opacity(0.7), lineWidth: 2)
@@ -33,6 +34,7 @@ struct NodeMapView: View {
                 
                 // Height limit label
                 HeightLimitLabelView(maxHeight: maxHeight, pointsPerMeter: pointsPerMeter, geometry: geometry)
+                #endif
                 
                 // Node connections
                 ForEach(appModel.connections) { connection in

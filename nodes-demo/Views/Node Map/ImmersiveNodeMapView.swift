@@ -10,7 +10,7 @@ import RealityKit
 import RealityKitContent
 import SwiftData
 
-#if os(visionOS)
+
 struct ImmersiveNodeMapView: View {
     @Environment(AppModel.self) var appModel
     @State private var draggedEntity: Entity?
@@ -468,4 +468,3 @@ struct ImmersiveNodeMapView: View {
         entity.move(to: transform, relativeTo: entity.parent, duration: 0.15)
     }
 }
-#endif
