@@ -10,7 +10,9 @@ import SwiftUI
 struct CreateNodeView: View {
     @Environment(AppModel.self) var appModel
     @Environment(\.dismiss) var dismiss
-    
+
+    let position: SIMD3<Float>?
+
     @State var name: String = ""
     @State var detail: String = ""
     @State var color = Color.white
@@ -18,29 +20,27 @@ struct CreateNodeView: View {
     var body: some View {
         NavigationStack {
             VStack(alignment: .leading) {
-                Text("Name:")
+                Text("Name")
                     .font(.title)
                     .padding(.bottom)
-                TextField(text: $name, axis: .vertical) {
-                    Text("Enter Name")
-                }
-                .lineLimit(2...3)
-                .textFieldStyle(.roundedBorder)
-                
-                Text("Description:")
+
+                TextField("Enter name", text: $name)
+                    .textFieldStyle(.roundedBorder)
+
+                Text("Description")
                     .font(.title)
                     .padding(.vertical)
-                TextField(text: $detail, axis: .vertical) {
-                    Text("Enter Description (optional)")
-                }
-                .lineLimit(5...10)
-                .textFieldStyle(.roundedBorder)
-                
-                Text("Color:")
+
+                TextField("Optional description", text: $detail, axis: .vertical)
+                    .lineLimit(3...6)
+                    .textFieldStyle(.roundedBorder)
+
+                Text("Color")
                     .font(.title)
                     .padding(.vertical)
-                ColorPicker("Choose a color", selection: $color)
-                
+
+                ColorPicker("Choose color", selection: $color)
+
                 Spacer()
                 
                 HStack {
@@ -54,7 +54,9 @@ struct CreateNodeView: View {
                         appModel.addNode(
                             name: name,
                             detail: detail,
-                            position: nil,
+                            position: position.map {
+                                (x: $0.x, y: $0.y, z: $0.z)
+                            },
                             color: color.toHex(includeAlpha: true)
                         )
                         dismiss()
@@ -63,7 +65,7 @@ struct CreateNodeView: View {
                 }
             }
             .padding()
-            .navigationTitle(Text("Create Node"))
+            .navigationTitle("Create Node")
         }
     }
 }

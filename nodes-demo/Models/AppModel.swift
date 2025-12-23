@@ -118,32 +118,14 @@ final class AppModel: Sendable {
     func addNode(name: String, detail: String, position: (x: Float, y: Float, z: Float)?, color: String? = nil) {
         guard let currentCanvas = currentCanvas else { return }
         
-        let _position: (x: Float, y: Float, z: Float)
-        
-        if let providedPosition = position {
-            _position = providedPosition
-        } else if nodes.isEmpty {
-            // If no nodes exist, place in the center relative to canvas
-            _position = (0, 1.0, -1.5)
-        } else {
-            // Calculate center position of all existing nodes
-            let totalX = nodes.reduce(0.0) { $0 + $1.x }
-            let totalY = nodes.reduce(0.0) { $0 + $1.y }
-            let totalZ = nodes.reduce(0.0) { $0 + $1.z }
-            
-            let centerX = totalX / Float(nodes.count)
-            let centerY = totalY / Float(nodes.count)
-            let centerZ = totalZ / Float(nodes.count)
-            
-            _position = (centerX, centerY, centerZ)
-        }
+        let position = position ?? (0, 1.0, -1.5)
         
         let node = Node(
             name: name,
             detail: detail,
-            x: _position.x,
-            y: _position.y,
-            z: _position.z,
+            x: position.x,
+            y: position.y,
+            z: position.z,
             color: color,
             canvas: currentCanvas
         )

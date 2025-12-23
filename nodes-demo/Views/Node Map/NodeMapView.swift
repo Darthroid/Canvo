@@ -14,8 +14,10 @@ struct NodeMapView: View {
     @State private var offset: CGSize = .zero
     @State private var lastPanTranslation: CGSize = .zero
     @State private var lastDragTranslation: CGSize = .zero
-    @State var showNodeForm: Bool = false
-    @State var showNodeSpace: Bool = false
+    
+    @State var showNodeForm = false
+    @State var showNodeSpace = false
+    @State var pendingNodePosition: SIMD3<Float>? = nil
     
     private let minScale: CGFloat = 0.1
     private let maxScale: CGFloat = 4.0
@@ -31,10 +33,23 @@ struct NodeMapView: View {
     private func resetZoom() {
         scale = 1.0
         baseScale = 1.0
+        offset = .zero
     }
-
+    
+    private func visibleCenterPosition(in geo: GeometryProxy) -> SIMD3<Float> {
+        let screenCenter = CGPoint(
+            x: geo.size.width / 2,
+            y: geo.size.height / 2
+        )
+        
+        let canvasX = (screenCenter.x - offset.width) / scale
+        let canvasY = (screenCenter.y - offset.height) / scale
+        
+        return SIMD3(Float(canvasX), Float(canvasY), 0)
+    }
+    
     var body: some View {
-        GeometryReader { _ in
+        GeometryReader { geo in
             ZStack {
                 ZStack {
                     GridLayer()
@@ -43,8 +58,11 @@ struct NodeMapView: View {
                     ForEach(appModel.connections) { c in
                         if let a = appModel.node(forId: c.fromNodeId),
                            let b = appModel.node(forId: c.toNodeId) {
-                            ConnectionView(from: a.position.position2D, to: b.position.position2D)
-                                .stroke(.secondary, lineWidth: 2)
+                            ConnectionView(
+                                from: a.position.position2D,
+                                to: b.position.position2D
+                            )
+                            .stroke(.secondary, lineWidth: 2)
                         }
                     }
 
@@ -66,10 +84,10 @@ struct NodeMapView: View {
                 .coordinateSpace(name: "canvas")
             }
             .sheet(isPresented: $showNodeForm) {
-                CreateNodeView()
+                CreateNodeView(position: pendingNodePosition)
                     .environment(appModel)
             }
-            .navigationTitle(Text(appModel.currentCanvas?.name ?? "Nodes Demo"))
+            .navigationTitle(appModel.currentCanvas?.name ?? "Nodes Demo")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItemGroup(placement: .bottomBar) {
@@ -91,8 +109,10 @@ struct NodeMapView: View {
                         Image(systemName: "text.magnifyingglass")
                     }
                 }
+                
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     Button {
+                        pendingNodePosition = visibleCenterPosition(in: geo)
                         showNodeForm = true
                     } label: {
                         Image(systemName: "plus")
@@ -155,12 +175,12 @@ struct NodeMapView: View {
     private func nodeDrag(_ node: Node) -> some Gesture {
         DragGesture(coordinateSpace: .named("canvas"))
             .onChanged { v in
-                let deltaX = (v.translation.width - lastDragTranslation.width) / scale
-                let deltaY = (v.translation.height - lastDragTranslation.height) / scale
-
-                node.x += Float(deltaX)
-                node.y += Float(deltaY)
-
+                let dx = (v.translation.width - lastDragTranslation.width) / scale
+                let dy = (v.translation.height - lastDragTranslation.height) / scale
+                
+                node.x += Float(dx)
+                node.y += Float(dy)
+                
                 lastDragTranslation = v.translation
             }
             .onEnded { _ in
@@ -169,7 +189,6 @@ struct NodeMapView: View {
             }
     }
 }
-
 
 // MARK: - GRID
 
