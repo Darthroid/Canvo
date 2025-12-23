@@ -8,138 +8,216 @@ struct NodeMapView: View {
     @Environment(\.openImmersiveSpace) var openImmersiveSpace
     @Environment(\.dismissImmersiveSpace) var dismissImmersiveSpace
     #endif
+
+    @State private var scale: CGFloat = 1.0
+    @State private var baseScale: CGFloat = 1.0
+    @State private var offset: CGSize = .zero
+    @State private var lastPanTranslation: CGSize = .zero
+    @State private var lastDragTranslation: CGSize = .zero
     
-    @State var showNodeForm: Bool = false
-    @State var showNodeSpace: Bool = false
+    @State var showNodeForm = false
+    @State var showNodeSpace = false
+    @State var pendingNodePosition: SIMD3<Float>? = nil
     
-    private let pointsPerMeter: CGFloat = 100.0
-    private let maxHeight: Float = 2.5 // Maximum height (meters)
+    private let minScale: CGFloat = 0.1
+    private let maxScale: CGFloat = 4.0
+    private let zoomSensitivity: CGFloat = 0.35
+    
+    private func applyZoom(multiplier: CGFloat) {
+        let next = scale * multiplier
+        let clamped = min(max(next, minScale), maxScale)
+        scale = clamped
+        baseScale = clamped
+    }
+    
+    private func resetZoom() {
+        scale = 1.0
+        baseScale = 1.0
+        offset = .zero
+    }
+    
+    private func visibleCenterPosition(in geo: GeometryProxy) -> SIMD3<Float> {
+        let screenCenter = CGPoint(
+            x: geo.size.width / 2,
+            y: geo.size.height / 2
+        )
+        
+        let canvasX = (screenCenter.x - offset.width) / scale
+        let canvasY = (screenCenter.y - offset.height) / scale
+        
+        return SIMD3(Float(canvasX), Float(canvasY), 0)
+    }
     
     var body: some View {
-        GeometryReader { geometry in
+        GeometryReader { geo in
             ZStack {
-                // Grid background for spatial reference
-                GridView(cellSize: pointsPerMeter, maxHeight: maxHeight, geometry: geometry)
-                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                    .allowsHitTesting(false)
-                
-                #if os(visionOS)
-                // Height limit indicator
-                HeightLimitView(maxHeight: maxHeight, pointsPerMeter: pointsPerMeter, geometry: geometry)
-                    .stroke(Color.red.opacity(0.7), lineWidth: 2)
-                    .allowsHitTesting(false)
-                
-                // Ground level indicator
-                GroundLevelIndicatorView(pointsPerMeter: pointsPerMeter, geometry: geometry)
-                
-                // Height limit label
-                HeightLimitLabelView(maxHeight: maxHeight, pointsPerMeter: pointsPerMeter, geometry: geometry)
-                #endif
-                
-                // Node connections
-                ForEach(appModel.connections) { connection in
-                    if let fromNode = appModel.node(forId: connection.fromNodeId),
-                       let toNode = appModel.node(forId: connection.toNodeId) {
-                        ConnectionView(
-                            from: convertToViewCoordinates(fromNode.position, in: geometry),
-                            to: convertToViewCoordinates(toNode.position, in: geometry)
-                        )
-                        .stroke(Color.black, lineWidth: 2)
+                ZStack {
+                    GridLayer()
+
+                    // Connections
+                    ForEach(appModel.connections) { c in
+                        if let a = appModel.node(forId: c.fromNodeId),
+                           let b = appModel.node(forId: c.toNodeId) {
+                            ConnectionView(
+                                from: a.position.position2D,
+                                to: b.position.position2D
+                            )
+                            .stroke(.secondary, lineWidth: 2)
+                        }
                     }
-                }
-                
-                // Nodes
-                ForEach(appModel.nodes) { node in
-                    NodeView(node: node, isSelected: appModel.selectedNodeId == node.id)
-                        .position(convertToViewCoordinates(node.position, in: geometry))
-                        .zIndex(appModel.selectedNodeId == node.id ? 1 : 0) // Selected nodes appear on top
-                        .gesture(
-                            DragGesture()
-                                .onChanged { value in
-                                    // Convert view coordinates back to world coordinates (meters)
-                                    let worldPosition = convertToWorldCoordinates(value.location, in: geometry)
-                                    
-                                    // Apply height constraint (0 to maxHeight meters)
-                                    let constrainedY = min(max(worldPosition.y, 0), CGFloat(maxHeight))
-                                    
-                                    appModel.updatePosition(
-                                        for: node.id,
-                                        newPosition: SIMD3<Float>(
-                                            Float(worldPosition.x),
-                                            Float(constrainedY),
-                                            node.z
-                                        )
-                                    )
-                                }
+
+                    // Nodes
+                    ForEach(appModel.nodes) { node in
+                        NodeView(
+                            node: node,
+                            isSelected: appModel.selectedNodeId == node.id
                         )
+                        .position(node.position.position2D)
+                        .gesture(nodeDrag(node))
                         .onTapGesture {
                             appModel.selectedNodeId = appModel.selectedNodeId == node.id ? nil : node.id
                         }
-                        .simultaneousGesture(
-                            TapGesture(count: 2)
-                                .onEnded {
-                                    // Double-tap to connect nodes
-                                    if let selectedNodeId = appModel.selectedNodeId,
-                                       selectedNodeId != node.id {
-                                        appModel.addConnection(from: selectedNodeId, to: node.id)
-                                    }
-                                }
-                        )
-//                        .animation(.spring(response: 0.3), value: node.position)
-                }
-            }
-        }
-        .background(Color.white)
-        .sheet(isPresented: $showNodeForm) {
-            CreateNodeView()
-                .environment(appModel)
-        }
-        .navigationTitle(Text(appModel.currentCanvas?.name ?? "Nodes Demo"))
-        .toolbar {
-            HStack {
-                Button {
-                    showNodeForm = true
-                } label: {
-                    Image(systemName: "plus")
-                }
-                #if os(visionOS)
-                Button {
-                    showNodeSpace.toggle()
-                    if showNodeSpace {
-                        Task {
-                            await openImmersiveSpace(id: "ImmersiveNodeMapView")
-                        }
-                    } else {
-                        Task {
-                            await dismissImmersiveSpace()
-                        }
                     }
-                } label: {
-                    Image(systemName: "graph.3d")
                 }
-                #endif
+                .scaleEffect(scale)
+                .offset(offset)
+                .coordinateSpace(name: "canvas")
             }
+            .sheet(isPresented: $showNodeForm) {
+                CreateNodeView(position: pendingNodePosition)
+                    .environment(appModel)
+            }
+            .navigationTitle(appModel.currentCanvas?.name ?? "Nodes Demo")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItemGroup(placement: .bottomBar) {
+                    Button {
+                        applyZoom(multiplier: 0.8)
+                    } label: {
+                        Image(systemName: "minus.magnifyingglass")
+                    }
+                    
+                    Button {
+                        applyZoom(multiplier: 1.2)
+                    } label: {
+                        Image(systemName: "plus.magnifyingglass")
+                    }
+                    
+                    Button {
+                        resetZoom()
+                    } label: {
+                        Image(systemName: "text.magnifyingglass")
+                    }
+                }
+                
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    Button {
+                        pendingNodePosition = visibleCenterPosition(in: geo)
+                        showNodeForm = true
+                    } label: {
+                        Image(systemName: "plus")
+                    }
+                    #if os(visionOS)
+                    Button {
+                        showNodeSpace.toggle()
+                        if showNodeSpace {
+                            Task {
+                                await openImmersiveSpace(id: "ImmersiveNodeMapView")
+                            }
+                        } else {
+                            Task {
+                                await dismissImmersiveSpace()
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "graph.3d")
+                    }
+                    #endif
+                }
+            }
+            .background(Color(uiColor: .systemBackground))
+            .gesture(panGesture)
+            .gesture(zoomGesture)
         }
     }
-    
-    /// Convert world coordinates (meters) to view coordinates (points)
-    /// Zero point at bottom of view (ground level), Y increases upward to maxHeight at top
-    private func convertToViewCoordinates(_ worldPosition: SIMD3<Float>, in geometry: GeometryProxy) -> CGPoint {
-        let viewX = CGFloat(worldPosition.x) * pointsPerMeter + geometry.size.width / 2
-        // Map Y coordinate: 0m at bottom, maxHeight at top
-        let viewY = geometry.size.height - (CGFloat(worldPosition.y) / CGFloat(maxHeight)) * geometry.size.height
-        return CGPoint(x: viewX, y: viewY)
+
+    // MARK: - PAN
+
+    private var panGesture: some Gesture {
+        DragGesture()
+            .onChanged { v in
+                let dx = v.translation.width - lastPanTranslation.width
+                let dy = v.translation.height - lastPanTranslation.height
+                offset.width += dx
+                offset.height += dy
+                lastPanTranslation = v.translation
+            }
+            .onEnded { _ in
+                lastPanTranslation = .zero
+            }
     }
-    
-    /// Convert view coordinates (points) to world coordinates (meters)
-    /// Zero point at bottom of view (ground level), Y increases upward to maxHeight at top
-    private func convertToWorldCoordinates(_ viewPosition: CGPoint, in geometry: GeometryProxy) -> CGPoint {
-        let worldX = (viewPosition.x - geometry.size.width / 2) / pointsPerMeter
-        // Map Y coordinate: bottom is 0m, top is maxHeight
-        let worldY = (1.0 - (viewPosition.y / geometry.size.height)) * CGFloat(maxHeight)
-        return CGPoint(x: worldX, y: worldY)
+
+    // MARK: - ZOOM
+
+    private var zoomGesture: some Gesture {
+        MagnificationGesture()
+            .onChanged { value in
+                let delta = 1 + (value - 1) * zoomSensitivity
+                scale = min(max(baseScale * delta, minScale), maxScale)
+            }
+            .onEnded { _ in
+                baseScale = scale
+            }
+    }
+
+    // MARK: - NODE DRAG
+
+    private func nodeDrag(_ node: Node) -> some Gesture {
+        DragGesture(coordinateSpace: .named("canvas"))
+            .onChanged { v in
+                let dx = (v.translation.width - lastDragTranslation.width) / scale
+                let dy = (v.translation.height - lastDragTranslation.height) / scale
+                
+                node.x += Float(dx)
+                node.y += Float(dy)
+                
+                lastDragTranslation = v.translation
+            }
+            .onEnded { _ in
+                lastDragTranslation = .zero
+                try? appModel.context?.save()
+            }
     }
 }
+
+// MARK: - GRID
+
+struct GridLayer: View {
+    private let spacing: CGFloat = 60
+    private let dotSize: CGFloat = 2
+
+    var body: some View {
+        GeometryReader { geo in
+            Path { p in
+                for x in stride(from: -geo.size.width,
+                                to: geo.size.width * 2,
+                                by: spacing) {
+                    for y in stride(from: -geo.size.height,
+                                    to: geo.size.height * 2,
+                                    by: spacing) {
+                        p.addEllipse(
+                            in: CGRect(x: x, y: y, width: dotSize, height: dotSize)
+                        )
+                    }
+                }
+            }
+            .fill(Color.gray.opacity(0.6))
+        }
+        .allowsHitTesting(false)
+    }
+}
+
+// MARK: - NODE VIEW
 
 struct NodeView: View {
     let node: Node
@@ -194,120 +272,24 @@ struct NodeView: View {
     }
 }
 
+// MARK: - CONNECTION
+
 struct ConnectionView: Shape {
     let from: CGPoint
     let to: CGPoint
-    
+
     func path(in rect: CGRect) -> Path {
-        var path = Path()
-        path.move(to: from)
-        path.addLine(to: to)
-        return path
+        var p = Path()
+        p.move(to: from)
+        p.addLine(to: to)
+        return p
     }
 }
 
-// Grid background for spatial reference
-struct GridView: Shape {
-    let cellSize: CGFloat
-    let maxHeight: Float
-    let geometry: GeometryProxy
-    
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        
-        let centerX = geometry.size.width / 2
-        
-        // Vertical lines
-        var x: CGFloat = centerX.truncatingRemainder(dividingBy: cellSize)
-        while x < geometry.size.width {
-            path.move(to: CGPoint(x: x, y: 0))
-            path.addLine(to: CGPoint(x: x, y: geometry.size.height))
-            x += cellSize
-        }
-        
-        // Horizontal lines (every 0.5 meters in world coordinates)
-        for height in stride(from: 0.0, through: Double(maxHeight), by: 0.5) {
-            let viewY = geometry.size.height - (CGFloat(height) / CGFloat(maxHeight)) * geometry.size.height
-            path.move(to: CGPoint(x: 0, y: viewY))
-            path.addLine(to: CGPoint(x: geometry.size.width, y: viewY))
-        }
-        
-        return path
-    }
-}
+// MARK: - EXTENSION
 
-// Height limit indicator
-struct HeightLimitView: Shape {
-    let maxHeight: Float
-    let pointsPerMeter: CGFloat
-    let geometry: GeometryProxy
-    
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        
-        // Height limit is at the top (y = 0)
-        path.move(to: CGPoint(x: 0, y: 0))
-        path.addLine(to: CGPoint(x: geometry.size.width, y: 0))
-        
-        return path
+extension SIMD3 where Scalar == Float {
+    var position2D: CGPoint {
+        CGPoint(x: CGFloat(x), y: CGFloat(y))
     }
-}
-
-// Height limit label
-struct HeightLimitLabelView: View {
-    let maxHeight: Float
-    let pointsPerMeter: CGFloat
-    let geometry: GeometryProxy
-    
-    var body: some View {
-        VStack {
-            HStack {
-                Text("Height Limit: \(String(format: "%.1f", maxHeight)) m")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(.red)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(Color.white.opacity(0.9))
-                    )
-                Spacer()
-            }
-            .padding(.leading, 8)
-            .padding(.top, 4)
-            Spacer()
-        }
-    }
-}
-
-// Ground level indicator
-struct GroundLevelIndicatorView: View {
-    let pointsPerMeter: CGFloat
-    let geometry: GeometryProxy
-    
-    var body: some View {
-        VStack {
-            Spacer()
-            HStack {
-                Text("Ground Level (0m)")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(.green)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(Color.white.opacity(0.9))
-                    )
-                Spacer()
-            }
-            .padding(.leading, 8)
-            .padding(.bottom, 4)
-        }
-    }
-}
-
-#Preview {
-    let appModel = AppModel()
-    return NodeMapView()
-        .environment(appModel)
 }
