@@ -33,7 +33,6 @@ struct NodeMapView: View {
     private func resetZoom() {
         scale = 1.0
         baseScale = 1.0
-        offset = .zero
     }
     
     private func visibleCenterPosition(in geo: GeometryProxy) -> SIMD3<Float> {
@@ -48,96 +47,106 @@ struct NodeMapView: View {
         return SIMD3(Float(canvasX), Float(canvasY), 0)
     }
     
+    var canvas: some View {
+        ZStack {
+            ZStack {
+                GridLayer()
+
+                // Connections
+                ForEach(appModel.connections) { c in
+                    if let a = appModel.node(forId: c.fromNodeId),
+                       let b = appModel.node(forId: c.toNodeId) {
+                        ConnectionView(
+                            from: a.position.position2D,
+                            to: b.position.position2D
+                        )
+                        .stroke(.secondary, lineWidth: 2)
+                    }
+                }
+
+                // Nodes
+                ForEach(appModel.nodes) { node in
+                    NodeView(
+                        node: node,
+                        isSelected: appModel.selectedNodeId == node.id
+                    )
+                    .position(node.position.position2D)
+                    .gesture(nodeDrag(node))
+                    .onTapGesture {
+                        appModel.selectedNodeId = appModel.selectedNodeId == node.id ? nil : node.id
+                    }
+                }
+            }
+            .scaleEffect(scale)
+            .offset(offset)
+            .coordinateSpace(name: "canvas")
+        }
+    }
+    
     var body: some View {
         GeometryReader { geo in
-            ZStack {
-                ZStack {
-                    GridLayer()
-
-                    // Connections
-                    ForEach(appModel.connections) { c in
-                        if let a = appModel.node(forId: c.fromNodeId),
-                           let b = appModel.node(forId: c.toNodeId) {
-                            ConnectionView(
-                                from: a.position.position2D,
-                                to: b.position.position2D
-                            )
-                            .stroke(.secondary, lineWidth: 2)
-                        }
-                    }
-
-                    // Nodes
-                    ForEach(appModel.nodes) { node in
-                        NodeView(
-                            node: node,
-                            isSelected: appModel.selectedNodeId == node.id
-                        )
-                        .position(node.position.position2D)
-                        .gesture(nodeDrag(node))
-                        .onTapGesture {
-                            appModel.selectedNodeId = appModel.selectedNodeId == node.id ? nil : node.id
-                        }
-                    }
+            canvas
+                .sheet(isPresented: $showNodeForm) {
+                    CreateNodeView(position: pendingNodePosition)
+                        .environment(appModel)
                 }
-                .scaleEffect(scale)
-                .offset(offset)
-                .coordinateSpace(name: "canvas")
-            }
-            .sheet(isPresented: $showNodeForm) {
-                CreateNodeView(position: pendingNodePosition)
-                    .environment(appModel)
-            }
-            .navigationTitle(appModel.currentCanvas?.name ?? "Nodes Demo")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItemGroup(placement: .bottomBar) {
-                    Button {
-                        applyZoom(multiplier: 0.8)
-                    } label: {
-                        Image(systemName: "minus.magnifyingglass")
+                .navigationTitle(appModel.currentCanvas?.name ?? "Nodes Demo")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItemGroup(placement: .bottomBar) {
+                        Button {
+                            applyZoom(multiplier: 0.8)
+                        } label: {
+                            Image(systemName: "minus.magnifyingglass")
+                        }
+                        
+                        Button {
+                            applyZoom(multiplier: 1.2)
+                        } label: {
+                            Image(systemName: "plus.magnifyingglass")
+                        }
+                        
+                        Button {
+                            resetZoom()
+                        } label: {
+                            Image(systemName: "text.magnifyingglass")
+                        }
                     }
                     
-                    Button {
-                        applyZoom(multiplier: 1.2)
-                    } label: {
-                        Image(systemName: "plus.magnifyingglass")
-                    }
-                    
-                    Button {
-                        resetZoom()
-                    } label: {
-                        Image(systemName: "text.magnifyingglass")
-                    }
-                }
-                
-                ToolbarItemGroup(placement: .topBarTrailing) {
-                    Button {
-                        pendingNodePosition = visibleCenterPosition(in: geo)
-                        showNodeForm = true
-                    } label: {
-                        Image(systemName: "plus")
-                    }
-                    #if os(visionOS)
-                    Button {
-                        showNodeSpace.toggle()
-                        if showNodeSpace {
-                            Task {
-                                await openImmersiveSpace(id: "ImmersiveNodeMapView")
-                            }
-                        } else {
-                            Task {
-                                await dismissImmersiveSpace()
-                            }
+                    ToolbarItemGroup(placement: .topBarTrailing) {
+                        Button {
+                            pendingNodePosition = visibleCenterPosition(in: geo)
+                            showNodeForm = true
+                        } label: {
+                            Image(systemName: "plus")
                         }
-                    } label: {
-                        Image(systemName: "graph.3d")
+                        #if os(visionOS)
+                        Button {
+                            showNodeSpace.toggle()
+                            if showNodeSpace {
+                                Task {
+                                    await openImmersiveSpace(id: "ImmersiveNodeMapView")
+                                }
+                            } else {
+                                Task {
+                                    await dismissImmersiveSpace()
+                                }
+                            }
+                        } label: {
+                            Image(systemName: "graph.3d")
+                        }
+                        #endif
                     }
-                    #endif
                 }
-            }
-            .background(Color(uiColor: .systemBackground))
-            .gesture(panGesture)
-            .gesture(zoomGesture)
+                .background(Color(uiColor: .systemBackground))
+                .gesture(panGesture)
+                .gesture(zoomGesture)
+        }
+        .onAppear {
+            snapshotCanvasToTmp()
+        }
+        .onDisappear {
+            snapshotCanvasToTmp()
         }
     }
 
@@ -187,6 +196,28 @@ struct NodeMapView: View {
                 lastDragTranslation = .zero
                 try? appModel.context?.save()
             }
+    }
+    
+    @MainActor
+    @discardableResult
+    private func snapshotCanvasToTmp() -> URL? {
+        guard let canvas = appModel.currentCanvas else { return nil }
+        let image = self.canvas.asImage().resizedWithAspect(targetSize: .init(width: 220, height: 160))
+        
+        guard let data = image.pngData() else {
+            return nil
+        }
+
+        let tmpURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("\(canvas.id).png")
+
+        do {
+            try data.write(to: tmpURL, options: [.atomic])
+            return tmpURL
+        } catch {
+            print("Snapshot save failed:", error)
+            return nil
+        }
     }
 }
 
@@ -283,13 +314,5 @@ struct ConnectionView: Shape {
         p.move(to: from)
         p.addLine(to: to)
         return p
-    }
-}
-
-// MARK: - EXTENSION
-
-extension SIMD3 where Scalar == Float {
-    var position2D: CGPoint {
-        CGPoint(x: CGFloat(x), y: CGFloat(y))
     }
 }
