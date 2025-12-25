@@ -81,33 +81,54 @@ struct CanvasGridView: View {
 struct CanvasCardView: View {
     let canvas: Canvas
     
+    @State private var previewURL: URL
+    @State private var lastUpdateId = UUID()
+    
+    init(canvas: Canvas) {
+        self.canvas = canvas
+        self._previewURL = State(initialValue: CanvasPreviewService.shared.getPreviewURL(for: canvas))
+    }
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             // Card header with gradient background
             ZStack {
-                // Gradient background
-                LinearGradient(
-                    colors: [.blue.opacity(0.3), .purple.opacity(0.2)],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                .frame(height: 160)
-                .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-                
-                // Canvas icon
-                Image(systemName: "rectangle.split.3x3")
-                    .font(.system(size: 48, weight: .medium))
-                    .foregroundStyle(
-                        .linearGradient(
-                            colors: [.blue, .purple],
+                // Background shape with fixed size
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [.blue.opacity(0.3), .purple.opacity(0.2)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
                     )
-                    .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
+                    .frame(height: 160)
+                
+                if CanvasPreviewService.shared.hasPreview(for: canvas) {
+                    Image(contentsOfFile: previewURL.path())
+                        .resizable()
+                        .scaledToFill()
+                        .frame(maxWidth: .infinity, maxHeight: 160)
+                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .id(lastUpdateId)
+                } else {
+                    // Canvas icon (fallback when no preview exists)
+                    Image(systemName: "rectangle.split.3x3")
+                        .font(.system(size: 48, weight: .medium))
+                        .foregroundStyle(
+                            .linearGradient(
+                                colors: [.blue, .purple],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
+                }
             }
+            .frame(height: 160)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .stroke(.white.opacity(0.2), lineWidth: 1)
             )
             
@@ -123,9 +144,8 @@ struct CanvasCardView: View {
                 
                 // Metadata footer
                 HStack {
-                    // Creation date
                     Label(
-                        canvas.createdAt.formatted(.dateTime.day().month().year()),
+                        canvas.updatedAt.formatted(.dateTime.day().month().year().hour().minute()),
                         systemImage: "calendar"
                     )
                     .font(.caption)
@@ -134,7 +154,7 @@ struct CanvasCardView: View {
                     Spacer()
                     
                     // Node count badge
-                    Label("\(canvas.nodes.count)", systemImage: "circle.fill")
+                    Label("\(canvas.nodes.count) nodes", systemImage: "circle.fill")
                         .font(.caption)
                         .foregroundColor(canvas.nodes.count > 0 ? .blue : .secondary)
                         .padding(.horizontal, 8)
@@ -158,6 +178,15 @@ struct CanvasCardView: View {
                 .stroke(.white.opacity(0.1), lineWidth: 1)
         )
         .frame(height: 320)
+        .onReceive(NotificationCenter.default.publisher(for: .canvasPreviewUpdated)) { notification in
+            if let canvasId = notification.userInfo?["canvasId"] as? String,
+               canvasId == canvas.id {
+                // Force update by changing the URL (append timestamp)
+                let newURL = CanvasPreviewService.shared.getPreviewURL(for: canvas)
+                self.previewURL = newURL
+                self.lastUpdateId = UUID()
+            }
+        }
     }
 }
 

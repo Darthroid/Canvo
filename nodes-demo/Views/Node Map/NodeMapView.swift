@@ -143,10 +143,10 @@ struct NodeMapView: View {
                 .gesture(zoomGesture)
         }
         .onAppear {
-            snapshotCanvasToTmp()
+            generatePreview()
         }
         .onDisappear {
-            snapshotCanvasToTmp()
+            generatePreview()
         }
     }
 
@@ -194,30 +194,16 @@ struct NodeMapView: View {
             }
             .onEnded { _ in
                 lastDragTranslation = .zero
-                try? appModel.context?.save()
+                appModel.save()
             }
     }
     
     @MainActor
-    @discardableResult
-    private func snapshotCanvasToTmp() -> URL? {
-        guard let canvas = appModel.currentCanvas else { return nil }
+    private func generatePreview() {
+        guard let canvas = appModel.currentCanvas else { return }
         let image = self.canvas.asImage().resizedWithAspect(targetSize: .init(width: 220, height: 160))
         
-        guard let data = image.pngData() else {
-            return nil
-        }
-
-        let tmpURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("\(canvas.id).png")
-
-        do {
-            try data.write(to: tmpURL, options: [.atomic])
-            return tmpURL
-        } catch {
-            print("Snapshot save failed:", error)
-            return nil
-        }
+        CanvasPreviewService.shared.generatePreview(image: image, for: canvas.id)
     }
 }
 

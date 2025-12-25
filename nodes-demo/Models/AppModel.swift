@@ -13,8 +13,8 @@ import SwiftData
 @MainActor
 @Observable
 final class AppModel: Sendable {
-    var container: ModelContainer?
-    var context: ModelContext? {
+    private var container: ModelContainer?
+    private var context: ModelContext? {
         container?.mainContext
     }
     
@@ -68,6 +68,7 @@ final class AppModel: Sendable {
     }
     
     func removeCanvas(_ canvas: Canvas) {
+        CanvasPreviewService.shared.removePreview(for: canvas)
         context?.delete(canvas)
         save()
         fetchCanvases()
@@ -82,7 +83,10 @@ final class AppModel: Sendable {
             .filter { indexSet.contains($0.offset) }
             .map { $0.element }
         
-        canvasesToDelete.forEach { removeCanvas($0) }
+        canvasesToDelete.forEach {
+            removeCanvas($0)
+            CanvasPreviewService.shared.removePreview(for: $0)
+        }
     }
     
     func updateCanvasName(_ canvas: Canvas, newName: String) {
@@ -233,12 +237,14 @@ final class AppModel: Sendable {
     
     // MARK: - Helper Methods
     
-    fileprivate func save() {
+    func save() {
         guard let context, context.hasChanges else { return }
+        
+        currentCanvas?.updatedAt = Date()
+        
         try? context.save()
         
         // Update current canvas timestamp
-        currentCanvas?.updatedAt = Date()
         
         // Refresh canvases to update lists
         fetchCanvases()
