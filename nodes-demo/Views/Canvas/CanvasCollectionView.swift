@@ -11,7 +11,7 @@ import RealityKit
 import RealityKitContent
 #endif
 
-struct CanvasGridView: View {
+struct CanvasCollectionView: View {
     @Environment(AppModel.self) var appModel
     @State var showCreateCanvas: Bool = false
     @State private var gridLayout = [GridItem(.adaptive(minimum: 280), spacing: 20)]
@@ -191,5 +191,5 @@ struct CanvasCardView: View {
 }
 
 #Preview {
-    CanvasGridView()
+    CanvasCollectionView()
 }

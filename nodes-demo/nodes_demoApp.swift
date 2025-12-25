@@ -13,7 +13,7 @@ struct nodes_demoApp: App {
     
     var body: some Scene {
         WindowGroup {
-            CanvasGridView()
+            CanvasCollectionView()
                 .environment(appModel)
         }
         #if os(visionOS)
