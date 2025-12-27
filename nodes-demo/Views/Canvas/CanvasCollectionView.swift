@@ -16,6 +16,8 @@ struct CanvasCollectionView: View {
     @State var showCreateCanvas: Bool = false
     @State private var gridLayout = [GridItem(.adaptive(minimum: 280), spacing: 20)]
     
+    @State var selectedCanvas: Canvas?
+    
     var body: some View {
         NavigationStack {
             canvasesGrid
@@ -31,8 +33,16 @@ struct CanvasCollectionView: View {
                 }
         }
         .sheet(isPresented: $showCreateCanvas) {
-            CreateCanvasView()
-                .environment(appModel)
+            NameCanvasView(isCreating: true, onSubmit: { name in
+                appModel.createCanvas(name: name)
+            })
+            .environment(appModel)
+        }
+        .sheet(item: $selectedCanvas) { canvas in
+            NameCanvasView(name: canvas.name, isCreating: false, onSubmit: { name in
+                appModel.renameCanvas(id: canvas.id, name: name)
+            })
+            .environment(appModel)
         }
     }
     
@@ -62,6 +72,12 @@ struct CanvasCollectionView: View {
                         }
                         .buttonStyle(.plain)
                         .contextMenu {
+                            Button {
+                                self.selectedCanvas = canvas
+                            } label: {
+                                Label("Rename", systemImage: "pencil")
+                            }
+                            
                             Button(role: .destructive) {
                                 if let index = appModel.canvases.firstIndex(where: { $0.id == canvas.id }) {
                                     appModel.removeCanvas(at: IndexSet([index]))

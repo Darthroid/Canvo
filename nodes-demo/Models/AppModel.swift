@@ -63,6 +63,16 @@ final class AppModel: Sendable {
         currentCanvas = canvas
     }
     
+    func renameCanvas(id: String, name: String) {
+        if let objectToUpdate = try? context?.fetch(
+            FetchDescriptor<Canvas>(predicate: #Predicate { $0.id == id })
+        ).first {
+            objectToUpdate.name = name
+            objectToUpdate.updatedAt = Date()
+        }
+        save()
+    }
+    
     func switchToCanvas(_ canvas: Canvas) {
         currentCanvas = canvas
     }

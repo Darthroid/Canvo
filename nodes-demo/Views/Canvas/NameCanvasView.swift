@@ -1,5 +1,5 @@
 //
-//  CreateCanvasView.swift
+//  NameCanvasView.swift
 //  nodes-demo
 //
 //  Created by Олег Комаристый on 19.12.2025.
@@ -7,11 +7,15 @@
 
 import SwiftUI
 
-struct CreateCanvasView: View {
+struct NameCanvasView: View {
     @Environment(AppModel.self) var appModel
     @Environment(\.dismiss) var dismiss
     
     @State var name: String = ""
+    
+    var isCreating: Bool
+    
+    var onSubmit: ((String) -> Void)?
     
     var body: some View {
         NavigationStack {
@@ -34,15 +38,15 @@ struct CreateCanvasView: View {
                         dismiss()
                     }
                     
-                    Button("Create") {
-                        appModel.createCanvas(name: name)
+                    Button(isCreating ? "Create" : "Rename") {
+                        onSubmit?(name)
                         dismiss()
                     }
                     .disabled(name.isEmpty)
                 }
             }
             .padding()
-            .navigationTitle(Text("Create Canvas"))
+            .navigationTitle(Text(isCreating ? "Create Canvas" : "Rename Canvas"))
         }
     }
 }
