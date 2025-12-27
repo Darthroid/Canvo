@@ -201,7 +201,9 @@ struct NodeMapView: View {
     @MainActor
     private func generatePreview() {
         guard let canvas = appModel.currentCanvas else { return }
-        let image = self.canvas.asImage().resizedWithAspect(targetSize: .init(width: 220, height: 160))
+        let image = self.canvas
+            .asImage(removeBackground: true)
+            .resizedWithAspect(targetSize: .init(width: 220, height: 160))
         
         CanvasPreviewService.shared.generatePreview(image: image, for: canvas.id)
     }

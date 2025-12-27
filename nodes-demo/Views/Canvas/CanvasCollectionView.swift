@@ -93,25 +93,31 @@ struct CanvasCardView: View {
         VStack(alignment: .leading, spacing: 16) {
             // Card header with gradient background
             ZStack {
-                // Background shape with fixed size
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [.blue.opacity(0.3), .purple.opacity(0.2)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(height: 160)
-                
                 if CanvasPreviewService.shared.hasPreview(for: canvas) {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(.background)
+                        .frame(height: 160)
+                    
                     Image(contentsOfFile: previewURL.path())
                         .resizable()
                         .scaledToFill()
                         .frame(maxWidth: .infinity, maxHeight: 160)
-                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .clipShape(
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        )
                         .id(lastUpdateId)
                 } else {
+                    // Background shape with fixed size
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [.blue.opacity(0.3), .purple.opacity(0.2)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(height: 160)
+                    
                     // Canvas icon (fallback when no preview exists)
                     Image(systemName: "rectangle.split.3x3")
                         .font(.system(size: 48, weight: .medium))

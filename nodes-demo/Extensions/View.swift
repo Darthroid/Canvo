@@ -9,7 +9,7 @@ import UIKit
 import SwiftUI
 
 extension View {
-    func asImage() -> UIImage {
+    func asImage(removeBackground: Bool) -> UIImage {
         let controller = UIHostingController(rootView: self)
         
         // locate far out of screen
@@ -19,6 +19,9 @@ extension View {
         let size = controller.sizeThatFits(in: UIScreen.main.bounds.size)
         controller.view.bounds = CGRect(origin: .zero, size: size)
         controller.view.sizeToFit()
+        if removeBackground {
+            controller.view.backgroundColor = .clear
+        }
         
         let image = controller.view.asImage()
         controller.view.removeFromSuperview()
