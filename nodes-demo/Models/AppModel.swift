@@ -99,6 +99,11 @@ final class AppModel: Sendable {
         }
     }
     
+    func setPin(_ isPinned: Bool, forCanvas canvas: Canvas) {
+        canvas.isPined = isPinned
+        save()
+    }
+    
     func updateCanvasName(_ canvas: Canvas, newName: String) {
         canvas.name = newName
         canvas.updatedAt = Date()

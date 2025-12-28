@@ -15,17 +15,20 @@ class Canvas: Identifiable, Codable {
     var createdAt: Date
     var updatedAt: Date
     
+    var isPined: Bool
+    
     @Relationship(deleteRule: .cascade, inverse: \Node.canvas)
     var nodes: [Node] = []
     
     @Relationship(deleteRule: .cascade, inverse: \NodeConnection.canvas)
     var connections: [NodeConnection] = []
     
-    init(id: String = UUID().uuidString, name: String, isDefault: Bool = false) {
+    init(id: String = UUID().uuidString, name: String, isPined: Bool = false) {
         self.id = id
         self.name = name
         self.createdAt = Date()
         self.updatedAt = Date()
+        self.isPined = isPined
     }
     
     required init(from decoder: Decoder) throws {
@@ -34,6 +37,7 @@ class Canvas: Identifiable, Codable {
         name = try container.decode(String.self, forKey: .name)
         createdAt = try container.decode(Date.self, forKey: .createdAt)
         updatedAt = try container.decode(Date.self, forKey: .updatedAt)
+        isPined = try container.decode(Bool.self, forKey: .isPined)
     }
     
     func encode(to encoder: any Encoder) throws {
@@ -42,9 +46,10 @@ class Canvas: Identifiable, Codable {
         try container.encode(name, forKey: .name)
         try container.encode(createdAt, forKey: .createdAt)
         try container.encode(updatedAt, forKey: .updatedAt)
+        try container.encode(isPined, forKey: .isPined)
     }
     
     private enum CodingKeys: String, CodingKey {
-        case id, name, createdAt, updatedAt
+        case id, name, createdAt, updatedAt, isPined
     }
 }

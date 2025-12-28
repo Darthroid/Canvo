@@ -11,12 +11,37 @@ import RealityKit
 import RealityKitContent
 #endif
 
+struct CanvasSectionHeaderView: View {
+    let title: String
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "pin.fill")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            Text(title.uppercased())
+                .font(.headline)
+                .fontWeight(.semibold)
+                .foregroundStyle(.secondary)
+
+            Spacer()
+        }
+        .padding(.horizontal, 4)
+        .padding(.top, 8)
+        .padding(.bottom, 4)
+    }
+}
+
+
 struct CanvasCollectionView: View {
     @Environment(AppModel.self) var appModel
     @State var showCreateCanvas: Bool = false
-    @State private var gridLayout = [GridItem(.adaptive(minimum: 280), spacing: 20)]
-    
     @State var selectedCanvas: Canvas?
+    
+    private let minCardWidth: CGFloat = 320
+    private let gridSpacing: CGFloat = 24
+    private let horizontalPadding: CGFloat = 24
     
     var body: some View {
         NavigationStack {
@@ -47,48 +72,82 @@ struct CanvasCollectionView: View {
     }
     
     var canvasesGrid: some View {
-        ZStack {
-            if appModel.canvases.isEmpty {
-                ContentUnavailableView(
-                    "No Canvases",
-                    systemImage: "rectangle.split.3x3",
-                    description: Text("Tap the + button to create your first canvas")
-                )
-                .zIndex(1)
-            }
-            
+        GeometryReader { geo in
+            let availableWidth = geo.size.width - horizontalPadding * 2
+            let columnCount = max(Int(availableWidth / minCardWidth), 1)
+            let cardWidth = (availableWidth - CGFloat(columnCount - 1) * gridSpacing) / CGFloat(columnCount)
+
             ScrollView {
-                LazyVGrid(columns: gridLayout, spacing: 24) {
-                    ForEach(appModel.canvases) { canvas in
-                        NavigationLink {
-                            NodeMapView()
-                                .environment(appModel)
-                                .onAppear {
-                                    appModel.switchToCanvas(canvas)
-                                }
-                        } label: {
-                            CanvasCardView(canvas: canvas)
-                                .hoverEffect(.highlight)
-                        }
-                        .buttonStyle(.plain)
-                        .contextMenu {
-                            Button {
-                                self.selectedCanvas = canvas
-                            } label: {
-                                Label("Rename", systemImage: "pencil")
-                            }
-                            
-                            Button(role: .destructive) {
-                                if let index = appModel.canvases.firstIndex(where: { $0.id == canvas.id }) {
-                                    appModel.removeCanvas(at: IndexSet([index]))
-                                }
-                            } label: {
-                                Label("Delete", systemImage: "trash")
+                if appModel.canvases.contains(where: { $0.isPined }) {
+
+                    CanvasSectionHeaderView(title: "Pinned")
+                        .padding(.horizontal, horizontalPadding)
+
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        LazyHGrid(
+                            rows: [GridItem(.fixed(cardWidth))],
+                            spacing: gridSpacing
+                        ) {
+                            ForEach(appModel.canvases.filter(\.isPined)) { canvas in
+                                canvasCard(for: canvas)
+                                    .frame(width: cardWidth)
                             }
                         }
+                        .padding(.horizontal, horizontalPadding)
+                    }
+
+                    Divider()
+                        .padding(.horizontal, horizontalPadding)
+                }
+
+                LazyVGrid(
+                    columns: Array(
+                        repeating: GridItem(.fixed(cardWidth), spacing: gridSpacing),
+                        count: columnCount
+                    ),
+                    spacing: gridSpacing
+                ) {
+                    ForEach(appModel.canvases.filter { !$0.isPined }) { canvas in
+                        canvasCard(for: canvas)
+                            .frame(width: cardWidth)
                     }
                 }
-                .padding(24)
+                .padding(horizontalPadding)
+            }
+        }
+    }
+
+    
+    @ViewBuilder func canvasCard(for canvas: Canvas) -> some View {
+        NavigationLink {
+            NodeMapView()
+                .environment(appModel)
+                .onAppear {
+                    appModel.switchToCanvas(canvas)
+                }
+        } label: {
+            CanvasCardView(canvas: canvas)
+                .hoverEffect(.highlight)
+        }
+        .buttonStyle(.plain)
+        .contextMenu {
+            Button {
+                appModel.setPin(!canvas.isPined, forCanvas: canvas)
+            } label: {
+                Label(canvas.isPined ? "Unpin" : "Pin", systemImage: canvas.isPined ? "pin.slash" : "pin")
+            }
+            Button {
+                self.selectedCanvas = canvas
+            } label: {
+                Label("Rename", systemImage: "pencil")
+            }
+            
+            Button(role: .destructive) {
+                if let index = appModel.canvases.firstIndex(where: { $0.id == canvas.id }) {
+                    appModel.removeCanvas(at: IndexSet([index]))
+                }
+            } label: {
+                Label("Delete", systemImage: "trash")
             }
         }
     }
@@ -197,9 +256,8 @@ struct CanvasCardView: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .stroke(.white.opacity(0.1), lineWidth: 1)
+                .stroke(Color(uiColor: .lightGray).opacity(0.1), lineWidth: 1)
         )
-        .frame(height: 320)
         .onReceive(NotificationCenter.default.publisher(for: .canvasPreviewUpdated)) { notification in
             if let canvasId = notification.userInfo?["canvasId"] as? String,
                canvasId == canvas.id {
