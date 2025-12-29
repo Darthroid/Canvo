@@ -1,71 +1,77 @@
 //
-//  EditNodeVIew.swift
+//  EditNodeView.swift
 //  nodes-demo
 //
 //  Created by Олег Комаристый on 04.12.2025.
 //
 
-
 import SwiftUI
 
 struct EditNodeView: View {
-    @Environment(AppModel.self) var appModel
-    @Environment(\.dismiss) var dismiss
-    
-    var nodeId: String
+    @Environment(AppModel.self) private var appModel
+    @Environment(\.dismiss) private var dismiss
+
+    let nodeId: String
+
     @State var name: String
     @State var detail: String
     @State var color: Color
-    
+
+    @FocusState private var isNameFocused: Bool
+
     var body: some View {
         NavigationStack {
-            VStack(alignment: .leading){
-                Text("Name:")
-                    .font(.title)
-                    .padding(.bottom)
-                TextField(text: $name, axis: .vertical) {
-                    Text("Enter Name")
+            Form {
+                Section {
+                    TextField("Name", text: $name)
+                        .focused($isNameFocused)
+                        .textInputAutocapitalization(.sentences)
                 }
-                .lineLimit(2...3)
-                .textFieldStyle(.roundedBorder)
-                
-                Text("Description:")
-                    .font(.title)
-                    .padding(.vertical)
-                TextField(text: $detail, axis: .vertical) {
-                    Text("Enter Description (optional)")
+
+                Section {
+                    TextField(
+                        "Description",
+                        text: $detail,
+                        axis: .vertical
+                    )
+                    .lineLimit(3...6)
                 }
-                .lineLimit(5...10)
-                .textFieldStyle(.roundedBorder)
-                
-                Text("Color:")
-                    .font(.title)
-                    .padding(.vertical)
-                ColorPicker("Choose a color", selection: $color)
-                
-                Spacer()
-                
-                HStack {
-                    Spacer()
-                    
+
+                Section {
+                    ColorPicker("Color", selection: $color, supportsOpacity: true)
+                }
+            }
+            .navigationTitle("Edit Node")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
                         dismiss()
                     }
-                    
+                }
+
+                ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         appModel.updateNode(
                             id: nodeId,
                             name: name,
                             detail: detail,
-                            color: color.toHex()
+                            color: color.toHex(includeAlpha: true)
                         )
                         dismiss()
                     }
-                    .disabled(name.isEmpty && detail.isEmpty)
+                    .disabled(
+                        name.trimmingCharacters(
+                            in: .whitespacesAndNewlines
+                        ).isEmpty
+                    )
                 }
             }
-            .padding()
-            .navigationTitle(Text("Edit Node"))
+            .onAppear {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    isNameFocused = true
+                }
+            }
         }
     }
 }

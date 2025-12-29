@@ -8,138 +8,142 @@
 import SwiftUI
 
 struct NodeDetailView: View {
-    @Environment(\.dismiss) var dismiss
-    @Environment(AppModel.self) var appModel
-    
-    @State var showDeleteConfirmation: Bool = false
-    
-    @State var showEditor: Bool = false
-    
-    @State var showLinkEditor: Bool = false
-    
-    var node: Node
-    
+    @Environment(\.dismiss) private var dismiss
+    @Environment(AppModel.self) private var appModel
+
+    @State private var showDeleteConfirmation = false
+    @State private var showEditor = false
+    @State private var showLinkEditor = false
+
+    let node: Node
+
     var body: some View {
-        VStack(alignment: .leading) {
-            ScrollView {
-                VStack(alignment: .leading) {
-                    Text("Description:")
-                        .font(.title)
-                        .padding(.bottom)
+        NavigationStack {
+            Form {
+                Section {
                     if node.detail.isEmpty {
                         Text("No description")
-                            .foregroundColor(Color(uiColor: .secondaryLabel))
+                            .foregroundStyle(.secondary)
                     } else {
                         Text(node.detail)
                     }
-                    
-                    Text("Position:")
-                        .font(.title)
-                        .padding(.vertical)
+                } header: {
+                    Text("Description")
+                }
+
+                Section {
                     #if os(visionOS)
                     Text(node.positionDescriptionMeters)
                     #else
                     Text(node.positionDescription)
                     #endif
-                    
-                    if appModel.hasConnection(nodeId: node.id) {
-                        Text("Connected Nodes")
-                            .font(.title)
-                            .padding(.vertical)
+                } header: {
+                    Text("Position")
+                }
+
+                if appModel.hasConnection(nodeId: node.id) {
+                    Section {
                         ForEach(appModel.nodesConnectedWith(node: node)) { connectedNode in
                             HStack {
                                 VStack(alignment: .leading) {
                                     Text(connectedNode.name)
-                                        .font(.headline)
+                                        .font(.body)
                                     Text(connectedNode.positionDescription)
-                                        .font(.footnote)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
                                 }
-                                
+
                                 Spacer()
-                                
-                                Button {
-                                    appModel.removeConnectionsBetween(connectedNode, and: node)
+
+                                Button(role: .destructive) {
+                                    appModel.removeConnectionsBetween(
+                                        connectedNode,
+                                        and: node
+                                    )
                                 } label: {
                                     Image(systemName: "xmark")
                                 }
                                 .buttonStyle(.borderless)
                             }
+                            .contentShape(Rectangle())
                             .onTapGesture {
                                 dismiss()
                                 appModel.selectedNodeId = connectedNode.id
                             }
                         }
-                        .listStyle(.plain)
+                    } header: {
+                        Text("Connected Nodes")
                     }
                 }
             }
-//            Spacer()
-            
-            HStack {
-                Spacer()
-                Button {
-                    showDeleteConfirmation.toggle()
-                } label: {
-                    Text("Delete")
+            .navigationTitle(node.name)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Close") {
+                        dismiss()
+                    }
                 }
-                
-                Button("Link") {
-                    showLinkEditor.toggle()
+
+                ToolbarItem(placement: .primaryAction) {
+                    Menu {
+                        Button("Edit") {
+                            showEditor = true
+                        }
+
+                        Button("Link") {
+                            showLinkEditor = true
+                        }
+
+                        Divider()
+
+                        Button(role: .destructive) {
+                            showDeleteConfirmation = true
+                        } label: {
+                            Text("Delete")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                    }
                 }
-                
-                Button {
-                    showEditor.toggle()
-                } label: {
-                    Text("Edit")
-                }
-                
             }
-        }
-        .toolbar {
-            Button {
-                dismiss()
-            } label: {
-                Text("Done")
+            .sheet(isPresented: $showEditor) {
+                EditNodeView(
+                    nodeId: node.id,
+                    name: node.name,
+                    detail: node.detail,
+                    color: node.color ?? .white
+                )
             }
-        }
-        .navigationTitle(node.name)
-        .sheet(isPresented: $showEditor) {
-            EditNodeView(
-                nodeId: node.id,
-                name: node.name,
-                detail: node.detail,
-                color: node.color ?? .white
-            )
-        }
-        .sheet(isPresented: $showLinkEditor) {
-            LinkEditorView(fromNode: node)
-        }
-        .alert(
-            Text("Delete node"),
-            isPresented: $showDeleteConfirmation,
-            actions: {
-                Button(role: .destructive) {
-                    showDeleteConfirmation.toggle()
+            .sheet(isPresented: $showLinkEditor) {
+                LinkEditorView(fromNode: node)
+            }
+            .alert(
+                "Delete Node",
+                isPresented: $showDeleteConfirmation
+            ) {
+                Button("Delete", role: .destructive) {
                     dismiss()
                     appModel.removeNode(node)
-                } label: {
-                    Text("Delete")
                 }
-                Button(role: .cancel) {
-                    //
-                } label: {
-                    Text("Cancel")
-                }
-                
-            },
-            message: {
+
+                Button("Cancel", role: .cancel) {}
+            } message: {
                 Text("Are you sure you want to delete this node?")
             }
-        )
-        .padding()
+        }
     }
 }
 
 #Preview {
-    NodeDetailView(node: .init(id: UUID().uuidString, name: "Test", detail: "Description", x: 0, y: 0, z: 0))
+    NodeDetailView(
+        node: .init(
+            id: UUID().uuidString,
+            name: "Test Node",
+            detail: "Description",
+            x: 0,
+            y: 0,
+            z: 0
+        )
+    )
 }

@@ -8,45 +8,52 @@
 import SwiftUI
 
 struct NameCanvasView: View {
-    @Environment(AppModel.self) var appModel
-    @Environment(\.dismiss) var dismiss
-    
+    @Environment(AppModel.self) private var appModel
+    @Environment(\.dismiss) private var dismiss
+
     @State var name: String = ""
-    
-    var isCreating: Bool
-    
-    var onSubmit: ((String) -> Void)?
-    
+
+    let isCreating: Bool
+    let onSubmit: ((String) -> Void)?
+
+    @FocusState private var isNameFocused: Bool
+
     var body: some View {
         NavigationStack {
-            VStack(alignment: .leading) {
-                Text("Name:")
-                    .font(.title)
-                    .padding(.bottom)
-                TextField(text: $name, axis: .vertical) {
-                    Text("Enter Name")
+            Form {
+                Section {
+                    TextField("Name", text: $name)
+                        .focused($isNameFocused)
+                        .textInputAutocapitalization(.sentences)
+                        .submitLabel(isCreating ? .done : .done)
                 }
-                .lineLimit(2...3)
-                .textFieldStyle(.roundedBorder)
-                
-                Spacer()
-                
-                HStack {
-                    Spacer()
-                    
+            }
+            .navigationTitle(isCreating ? "Create Canvas" : "Rename Canvas")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
                         dismiss()
                     }
-                    
+                }
+
+                ToolbarItem(placement: .confirmationAction) {
                     Button(isCreating ? "Create" : "Rename") {
                         onSubmit?(name)
                         dismiss()
                     }
-                    .disabled(name.isEmpty)
+                    .disabled(
+                        name.trimmingCharacters(
+                            in: .whitespacesAndNewlines
+                        ).isEmpty
+                    )
                 }
             }
-            .padding()
-            .navigationTitle(Text(isCreating ? "Create Canvas" : "Rename Canvas"))
+            .onAppear {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    isNameFocused = true
+                }
+            }
         }
     }
 }

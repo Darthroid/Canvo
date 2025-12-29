@@ -8,49 +8,50 @@
 import SwiftUI
 
 struct CreateNodeView: View {
-    @Environment(AppModel.self) var appModel
-    @Environment(\.dismiss) var dismiss
+    @Environment(AppModel.self) private var appModel
+    @Environment(\.dismiss) private var dismiss
 
     let position: SIMD3<Float>?
 
-    @State var name: String = ""
-    @State var detail: String = ""
-    @State var color = Color.white
-    
+    @State private var name: String = ""
+    @State private var detail: String = ""
+    @State private var color: Color = .white
+
+    @FocusState private var isNameFocused: Bool
+
     var body: some View {
         NavigationStack {
-            VStack(alignment: .leading) {
-                Text("Name")
-                    .font(.title)
-                    .padding(.bottom)
+            Form {
+                Section {
+                    TextField("Name", text: $name)
+                        .focused($isNameFocused)
+                        .textInputAutocapitalization(.sentences)
+                }
 
-                TextField("Enter name", text: $name)
-                    .textFieldStyle(.roundedBorder)
-
-                Text("Description")
-                    .font(.title)
-                    .padding(.vertical)
-
-                TextField("Optional description", text: $detail, axis: .vertical)
+                Section {
+                    TextField(
+                        "Description",
+                        text: $detail,
+                        axis: .vertical
+                    )
                     .lineLimit(3...6)
-                    .textFieldStyle(.roundedBorder)
+                }
 
-                Text("Color")
-                    .font(.title)
-                    .padding(.vertical)
-
-                ColorPicker("Choose color", selection: $color)
-
-                Spacer()
-                
-                HStack {
-                    Spacer()
-                    
+                Section {
+                    ColorPicker("Color", selection: $color, supportsOpacity: true)
+                }
+            }
+            .navigationTitle("Create Node")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
                         dismiss()
                     }
-                    
-                    Button("Create") {
+                }
+
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
                         appModel.addNode(
                             name: name,
                             detail: detail,
@@ -61,11 +62,14 @@ struct CreateNodeView: View {
                         )
                         dismiss()
                     }
-                    .disabled(name.isEmpty)
+                    .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
-            .padding()
-            .navigationTitle("Create Node")
+            .onAppear {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    isNameFocused = true
+                }
+            }
         }
     }
 }

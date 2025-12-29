@@ -77,42 +77,51 @@ struct CanvasCollectionView: View {
             let columnCount = max(Int(availableWidth / minCardWidth), 1)
             let cardWidth = (availableWidth - CGFloat(columnCount - 1) * gridSpacing) / CGFloat(columnCount)
 
-            ScrollView {
-                if appModel.canvases.contains(where: { $0.isPined }) {
+            if appModel.canvases.isEmpty {
+                ContentUnavailableView(
+                    "No Canvases",
+                    systemImage: "rectangle.split.3x3",
+                    description: Text("Tap the + button to create your first canvas")
+                )
+                .zIndex(1)
+            } else {
+                ScrollView {
+                    if appModel.canvases.contains(where: { $0.isPined }) {
 
-                    CanvasSectionHeaderView(title: "Pinned")
-                        .padding(.horizontal, horizontalPadding)
+                        CanvasSectionHeaderView(title: "Pinned")
+                            .padding(.horizontal, horizontalPadding)
 
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        LazyHGrid(
-                            rows: [GridItem(.fixed(cardWidth))],
-                            spacing: gridSpacing
-                        ) {
-                            ForEach(appModel.canvases.filter(\.isPined)) { canvas in
-                                canvasCard(for: canvas)
-                                    .frame(width: cardWidth)
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            LazyHGrid(
+                                rows: [GridItem(.fixed(cardWidth))],
+                                spacing: gridSpacing
+                            ) {
+                                ForEach(appModel.canvases.filter(\.isPined)) { canvas in
+                                    canvasCard(for: canvas)
+                                        .frame(width: cardWidth)
+                                }
                             }
+                            .padding(.horizontal, horizontalPadding)
                         }
-                        .padding(.horizontal, horizontalPadding)
+
+                        Divider()
+                            .padding(.horizontal, horizontalPadding)
                     }
 
-                    Divider()
-                        .padding(.horizontal, horizontalPadding)
-                }
-
-                LazyVGrid(
-                    columns: Array(
-                        repeating: GridItem(.fixed(cardWidth), spacing: gridSpacing),
-                        count: columnCount
-                    ),
-                    spacing: gridSpacing
-                ) {
-                    ForEach(appModel.canvases.filter { !$0.isPined }) { canvas in
-                        canvasCard(for: canvas)
-                            .frame(width: cardWidth)
+                    LazyVGrid(
+                        columns: Array(
+                            repeating: GridItem(.fixed(cardWidth), spacing: gridSpacing),
+                            count: columnCount
+                        ),
+                        spacing: gridSpacing
+                    ) {
+                        ForEach(appModel.canvases.filter { !$0.isPined }) { canvas in
+                            canvasCard(for: canvas)
+                                .frame(width: cardWidth)
+                        }
                     }
+                    .padding(horizontalPadding)
                 }
-                .padding(horizontalPadding)
             }
         }
     }
