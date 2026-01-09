@@ -45,13 +45,20 @@ final class AppModel: Sendable {
     func fetchCanvases() {
         do {
             let descriptor = FetchDescriptor<Canvas>(
-                sortBy: [SortDescriptor(\.createdAt)]
+                sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
             )
             canvases = try context?.fetch(descriptor) ?? []
         } catch {
             print("Failed to fetch canvases: \(error)")
             canvases = []
         }
+    }
+    
+    func addCanvas(_ canvas: Canvas) {
+        context?.insert(canvas)
+        save()
+        
+        fetchCanvases()
     }
     
     func createCanvas(name: String) {

@@ -37,6 +37,7 @@ struct CanvasSectionHeaderView: View {
 struct CanvasCollectionView: View {
     @Environment(AppModel.self) var appModel
     @State var showCreateCanvas: Bool = false
+    @State var showAICreateCanvas: Bool = false
     @State var selectedCanvas: Canvas?
     
     private let minCardWidth: CGFloat = 320
@@ -48,14 +49,27 @@ struct CanvasCollectionView: View {
             canvasesGrid
                 .navigationTitle("Nodes Demo")
                 .toolbar {
-                    ToolbarItem(placement: .primaryAction) {
+                    ToolbarItemGroup(placement: .primaryAction) {
                         Button {
                             showCreateCanvas = true
                         } label: {
                             Image(systemName: "plus")
                         }
+                        if #available(iOS 26, macOS 26, visionOS 26, *),
+                           AIGenerationService.shared.isAvailable {
+                            Button {
+                                showAICreateCanvas = true
+                            } label: {
+                                Image(systemName: "apple.intelligence")
+                            }
+                        }
                     }
                 }
+        }
+        .sheet(isPresented: $showAICreateCanvas) {
+            if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+                AICreateCanvasView()
+            }
         }
         .sheet(isPresented: $showCreateCanvas) {
             NameCanvasView(isCreating: true, onSubmit: { name in

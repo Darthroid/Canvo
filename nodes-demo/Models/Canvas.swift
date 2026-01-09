@@ -23,12 +23,14 @@ class Canvas: Identifiable, Codable {
     @Relationship(deleteRule: .cascade, inverse: \NodeConnection.canvas)
     var connections: [NodeConnection] = []
     
-    init(id: String = UUID().uuidString, name: String, isPined: Bool = false) {
+    init(id: String = UUID().uuidString, name: String, isPined: Bool = false, nodes: [Node] = [], connections: [NodeConnection] = []) {
         self.id = id
         self.name = name
         self.createdAt = Date()
         self.updatedAt = Date()
         self.isPined = isPined
+        self.nodes = nodes
+        self.connections = connections
     }
     
     required init(from decoder: Decoder) throws {
@@ -51,5 +53,29 @@ class Canvas: Identifiable, Codable {
     
     private enum CodingKeys: String, CodingKey {
         case id, name, createdAt, updatedAt, isPined
+    }
+}
+
+extension Canvas {
+    @available(iOS 26.0, *)
+    func toSchema() -> CanvasSchema {
+        CanvasSchema(
+            id: id,
+            name: name,
+            isPinned: isPined,
+            nodes: nodes.map { $0.toSchema() },
+            connections: connections.map { $0.toSchema() }
+        )
+    }
+    
+    @available(iOS 26.0, macOS 26.0, visionOS 26.0, *)
+    convenience init(from schema: CanvasSchema) {
+        self.init(
+            id: schema.id,
+            name: schema.name,
+            isPined: schema.isPinned,
+            nodes: schema.nodes.map { Node(from: $0) },
+            connections: schema.connections.map { NodeConnection(from: $0) }
+        )
     }
 }

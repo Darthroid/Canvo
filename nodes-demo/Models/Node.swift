@@ -74,6 +74,33 @@ class Node: Identifiable, Codable {
     }
 }
 
+extension Node {
+    @available(iOS 26.0, macOS 26.0, visionOS 26.0, *)
+    func toSchema() -> NodeSchema {
+        NodeSchema(
+            id: id,
+            name: name,
+            detail: detail,
+            position: .init(x: x, y: y, z: z),
+            color: colorRaw
+        )
+    }
+    
+    @available(iOS 26.0, macOS 26.0, visionOS 26.0, *)
+    convenience init(from schema: NodeSchema, canvas: Canvas? = nil) {
+        self.init(
+            id: schema.id,
+            name: schema.name,
+            detail: schema.detail,
+            x: schema.position.x,
+            y: schema.position.y,
+            z: schema.position.z,
+            color: schema.color,
+            canvas: canvas
+        )
+    }
+}
+
 @Model
 class NodeConnection: Identifiable, Equatable {
     @Attribute(.unique) var id: String
@@ -87,6 +114,27 @@ class NodeConnection: Identifiable, Equatable {
         self.fromNodeId = fromNodeId
         self.toNodeId = toNodeId
         self.canvas = canvas
+    }
+}
+
+extension NodeConnection {
+    @available(iOS 26.0, macOS 26.0, visionOS 26.0, *)
+    func toSchema() -> NodeConnectionSchema {
+        .init(
+            id: id,
+            fromNodeId: fromNodeId,
+            toNodeId: toNodeId
+        )
+    }
+    
+    @available(iOS 26.0, macOS 26.0, visionOS 26.0, *)
+    convenience init(from schema: NodeConnectionSchema, canvas: Canvas? = nil) {
+        self.init(
+            id: schema.id,
+            fromNodeId: schema.fromNodeId,
+            toNodeId: schema.toNodeId,
+            canvas: canvas
+        )
     }
 }
 
