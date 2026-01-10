@@ -1,14 +1,14 @@
 //
-//  AICreateCanvasView.swift
+//  AIEditCanvasView.swift
 //  nodes-demo
 //
-//  Created by Олег Комаристый on 09.01.2026.
+//  Created by Олег Комаристый on 10.01.2026.
 //
 
 import SwiftUI
 
 @available(iOS 26.0, macOS 26.0, visionOS 26.0, *)
-struct AICreateCanvasView: View {
+struct AIEditCanvasView: View {
     @Environment(AppModel.self) private var appModel
     @Environment(\.dismiss) private var dismiss
 
@@ -25,7 +25,7 @@ struct AICreateCanvasView: View {
             contentView // твой NavigationStack / Form
 
             if isGenerating {
-                AIOverlayView(title: "Generating Canvas")
+                AIOverlayView(title: "Generating Ideas")
                     .zIndex(100)
             }
         }
@@ -46,7 +46,7 @@ struct AICreateCanvasView: View {
                         .lineLimit(10...15)
                 }
             }
-            .navigationTitle("AI Create Canvas")
+            .navigationTitle("AI Edit Canvas")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -61,8 +61,7 @@ struct AICreateCanvasView: View {
                         generateCanvas()
                     }
                     .disabled(
-                        isGenerating ||
-                        ideas.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                        isGenerating
                     )
                 }
             }
@@ -78,14 +77,21 @@ struct AICreateCanvasView: View {
 
     private func generateCanvas() {
         Task {
+            guard let currentCanvas = appModel.currentCanvas else {
+                return
+            }
             isGenerating = true
             isIdeasFocused = false
             do {
                 let schema = try await AIGenerationService.shared
-                    .generaeteCanvas(prompt: ideas)
+                    .generateNodes(prompt: ideas, in: currentCanvas)
 
-                let canvas = Canvas(from: schema)
-                appModel.addCanvas(canvas)
+                let nodes = schema.0.map { Node(from: $0) }
+                let connections = schema.1.map { NodeConnection(from: $0) }
+                
+                appModel.addNodes(nodes)
+                appModel.addConnections(connections)
+                
                 dismiss()
             } catch {
                 errorMessage = error.localizedDescription

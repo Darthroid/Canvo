@@ -45,7 +45,7 @@ final class AppModel: Sendable {
     func fetchCanvases() {
         do {
             let descriptor = FetchDescriptor<Canvas>(
-                sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+                sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
             )
             canvases = try context?.fetch(descriptor) ?? []
         } catch {
@@ -141,6 +141,24 @@ final class AppModel: Sendable {
         return connectedNodes
     }
     
+    func addNode(_ node: Node) {
+        guard let currentCanvas = currentCanvas else { return }
+        
+        node.canvas = currentCanvas
+        context?.insert(node)
+        save()
+    }
+    
+    func addNodes(_ nodes: [Node]) {
+        guard let currentCanvas = currentCanvas else { return }
+        
+        nodes.forEach {
+            $0.canvas = currentCanvas
+            context?.insert($0)
+        }
+        save()
+    }
+    
     func addNode(name: String, detail: String, position: (x: Float, y: Float, z: Float)?, color: String? = nil) {
         guard let currentCanvas = currentCanvas else { return }
         
@@ -216,6 +234,24 @@ final class AppModel: Sendable {
     }
     
     // MARK: - Connection Management
+    
+    func addConnections(_ connections: [NodeConnection]) {
+        guard let currentCanvas = currentCanvas else { return }
+        
+        connections.forEach {
+            $0.canvas = currentCanvas
+            context?.insert($0)
+        }
+        
+        save()
+    }
+    
+    func addConnection(_ connection: NodeConnection) {
+        guard let currentCanvas = currentCanvas else { return }
+        
+        context?.insert(connection)
+        save()
+    }
     
     func addConnection(from fromNodeId: String, to toNodeId: String) {
         guard let currentCanvas = currentCanvas,

@@ -15,6 +15,7 @@ struct NodeMapView: View {
     @State private var lastPanTranslation: CGSize = .zero
     @State private var lastDragTranslation: CGSize = .zero
     
+    @State var showAIEditCanvas = false
     @State var showNodeForm = false
     @State var showNodeSpace = false
     @State var pendingNodePosition: SIMD3<Float>? = nil
@@ -90,6 +91,11 @@ struct NodeMapView: View {
                     CreateNodeView(position: pendingNodePosition)
                         .environment(appModel)
                 }
+                .sheet(isPresented: $showAIEditCanvas) {
+                    if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+                        AIEditCanvasView()
+                    }
+                }
                 .navigationTitle(appModel.currentCanvas?.name ?? "Nodes Demo")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
@@ -119,6 +125,13 @@ struct NodeMapView: View {
                             showNodeForm = true
                         } label: {
                             Image(systemName: "plus")
+                        }
+                        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+                            Button {
+                                showAIEditCanvas = true
+                            } label: {
+                                Image(systemName: "apple.intelligence")
+                            }
                         }
                         #if os(visionOS)
                         Button {
