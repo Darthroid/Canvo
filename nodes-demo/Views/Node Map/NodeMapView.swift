@@ -126,7 +126,7 @@ struct NodeMapView: View {
                         } label: {
                             Image(systemName: "plus")
                         }
-                        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+                        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *), AIGenerationService.shared.isAvailable {
                             Button {
                                 showAIEditCanvas = true
                             } label: {
@@ -261,13 +261,13 @@ struct NodeView: View {
             VStack(spacing: 8) {
                 Text(node.name)
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(.init(uiColor: .darkGray))
+                    .foregroundColor(.init(uiColor: .label))
                     .multilineTextAlignment(.center)
                 
                 if isSelected {
                     Text(node.detail.isEmpty ? "No description" : node.detail)
                         .font(.system(size: 14))
-                        .foregroundColor(.init(uiColor: .darkGray).opacity(node.detail.isEmpty ? 0.6 : 0.9))
+                        .foregroundColor(.init(uiColor: .secondaryLabel))
                         .multilineTextAlignment(.center)
                 }
             }
@@ -287,11 +287,11 @@ struct NodeView: View {
             RoundedRectangle(cornerRadius: 25)
                 .stroke(.gray, lineWidth: 1)
                 .fill(node.color ?? .white)
-                .shadow(
-                    color: .black.opacity(isSelected ? 0.5 : 0.3),
-                    radius: isSelected ? 10 : 6,
-                    x: 0, y: isSelected ? 5 : 3
-                )
+//                .shadow(
+//                    color: .black.opacity(isSelected ? 0.5 : 0.3),
+//                    radius: isSelected ? 10 : 6,
+//                    x: 0, y: isSelected ? 5 : 3
+//                )
         )
         .frame(maxWidth: 400)
         .transition(.scale.combined(with: .opacity))
