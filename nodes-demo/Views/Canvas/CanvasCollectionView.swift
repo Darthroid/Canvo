@@ -198,7 +198,7 @@ struct CanvasCardView: View {
                     
                     Image(contentsOfFile: previewURL.path())
                         .resizable()
-                        .scaledToFill()
+                        .scaledToFit()
                         .frame(maxWidth: .infinity, maxHeight: 160)
                         .clipShape(
                             RoundedRectangle(cornerRadius: 16, style: .continuous)

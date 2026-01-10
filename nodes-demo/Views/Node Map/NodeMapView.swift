@@ -155,13 +155,78 @@ struct NodeMapView: View {
                 .gesture(panGesture)
                 .gesture(zoomGesture)
         }
-        .onAppear {
-            generatePreview()
-        }
         .onDisappear {
             generatePreview()
         }
     }
+    
+    // MARK: - PREVIEW FIT UTILS
+    
+    @ViewBuilder
+    private func previewCanvas(
+        layout: PreviewLayout
+    ) -> some View {
+        ZStack {
+            ForEach(appModel.connections) { c in
+                if let a = appModel.node(forId: c.fromNodeId),
+                   let b = appModel.node(forId: c.toNodeId) {
+                    ConnectionView(
+                        from: a.position.position2D,
+                        to: b.position.position2D
+                    )
+                    .stroke(.secondary, lineWidth: 1.25)
+                }
+            }
+
+            ForEach(appModel.nodes) { node in
+                NodeView(
+                    node: node,
+                    isSelected: false
+                )
+                .position(node.position.position2D)
+            }
+        }
+        .scaleEffect(layout.scale, anchor: .topLeading)
+        .offset(layout.offset)
+    }
+
+
+    private struct PreviewLayout {
+        let scale: CGFloat
+        let offset: CGSize
+    }
+
+    private func previewLayout(targetSize: CGSize) -> PreviewLayout? {
+        let points = appModel.nodes.map { $0.position.position2D }
+        guard !points.isEmpty else { return nil }
+
+        let minX = points.map(\.x).min()!
+        let maxX = points.map(\.x).max()!
+        let minY = points.map(\.y).min()!
+        let maxY = points.map(\.y).max()!
+
+        let padding: CGFloat = 80
+
+        let contentWidth = (maxX - minX) + padding * 2
+        let contentHeight = (maxY - minY) + padding * 2
+
+        let scale = min(
+            targetSize.width / contentWidth,
+            targetSize.height / contentHeight
+        )
+
+        /// ❗️ВАЖНО:
+        /// Сначала сдвигаем bounding в (0,0),
+        /// потом центрируем в targetSize
+        let offsetX = targetSize.width / 2 - ((minX + maxX) / 2) * scale
+        let offsetY = targetSize.height / 2 - ((minY + maxY) / 2) * scale
+
+        return PreviewLayout(
+            scale: scale,
+            offset: CGSize(width: offsetX, height: offsetY)
+        )
+    }
+
 
     // MARK: - PAN
 
@@ -214,12 +279,45 @@ struct NodeMapView: View {
     @MainActor
     private func generatePreview() {
         guard let canvas = appModel.currentCanvas else { return }
-        let image = self.canvas
+
+        let targetSize = CGSize(width: 220, height: 160)
+        let scaleFactor = UIScreen.main.scale
+
+        let renderSize = CGSize(
+            width: targetSize.width * scaleFactor,
+            height: targetSize.height * scaleFactor
+        )
+
+        let view: AnyView
+
+        if let layout = previewLayout(targetSize: targetSize) {
+            let scaledLayout = PreviewLayout(
+                scale: layout.scale * scaleFactor,
+                offset: layout.offset * scaleFactor
+            )
+
+            view = AnyView(
+                previewCanvas(layout: scaledLayout)
+                    .frame(width: renderSize.width, height: renderSize.height)
+            )
+        } else {
+            view = AnyView(
+                GridLayer()
+                    .frame(width: renderSize.width, height: renderSize.height)
+            )
+        }
+
+        let image = view
             .asImage(removeBackground: true)
-            .resizedWithAspect(targetSize: .init(width: 220, height: 160))
-        
-        CanvasPreviewService.shared.generatePreview(image: image, for: canvas.id)
+            .resizedWithAspect(targetSize: targetSize)
+
+        CanvasPreviewService.shared.generatePreview(
+            image: image,
+            for: canvas.id
+        )
     }
+
+
 }
 
 // MARK: - GRID
@@ -315,5 +413,11 @@ struct ConnectionView: Shape {
         p.move(to: from)
         p.addLine(to: to)
         return p
+    }
+}
+
+public extension CGSize {
+    static func * (lhs: CGSize, rhs: CGFloat) -> CGSize {
+        CGSize(width: lhs.width * rhs, height: lhs.height * rhs)
     }
 }
