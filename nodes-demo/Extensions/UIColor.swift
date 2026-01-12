@@ -106,3 +106,38 @@ extension Color {
         }
     }
 }
+
+extension UIColor {
+
+    /// Относительная яркость по WCAG
+    var relativeLuminance: CGFloat {
+        var r: CGFloat = 0
+        var g: CGFloat = 0
+        var b: CGFloat = 0
+        var a: CGFloat = 0
+
+        getRed(&r, green: &g, blue: &b, alpha: &a)
+
+        func adjust(_ c: CGFloat) -> CGFloat {
+            return c <= 0.03928
+            ? c / 12.92
+            : pow((c + 0.055) / 1.055, 2.4)
+        }
+
+        return 0.2126 * adjust(r)
+             + 0.7152 * adjust(g)
+             + 0.0722 * adjust(b)
+    }
+
+    /// Контрастный цвет текста
+    func readableTextColor(isDarkMode: Bool) -> UIColor {
+        let luminance = relativeLuminance
+
+        // Порог можно тюнить
+        if isDarkMode {
+            return luminance < 0.35 ? .white : .black
+        } else {
+            return luminance < 0.55 ? .white : .black
+        }
+    }
+}

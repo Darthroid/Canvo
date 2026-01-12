@@ -112,7 +112,7 @@ struct NodeDetailView: View {
                     nodeId: node.id,
                     name: node.name,
                     detail: node.detail,
-                    color: node.color ?? .white
+                    color: Color(uiColor: node.color ?? .white)
                 )
             }
             .sheet(isPresented: $showLinkEditor) {

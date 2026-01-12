@@ -352,30 +352,48 @@ struct GridLayer: View {
 struct NodeView: View {
     let node: Node
     let isSelected: Bool
+
+    @Environment(\.colorScheme) private var colorScheme
     @State var showDetail: Bool = false
-    
+
+    private var backgroundUIColor: UIColor {
+        node.color ?? UIColor.systemBackground
+    }
+
+    private var titleColor: Color {
+        Color(
+            uiColor: backgroundUIColor.readableTextColor(
+                isDarkMode: colorScheme == .dark
+            )
+        )
+    }
+
+    private var secondaryColor: Color {
+        titleColor.opacity(0.75)
+    }
+
     var body: some View {
         HStack(spacing: 8) {
             VStack(spacing: 8) {
                 Text(node.name)
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(.init(uiColor: .label))
+                    .foregroundColor(titleColor)
                     .multilineTextAlignment(.center)
-                
+
                 if isSelected {
                     Text(node.detail.isEmpty ? "No description" : node.detail)
                         .font(.system(size: 14))
-                        .foregroundColor(.init(uiColor: .secondaryLabel))
+                        .foregroundColor(secondaryColor)
                         .multilineTextAlignment(.center)
                 }
             }
-            
+
             if isSelected {
                 Button {
                     showDetail.toggle()
                 } label: {
                     Image(systemName: "info.circle")
-                        .foregroundColor(.init(uiColor: .darkGray))
+                        .foregroundColor(titleColor.opacity(0.7))
                 }
             }
         }
@@ -383,13 +401,11 @@ struct NodeView: View {
         .padding(.vertical, 12)
         .background(
             RoundedRectangle(cornerRadius: 25)
-                .stroke(.gray, lineWidth: 1)
-                .fill(node.color ?? .white)
-//                .shadow(
-//                    color: .black.opacity(isSelected ? 0.5 : 0.3),
-//                    radius: isSelected ? 10 : 6,
-//                    x: 0, y: isSelected ? 5 : 3
-//                )
+                .fill(Color(uiColor: backgroundUIColor))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 25)
+                        .stroke(titleColor.opacity(0.2), lineWidth: 1)
+                )
         )
         .frame(maxWidth: 400)
         .transition(.scale.combined(with: .opacity))
@@ -401,6 +417,7 @@ struct NodeView: View {
         }
     }
 }
+
 
 // MARK: - CONNECTION
 

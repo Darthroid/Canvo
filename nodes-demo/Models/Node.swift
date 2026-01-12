@@ -27,8 +27,8 @@ class Node: Identifiable, Codable {
     
     var canvas: Canvas?
     
-    var color: Color? {
-        return Color(hex: colorRaw ?? "")
+    var color: UIColor? {
+        return UIColor(hex: colorRaw ?? "")
     }
     
     var position: SIMD3<Float> { .init(x, y, z) }
