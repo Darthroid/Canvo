@@ -8,7 +8,7 @@
 import Foundation
 import FoundationModels
 
-@available(iOS 26.0, *)
+@available(iOS 26.0, macOS 26.0, visionOS 26.0, *)
 @Generable
 struct Position3DSchema: Codable, Sendable {
     var x: Float

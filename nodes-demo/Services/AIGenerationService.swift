@@ -7,7 +7,7 @@
 
 import FoundationModels
 
-@available(iOS 26.0, *)
+@available(iOS 26.0, macOS 26.0, visionOS 26.0, *)
 class AIGenerationService {
     static let shared = AIGenerationService()
     
@@ -20,49 +20,81 @@ class AIGenerationService {
     private init() {}
     
     func generaeteCanvas(prompt: String) async throws -> CanvasSchema {
+        let session = LanguageModelSession(model: model)
+
+        let result = try await session.respond(
+            to: """
+            You are an AI that designs a structured mind map.
+            Before you start, please check what is a mind map.
+            
+            Create a mind map following all the rules. 
+            Here are ideas for mind map: \(prompt). 
+            A summary of idea is also title for canvas.
+            
+            You must follow these rules:
+             
+            GENERAL RULES:
+            - mind map should have main idea node.
+            - mind map should have other nodes that relates to main idea.
+            - All other nodes must connect to main idea node and not connect to each other.
+
+            MAIN IDEA NODE:
+            - Create a single node that represents the core concept of the mind map.
+            - Place the main idea node exactly at position x:0, y: 0, z:0.
+
+            OTHER NODES:
+            - All other nodes must support, expand, or relate to the main idea node.
+            - place other nodes in graph tree-like shape, where main node is the root
+
+            CONNECTIONS:
+            - Nodes should be directly connected to the main idea node.
+
+            CONTENT RULES:
+            - Do not duplicate ideas.
+            - Generate 10 nodes that represents core concept of the mind map.
+            - Supporting nodes must not overlap in X and Y coordinates and must be spaced by 150 points.
+            """,
+            generating: CanvasSchema.self
+        )
+
+        return result.content
+    }
+
+}
+
+@available(iOS 26.0, macOS 26.0, visionOS 26.0, *)
+extension AIGenerationService {
+
+    func generateForChunk(
+        prompt: String,
+        summary: String,
+        chunk: CanvasChunk,
+        existingIDs: Set<String>
+    ) async throws -> CanvasSchema {
+
         let session = LanguageModelSession(
             model: model,
             instructions: """
-            You are an AI that designs a structured 3D idea canvas.
+            You are extending a mind map by adding NEW ideas only.
+            Before start, please check what is a mind map.
 
-            General rules:
-            - All nodes must have unique UUID string identifiers.
-            - Node positions are in meters.
-            - The canvas is laid out primarily on the X-Y plane (Z should be 0 unless needed).
-            - The coordinate origin (0, 0, 0) represents the center of the canvas.
+            \(summary)
 
-            Main idea node:
-            - If possible, create a single main idea node.
-            - The main idea node represents the core concept of the canvas.
-            - Place the main idea node exactly at position (0, 0, 0).
-            - The main idea node should have the most general and descriptive name.
-            - The main idea node name should also represent the core concept of canvas.
-
-            Supporting nodes:
-            - All other nodes must support, expand, or relate to the main idea.
-            - Place supporting nodes around the main idea in a roughly circular or radial layout.
-            - Supporting nodes must not overlap in X and Y coordinates.
-
-            Spacing rules:
-            - The minimum distance between any two nodes on the X-Y plane must be at least 100 points.
-            - Do not place two nodes with the same X and Y coordinates on each other. add 100 points on the X-Y plane to one of nodes so that is would not overlap other node.
-            - Use evenly distributed angles when placing nodes around the center.
+            Active canvas chunk:
+            Nodes:
+            \(chunk.nodes.map { "- \($0.id): \($0.name)" }.joined(separator: "\n"))
 
             Connections:
-            - Create logical connections between nodes if needed.
-            - Most supporting nodes should be directly connected to the main idea node.
-            - Do not create connections to non-existent node IDs.
+            \(chunk.connections.map { "- \($0.fromNodeId) -> \($0.toNodeId)" }.joined(separator: "\n"))
 
-            Content rules:
-            - Node names must be short and meaningful.
-            - Node details may briefly explain the idea.
-            - Do not duplicate ideas across nodes.
-            - Draw at least 10 nodes that represents core concept of the canvas.
-            - If possible, canvas should have main idea node.
+            Forbidden node IDs:
+            \(existingIDs.joined(separator: ", "))
 
-            Output rules:
-            - Return valid JSON strictly matching CanvasSchema.
-            - Do not include explanations or comments outside the JSON.
+            Rules:
+            - Generate ONLY new nodes and connections
+            - Connections with existing and new nodes are allowed if there is a logical relationship
+            - Place nodes near related ones
+            - The distance between any two nodes on the X-Y plane must be at least 150 points.
             """
         )
 
@@ -73,90 +105,60 @@ class AIGenerationService {
 
         return result.content
     }
+}
+
+@available(iOS 26.0, macOS 26.0, visionOS 26.0, *)
+extension AIGenerationService {
+
+    func generateNodesChunked(
+        prompt: String,
+        in canvas: Canvas
+    ) async throws -> ([NodeSchema], [NodeConnectionSchema]) {
+
+        let summary = canvas.makeSemanticSummary()
+        let chunks = canvas.makeChunks()
+        let existingIDs = Set(canvas.nodes.map(\.id))
+
+        var newNodes: [NodeSchema] = []
+        var newConnections: [NodeConnectionSchema] = []
+
+        for chunk in chunks {
+            if let result = try? await generateForChunk(
+                prompt: prompt,
+                summary: summary,
+                chunk: chunk,
+                existingIDs: existingIDs
+            ) {
+                newNodes += result.nodes
+                newConnections += result.connections
+            }
+        }
+
+        return normalize(
+            nodes: newNodes,
+            connections: newConnections,
+            existing: existingIDs
+        )
+    }
     
-    func generateNodes(prompt: String, in canvas: Canvas) async throws -> ([NodeSchema], [NodeConnectionSchema]) {
-        let canvasSchema = canvas.toSchema()
-        let session = LanguageModelSession(
-            model: model,
-            instructions: """
-                You are an AI assistant that extends an existing 3D idea canvas by proposing
-                additional nodes and connections.
+    func normalize(
+        nodes: [NodeSchema],
+        connections: [NodeConnectionSchema],
+        existing: Set<String>
+    ) -> ([NodeSchema], [NodeConnectionSchema]) {
 
-                You are given:
-                - A user prompt describing what ideas they want to add or explore.
-                - An existing canvas that already contains nodes and connections.
+        let uniqueNodes = Dictionary(grouping: nodes, by: \.name)
+            .compactMap { $0.value.first }
+            .filter { !existing.contains($0.id) }
 
-                Your task:
-                - Propose NEW nodes and NEW connections that complement the existing canvas.
-                - Do NOT recreate, modify, or remove existing nodes or connections.
-                
-                Existing canvas:
-                \(canvasSchema.promptRepresentation)
+        let validNodeIDs = Set(uniqueNodes.map(\.id))
 
-                --------------------------------
-                General rules:
-                - All newly created nodes MUST have unique UUID string identifiers.
-                - Never reuse or regenerate IDs of existing nodes.
-                - Node positions are in meters.
-                - The canvas is laid out primarily on the X-Y plane.
-                - Z should be 0 unless there is a clear reason to separate nodes in depth.
+        let validConnections = connections.filter {
+            validNodeIDs.contains($0.fromNodeId)
+            || validNodeIDs.contains($0.toNodeId)
+        }
 
-                --------------------------------
-                Working with existing nodes:
-                - You may create connections FROM or TO existing nodes using their IDs.
-                - Do NOT modify existing node properties (name, position, details, color).
-                - Do NOT assume missing nodes — only reference node IDs that exist or that you create.
-
-                --------------------------------
-                Placement rules:
-                - New nodes must NOT overlap with existing nodes or with each other.
-                - The minimum distance between any two nodes on the X-Y plane must be at least 100 points.
-                - If a proposed position would overlap an existing node, adjust it by at least 100 points on the X-Y plane.
-                - Prefer placing new nodes near related existing nodes.
-                - If the canvas has a central or main idea node (usually near 0,0,0), arrange new nodes around it or around their most relevant existing node.
-
-                --------------------------------
-                Semantic rules:
-                - New nodes should expand, refine, or add perspectives to the existing ideas.
-                - Avoid duplicating concepts already present in the canvas.
-                - Node names must be short, clear, and meaningful.
-                - Node details may briefly explain the idea or how it relates to existing nodes.
-
-                --------------------------------
-                Connections:
-                - Create new connections only when there is a clear logical relationship.
-                - Connections may link:
-                  - new node → new node
-                  - new node → existing node
-                  - existing node → new node
-                - Do NOT create connections between two existing nodes.
-                - Do NOT create duplicate connections.
-                - Do NOT create connections to non-existent node IDs.
-
-                --------------------------------
-                Quantity guidelines:
-                - Create only as many nodes as necessary to meaningfully address the user's prompt.
-                - Prefer quality and relevance over quantity.
-
-                --------------------------------
-                Output rules:
-                - Return ONLY valid JSON.
-                - The output must strictly match the expected schema:
-                  - An array of NodeSchema objects
-                  - An array of NodeConnectionSchema objects
-                - Do NOT include explanations, comments, or extra text outside the JSON.
-                - DO NOT include nodes and connections provided by prompt/instructions that already existing in canvas
-                """
-
-        )
-
-        let result = try await session.respond(
-            to: prompt,
-            generating: CanvasSchema.self
-        )
-
-        return (result.content.nodes, result.content.connections)
-
+        return (uniqueNodes, validConnections)
     }
 
 }

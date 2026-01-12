@@ -8,7 +8,7 @@
 import Foundation
 import FoundationModels
 
-@available(iOS 26.0, *)
+@available(iOS 26.0, macOS 26.0, visionOS 26.0, *)
 @Generable
 struct CanvasSchema: Codable, Sendable, Identifiable {
     @Guide(description: "A unique identifier (UUID string) of canvas")
@@ -20,7 +20,7 @@ struct CanvasSchema: Codable, Sendable, Identifiable {
     @Guide(description: "A boolean value indicated whether the canvas is pinned (leave it false)")
     var isPinned: Bool
     
-    @Guide(description: "An array of nodes in canvas")
+    @Guide(description: "An array of nodes in canvas. should have main idea node")
     var nodes: [NodeSchema]
     
     @Guide(description: "An array of connections between nodes in canvas")

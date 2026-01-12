@@ -84,7 +84,8 @@ struct AIEditCanvasView: View {
             isIdeasFocused = false
             do {
                 let schema = try await AIGenerationService.shared
-                    .generateNodes(prompt: ideas, in: currentCanvas)
+//                    .generateNodes(prompt: ideas, in: currentCanvas)
+                    .generateNodesChunked(prompt: ideas, in: currentCanvas)
 
                 let nodes = schema.0.map { Node(from: $0) }
                 let connections = schema.1.map { NodeConnection(from: $0) }
