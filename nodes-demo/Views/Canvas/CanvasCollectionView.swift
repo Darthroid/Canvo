@@ -249,7 +249,15 @@ struct CanvasCardView: View {
                 // Metadata footer
                 HStack {
                     Label(
-                        canvas.updatedAt.formatted(.dateTime.day().month().year().hour().minute()),
+                        canvas.updatedAt
+                            .formatted(
+                                .dateTime
+                                .day()
+                                .month(.twoDigits)
+                                .year()
+                                .hour()
+                                .minute()
+                            ),
                         systemImage: "calendar"
                     )
                     .font(.caption)
@@ -258,15 +266,9 @@ struct CanvasCardView: View {
                     Spacer()
                     
                     // Node count badge
-                    Label("\(canvas.nodes.count) nodes", systemImage: "circle.fill")
+                    Text("\(canvas.nodes.count) nodes")
                         .font(.caption)
-                        .foregroundColor(canvas.nodes.count > 0 ? .blue : .secondary)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(
-                            Capsule()
-                                .fill(canvas.nodes.count > 0 ? Color.blue.opacity(0.1) : Color.gray.opacity(0.1))
-                        )
+                        .foregroundColor(.secondary)
                 }
             }
             .padding(.horizontal, 4)

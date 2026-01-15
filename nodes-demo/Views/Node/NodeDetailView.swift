@@ -87,12 +87,16 @@ struct NodeDetailView: View {
 
                 ToolbarItem(placement: .primaryAction) {
                     Menu {
-                        Button("Edit") {
+                        Button {
                             showEditor = true
+                        } label: {
+                            Label("Edit", systemImage: "pencil")
                         }
 
-                        Button("Link") {
+                        Button {
                             showLinkEditor = true
+                        } label: {
+                            Label("Link", systemImage: "point.topleft.down.to.point.bottomright.curvepath")
                         }
 
                         Divider()
@@ -100,7 +104,7 @@ struct NodeDetailView: View {
                         Button(role: .destructive) {
                             showDeleteConfirmation = true
                         } label: {
-                            Text("Delete")
+                            Label("Delete", systemImage: "trash")
                         }
                     } label: {
                         Image(systemName: "ellipsis.circle")
