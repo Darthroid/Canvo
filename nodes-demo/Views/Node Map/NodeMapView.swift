@@ -281,7 +281,11 @@ struct NodeMapView: View {
         guard let canvas = appModel.currentCanvas else { return }
 
         let targetSize = CGSize(width: 220, height: 160)
-        let scaleFactor = UIScreen.main.scale
+        #if os(visionOS)
+        let scaleFactor: CGFloat = 1.0
+        #else
+        let scaleFactor: CGFloat = UIScreen.main.scale
+        #endif
 
         let renderSize = CGSize(
             width: targetSize.width * scaleFactor,
