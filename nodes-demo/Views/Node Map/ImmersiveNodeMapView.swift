@@ -17,7 +17,8 @@ struct ImmersiveNodeMapView: View {
     @State private var entityMap: [String: Entity] = [:]
     @State private var connectionMap: [String: ModelEntity] = [:]
     @State private var realityViewContent: RealityViewContent?
-    @State var initialDragPosition: SIMD3<Float> = .zero
+    
+    @State private var initialNodeCanvasPosition: SIMD3<Float> = .zero
     
     var body: some View {
         RealityView { content in
@@ -50,31 +51,61 @@ struct ImmersiveNodeMapView: View {
         DragGesture(coordinateSpace: .global)
             .targetedToAnyEntity()
             .onChanged { value in
-                guard let nodeComponent = value.entity.components[NodeDataComponent.self] else { return }
-                
+                guard
+                    let nodeComponent = value.entity.components[NodeDataComponent.self]
+                else { return }
+
+                // Begin drag
                 if draggedEntity == nil {
                     draggedEntity = value.entity
                     animateEntityScale(value.entity, to: 1.1)
-                    initialDragPosition = value.entity.position
+
+                    // CANVAS position (2D source of truth)
+                    initialNodeCanvasPosition = nodeComponent.node.position
                 }
-                
-                let movement = value.convert(value.gestureValue.translation3D, from: .local, to: .scene)
-                let newPosition = initialDragPosition + movement
-                
-                value.entity.position = newPosition
-                
-                appModel.updatePosition(for: nodeComponent.node.id, newPosition: newPosition)
+
+                // Movement in RealityKit scene (meters)
+                let movementScene = value.convert(
+                    value.gestureValue.translation3D,
+                    from: .local,
+                    to: .scene
+                )
+
+                let scaleFactor: Float = 0.001
+
+                // Convert to canvas delta
+                let deltaX = movementScene.x / scaleFactor
+                let deltaY = -movementScene.y / scaleFactor
+
+                let newCanvasPosition = SIMD3<Float>(
+                    initialNodeCanvasPosition.x + deltaX,
+                    initialNodeCanvasPosition.y + deltaY,
+                    initialNodeCanvasPosition.z
+                )
+
+                appModel.updatePosition(
+                    for: nodeComponent.node.id,
+                    newPosition: newCanvasPosition
+                )
+
+                value.entity.position =
+                    convertToVisionOSPosition(node: nodeComponent.node)
+
                 updateConnectionsForNode(nodeId: nodeComponent.node.id)
             }
             .onEnded { value in
-                guard let nodeComponent = value.entity.components[NodeDataComponent.self] else { return }
-                
+                guard
+                    let nodeComponent = value.entity.components[NodeDataComponent.self]
+                else { return }
+
                 animateEntityScale(value.entity, to: 1.0)
                 draggedEntity = nil
-                
+
                 updateConnectionsForNode(nodeId: nodeComponent.node.id)
             }
     }
+
+
     
     private var tapGesture: some Gesture {
         SpatialTapGesture()
@@ -115,8 +146,9 @@ struct ImmersiveNodeMapView: View {
         for node in appModel.nodes {
             if let existingEntity = entityMap[node.id] {
                 // Update position of existing entity if it changed
-                if existingEntity.position != node.position {
-                    existingEntity.position = node.position
+                let position = convertToVisionOSPosition(node: node)
+                if existingEntity.position != position {
+                    existingEntity.position = position
                     // Connection updates will be handled by the drag gesture
                 }
             } else {
@@ -170,8 +202,8 @@ struct ImmersiveNodeMapView: View {
     private func updateConnectionEntity(_ connectionEntity: ModelEntity, from fromNode: Node, to toNode: Node) {
         connectionEntity.children.forEach { $0.removeFromParent() }
         
-        let startPos = fromNode.position
-        let endPos = toNode.position
+        let startPos = convertToVisionOSPosition(node: fromNode)
+        let endPos = convertToVisionOSPosition(node: toNode)
         
         // Calculate the vector between nodes
         let vector = endPos - startPos
@@ -236,6 +268,28 @@ struct ImmersiveNodeMapView: View {
     
     // MARK: - Drawing nodes
     
+    private func convertToVisionOSPosition(node: Node) -> SIMD3<Float> {
+        let scaleFactor: Float = 0.001
+        let x = Float(node.position.x) * scaleFactor
+        let y = -Float(node.position.y) * scaleFactor
+
+        // Handle z value - if zConstant is nil, use 0 as the base
+        let baseZ = Float(node.position.z)
+
+        // Apply z-offset: if original z was 0, place at -1.5 (comfortable viewing distance)
+        // Otherwise, use the original z value directly
+        let z = baseZ == 0.0 ? -1.5 : baseZ
+
+        let xOffset: Float = 0.0
+        let yOffset: Float = 1.5
+
+        return SIMD3<Float>(
+            x + xOffset,
+            y + yOffset,
+            z  // No additional zOffset needed since we handled it above
+        )
+    }
+    
     private func createCapsuleNode(for node: Node) -> Entity {
         let parentEntity = Entity()
 
@@ -260,7 +314,7 @@ struct ImmersiveNodeMapView: View {
         wrapperEntity.addChild(text)
 
         parentEntity.addChild(wrapperEntity)
-        parentEntity.position = node.position
+        parentEntity.position = convertToVisionOSPosition(node: node)
         
         let collisionShape = ShapeResource.generateBox(width: capsuleWidth, height: capsuleHeight, depth: 0.02)
         parentEntity.components.set(CollisionComponent(
