@@ -19,6 +19,7 @@ struct NodeMapView: View {
     @State var showNodeForm = false
     @State var showNodeSpace = false
     @State var pendingNodePosition: SIMD3<Float>? = nil
+    @State private var containerSize: CGSize = .zero
     
     private let minScale: CGFloat = 0.1
     private let maxScale: CGFloat = 4.0
@@ -36,14 +37,13 @@ struct NodeMapView: View {
         baseScale = 1.0
     }
     
-    private func visibleCenterPosition(in geo: GeometryProxy) -> SIMD3<Float> {
-        let screenCenter = CGPoint(
-            x: geo.size.width / 2,
-            y: geo.size.height / 2
-        )
+    private func visibleCenterPosition() -> SIMD3<Float> {
         
-        let canvasX = (screenCenter.x - offset.width) / scale
-        let canvasY = (screenCenter.y - offset.height) / scale
+        let screenCenterX = containerSize.width / 2
+        let screenCenterY = containerSize.height / 2
+        
+        let canvasX = (screenCenterX - offset.width) / scale
+        let canvasY = (screenCenterY - offset.height) / scale
         
         return SIMD3(Float(canvasX), Float(canvasY), 0)
     }
@@ -77,6 +77,16 @@ struct NodeMapView: View {
                         appModel.selectedNodeId = appModel.selectedNodeId == node.id ? nil : node.id
                     }
                 }
+                
+                // Debug marker for node creation (DO NOT REMOVE!)
+                Circle()
+                    .fill(Color.clear)
+                    .frame(width: 12, height: 12)
+                    .position(
+                        x: CGFloat(pendingNodePosition?.x ?? 0),
+                        y: CGFloat(pendingNodePosition?.y ?? 0)
+                    )
+                    .opacity(pendingNodePosition == nil ? 0 : 0.7)
             }
             .scaleEffect(scale)
             .offset(offset)
@@ -87,6 +97,12 @@ struct NodeMapView: View {
     var body: some View {
         GeometryReader { geo in
             canvas
+                .onAppear {
+                    containerSize = geo.size
+                }
+                .onChange(of: geo.size) { oldSize, newSize in
+                    containerSize = newSize
+                }
                 .sheet(isPresented: $showNodeForm) {
                     CreateNodeView(position: pendingNodePosition)
                         .environment(appModel)
@@ -121,7 +137,7 @@ struct NodeMapView: View {
                     
                     ToolbarItemGroup(placement: .topBarTrailing) {
                         Button {
-                            pendingNodePosition = visibleCenterPosition(in: geo)
+                            pendingNodePosition = visibleCenterPosition()
                             showNodeForm = true
                         } label: {
                             Image(systemName: "plus")
@@ -154,6 +170,14 @@ struct NodeMapView: View {
                 .background(Color(uiColor: .systemBackground))
                 .gesture(panGesture)
                 .gesture(zoomGesture)
+                
+                // visible area center debug marker (DO NOT REMOVE!)
+                Circle()
+                    .fill(Color.clear)
+                    .frame(width: 10, height: 10)
+                    .position(CGPoint(x: geo.size.width / 2, y: geo.size.height / 2))
+                    .opacity(0.5)
+                    .allowsHitTesting(false)
         }
         .onDisappear {
             generatePreview()
@@ -320,8 +344,6 @@ struct NodeMapView: View {
             for: canvas.id
         )
     }
-
-
 }
 
 // MARK: - GRID
