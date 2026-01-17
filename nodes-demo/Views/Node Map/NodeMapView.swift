@@ -21,9 +21,16 @@ struct NodeMapView: View {
     @State var pendingNodePosition: SIMD3<Float>? = nil
     @State private var containerSize: CGSize = .zero
     
+    @State private var searchText = ""
+    @State private var showSearch = false
+    @State private var searchResults: [Node] = []
+    @State private var selectedSearchResultIndex = 0
+    @FocusState private var isSearchFieldFocused: Bool
+    
     private let minScale: CGFloat = 0.1
     private let maxScale: CGFloat = 4.0
     private let zoomSensitivity: CGFloat = 0.35
+    private let searchAnimationDuration: Double = 0.5
     
     private func applyZoom(multiplier: CGFloat) {
         let next = scale * multiplier
@@ -35,10 +42,10 @@ struct NodeMapView: View {
     private func resetZoom() {
         scale = 1.0
         baseScale = 1.0
+        offset = .zero
     }
     
     private func visibleCenterPosition() -> SIMD3<Float> {
-        
         let screenCenterX = containerSize.width / 2
         let screenCenterY = containerSize.height / 2
         
@@ -46,6 +53,72 @@ struct NodeMapView: View {
         let canvasY = (screenCenterY - offset.height) / scale
         
         return SIMD3(Float(canvasX), Float(canvasY), 0)
+    }
+    
+    // Функция для центрирования ноды
+    private func centerOnNode(_ node: Node, animated: Bool = true) {
+        let nodePosition = node.position.position2D
+        
+        // Центр экрана
+        let screenCenterX = containerSize.width / 2
+        let screenCenterY = containerSize.height / 2
+        
+        // Вычисляем нужный offset для центрирования ноды
+        // Формула: offset = screenCenter - nodePosition * scale
+        let targetOffset = CGSize(
+            width: screenCenterX - nodePosition.x * scale,
+            height: screenCenterY - nodePosition.y * scale
+        )
+        
+        if animated {
+            withAnimation(.easeInOut(duration: searchAnimationDuration)) {
+                offset = targetOffset
+            }
+        } else {
+            offset = targetOffset
+        }
+        
+        // Выделяем ноду
+        appModel.selectedNodeId = node.id
+    }
+    
+    // Функция поиска нод
+    private func performSearch() {
+        if searchText.isEmpty {
+            searchResults = []
+            return
+        }
+        
+        let query = searchText.lowercased()
+        searchResults = appModel.nodes.filter { node in
+            node.name.lowercased().contains(query) ||
+            node.detail.lowercased().contains(query)
+        }
+        
+        selectedSearchResultIndex = 0
+        if let firstResult = searchResults.first {
+            centerOnNode(firstResult)
+        }
+    }
+    
+    // Переход к следующему результату поиска
+    private func goToNextSearchResult() {
+        guard !searchResults.isEmpty else { return }
+        
+        selectedSearchResultIndex = (selectedSearchResultIndex + 1) % searchResults.count
+        if let node = searchResults[safe: selectedSearchResultIndex] {
+            centerOnNode(node)
+        }
+    }
+    
+    // Переход к предыдущему результату поиска
+    private func goToPreviousSearchResult() {
+        guard !searchResults.isEmpty else { return }
+        
+        selectedSearchResultIndex = (selectedSearchResultIndex - 1 + searchResults.count) % searchResults.count
+        if let node = searchResults[safe: selectedSearchResultIndex] {
+            centerOnNode(node)
+        }
     }
     
     var canvas: some View {
@@ -65,12 +138,31 @@ struct NodeMapView: View {
                     }
                 }
 
-                // Nodes
+                // Nodes - теперь раздельно для правильного overlay
                 ForEach(appModel.nodes) { node in
-                    NodeView(
-                        node: node,
-                        isSelected: appModel.selectedNodeId == node.id
-                    )
+                    ZStack {
+                        // Основная нода
+                        NodeView(
+                            node: node,
+                            isSelected: appModel.selectedNodeId == node.id
+                        )
+                        
+                        // Подсветка для найденных нод (отдельный элемент)
+//                        if searchResults.contains(where: { $0.id == node.id }) {
+//                            RoundedRectangle(cornerRadius: 28) // Немного больше, чем у ноды (25)
+//                                .stroke(
+//                                    Color.blue,
+//                                    style: StrokeStyle(
+//                                        lineWidth: 3,
+//                                        lineCap: .round,
+//                                        lineJoin: .round,
+//                                        dash: [5, 3]
+//                                    )
+//                                )
+//                                .frame(width: 400 + 20, height: 400 + 20) // Чуть больше размера ноды
+//                                .allowsHitTesting(false)
+//                        }
+                    }
                     .position(node.position.position2D)
                     .gesture(nodeDrag(node))
                     .onTapGesture {
@@ -94,90 +186,237 @@ struct NodeMapView: View {
         }
     }
     
+    // Вью поиска в стиле Apple
+    var searchView: some View {
+        VStack(spacing: 0) {
+            if showSearch {
+                HStack(spacing: 8) {
+                    // Поле поиска
+                    HStack {
+                        Image(systemName: "magnifyingglass")
+                            .foregroundColor(.secondary)
+                            .font(.system(size: 17))
+                        
+                        TextField("Search", text: $searchText)
+                            .focused($isSearchFieldFocused)
+                            .textFieldStyle(PlainTextFieldStyle())
+                            .font(.system(size: 17))
+                            .autocapitalization(.none)
+                            .disableAutocorrection(true)
+                            .submitLabel(.search)
+                            .onSubmit {
+                                performSearch()
+                            }
+                            .onChange(of: searchText) { oldValue, newValue in
+                                performSearch()
+                            }
+                        
+                        if !searchText.isEmpty {
+                            Button {
+                                searchText = ""
+                            } label: {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundColor(.secondary)
+                                    .font(.system(size: 17))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(Color(.systemBackground))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .stroke(Color(.separator), lineWidth: 1)
+                            )
+                    )
+                    .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
+                    
+                    // Кнопка отмены
+                    Button("Cancel") {
+                        withAnimation {
+                            showSearch = false
+                            searchText = ""
+                            searchResults = []
+                        }
+                    }
+                    .font(.system(size: 17))
+                    .foregroundColor(.accentColor)
+                    .transition(.move(edge: .trailing))
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                .padding(.bottom, 8)
+                .background(
+                    Rectangle()
+                        .fill(Color(.systemBackground))
+                        .shadow(color: .black.opacity(0.1), radius: 3, x: 0, y: 2)
+                        .edgesIgnoringSafeArea(.top)
+                )
+                .transition(.move(edge: .top))
+                
+                // Индикатор результатов поиска (только если есть результаты)
+                if !searchResults.isEmpty {
+                    HStack(spacing: 16) {
+                        // Счетчик результатов
+                        Text("\(selectedSearchResultIndex + 1) of \(searchResults.count)")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        
+                        Spacer()
+                        
+                        // Кнопка предыдущего результата
+                        Button {
+                            goToPreviousSearchResult()
+                        } label: {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 22))
+                                .opacity(searchResults.count > 1 ? 1 : 0.3)
+                        }
+                        .disabled(searchResults.count <= 1)
+                        
+                        // Кнопка следующего результата
+                        Button {
+                            goToNextSearchResult()
+                        } label: {
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 22))
+                                .opacity(searchResults.count > 1 ? 1 : 0.3)
+                        }
+                        .disabled(searchResults.count <= 1)
+                    }
+                    .padding()
+                    .background(
+                        Rectangle()
+                            .fill(Color(.systemBackground).opacity(0.9))
+                            .overlay(
+                                Rectangle()
+                                    .frame(height: 1)
+                                    .foregroundColor(Color(.separator)),
+                                alignment: .bottom
+                            )
+                    )
+                    .transition(.opacity)
+                }
+            }
+            
+            Spacer()
+        }
+        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: showSearch)
+        .animation(.easeInOut(duration: 0.2), value: !searchResults.isEmpty)
+        .onChange(of: showSearch) { oldValue, newValue in
+            if newValue {
+                // При показе поиска фокусируем поле ввода
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    isSearchFieldFocused = true
+                }
+            } else {
+                isSearchFieldFocused = false
+            }
+        }
+    }
+    
     var body: some View {
         GeometryReader { geo in
-            canvas
-                .onAppear {
-                    containerSize = geo.size
+            ZStack(alignment: .top) {
+                canvas
+                
+                searchView
+            }
+            .onAppear {
+                containerSize = geo.size
+            }
+            .onChange(of: geo.size) { oldSize, newSize in
+                containerSize = newSize
+            }
+            .sheet(isPresented: $showNodeForm) {
+                CreateNodeView(position: pendingNodePosition)
+                    .environment(appModel)
+            }
+            .sheet(isPresented: $showAIEditCanvas) {
+                if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+                    AIEditCanvasView()
                 }
-                .onChange(of: geo.size) { oldSize, newSize in
-                    containerSize = newSize
-                }
-                .sheet(isPresented: $showNodeForm) {
-                    CreateNodeView(position: pendingNodePosition)
-                        .environment(appModel)
-                }
-                .sheet(isPresented: $showAIEditCanvas) {
-                    if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
-                        AIEditCanvasView()
+            }
+            .navigationTitle(appModel.currentCanvas?.name ?? "Nodes Demo")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItemGroup(placement: .bottomBar) {
+                    Button {
+                        applyZoom(multiplier: 0.8)
+                    } label: {
+                        Image(systemName: "minus.magnifyingglass")
+                    }
+                    
+                    Button {
+                        applyZoom(multiplier: 1.2)
+                    } label: {
+                        Image(systemName: "plus.magnifyingglass")
+                    }
+                    
+                    Button {
+                        resetZoom()
+                    } label: {
+                        Image(systemName: "text.magnifyingglass")
                     }
                 }
-                .navigationTitle(appModel.currentCanvas?.name ?? "Nodes Demo")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItemGroup(placement: .bottomBar) {
+                
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    // Кнопка поиска (скрывается при активном поиске)
+                    if !showSearch {
                         Button {
-                            applyZoom(multiplier: 0.8)
+                            withAnimation {
+                                showSearch = true
+                            }
                         } label: {
-                            Image(systemName: "minus.magnifyingglass")
-                        }
-                        
-                        Button {
-                            applyZoom(multiplier: 1.2)
-                        } label: {
-                            Image(systemName: "plus.magnifyingglass")
-                        }
-                        
-                        Button {
-                            resetZoom()
-                        } label: {
-                            Image(systemName: "text.magnifyingglass")
+                            Image(systemName: "magnifyingglass")
                         }
                     }
                     
-                    ToolbarItemGroup(placement: .topBarTrailing) {
-                        Button {
-                            pendingNodePosition = visibleCenterPosition()
-                            showNodeForm = true
-                        } label: {
-                            Image(systemName: "plus")
-                        }
-                        if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *), AIGenerationService.shared.isAvailable {
-                            Button {
-                                showAIEditCanvas = true
-                            } label: {
-                                Image(systemName: "apple.intelligence")
-                            }
-                        }
-                        #if os(visionOS)
-                        Button {
-                            showNodeSpace.toggle()
-                            if showNodeSpace {
-                                Task {
-                                    await openImmersiveSpace(id: "ImmersiveNodeMapView")
-                                }
-                            } else {
-                                Task {
-                                    await dismissImmersiveSpace()
-                                }
-                            }
-                        } label: {
-                            Image(systemName: "graph.3d")
-                        }
-                        #endif
+                    Button {
+                        pendingNodePosition = visibleCenterPosition()
+                        showNodeForm = true
+                    } label: {
+                        Image(systemName: "plus")
                     }
+                    if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *), AIGenerationService.shared.isAvailable {
+                        Button {
+                            showAIEditCanvas = true
+                        } label: {
+                            Image(systemName: "apple.intelligence")
+                        }
+                    }
+                    #if os(visionOS)
+                    Button {
+                        showNodeSpace.toggle()
+                        if showNodeSpace {
+                            Task {
+                                await openImmersiveSpace(id: "ImmersiveNodeMapView")
+                            }
+                        } else {
+                            Task {
+                                await dismissImmersiveSpace()
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "graph.3d")
+                    }
+                    #endif
                 }
-                .background(Color(uiColor: .systemBackground))
-                .gesture(panGesture)
-                .gesture(zoomGesture)
-                
-                // visible area center debug marker (DO NOT REMOVE!)
-                Circle()
-                    .fill(Color.clear)
-                    .frame(width: 10, height: 10)
-                    .position(CGPoint(x: geo.size.width / 2, y: geo.size.height / 2))
-                    .opacity(0.5)
-                    .allowsHitTesting(false)
+            }
+            .background(Color(uiColor: .systemBackground))
+            .gesture(panGesture)
+            .gesture(zoomGesture)
+            
+            // visible area center debug marker (DO NOT REMOVE!)
+            Circle()
+                .fill(Color.clear)
+                .frame(width: 10, height: 10)
+                .position(CGPoint(x: geo.size.width / 2, y: geo.size.height / 2))
+                .opacity(0.5)
+                .allowsHitTesting(false)
         }
         .onDisappear {
             generatePreview()
@@ -343,6 +582,13 @@ struct NodeMapView: View {
             image: image,
             for: canvas.id
         )
+    }
+}
+
+// MARK: - Helper extension для безопасного доступа к массиву
+extension Array {
+    subscript(safe index: Int) -> Element? {
+        return indices.contains(index) ? self[index] : nil
     }
 }
 
