@@ -144,24 +144,9 @@ struct NodeMapView: View {
                         // Основная нода
                         NodeView(
                             node: node,
-                            isSelected: appModel.selectedNodeId == node.id
+                            isSelected: appModel.selectedNodeId == node.id,
+                            isMatchingSearch: searchResults.contains(where: { $0.id == node.id })
                         )
-                        
-                        // Подсветка для найденных нод (отдельный элемент)
-//                        if searchResults.contains(where: { $0.id == node.id }) {
-//                            RoundedRectangle(cornerRadius: 28) // Немного больше, чем у ноды (25)
-//                                .stroke(
-//                                    Color.blue,
-//                                    style: StrokeStyle(
-//                                        lineWidth: 3,
-//                                        lineCap: .round,
-//                                        lineJoin: .round,
-//                                        dash: [5, 3]
-//                                    )
-//                                )
-//                                .frame(width: 400 + 20, height: 400 + 20) // Чуть больше размера ноды
-//                                .allowsHitTesting(false)
-//                        }
                     }
                     .position(node.position.position2D)
                     .gesture(nodeDrag(node))
@@ -190,125 +175,87 @@ struct NodeMapView: View {
     var searchView: some View {
         VStack(spacing: 0) {
             if showSearch {
-                HStack(spacing: 8) {
-                    // Поле поиска
-                    HStack {
-                        Image(systemName: "magnifyingglass")
-                            .foregroundColor(.secondary)
-                            .font(.system(size: 17))
-                        
-                        TextField("Search", text: $searchText)
-                            .focused($isSearchFieldFocused)
-                            .textFieldStyle(PlainTextFieldStyle())
-                            .font(.system(size: 17))
-                            .autocapitalization(.none)
-                            .disableAutocorrection(true)
-                            .submitLabel(.search)
-                            .onSubmit {
-                                performSearch()
-                            }
-                            .onChange(of: searchText) { oldValue, newValue in
-                                performSearch()
-                            }
-                        
-                        if !searchText.isEmpty {
+                VStack(spacing: 0) {
+                    HStack(spacing: 8) {
+                        HStack {
+                            Image(systemName: "magnifyingglass")
+                                .foregroundColor(.secondary)
+                            
+                            TextField("Search", text: $searchText)
+                                .focused($isSearchFieldFocused)
+                                .textFieldStyle(.plain)
+                                .submitLabel(.search)
+                                .autocapitalization(.none)
+                                .disableAutocorrection(true)
+                                .onSubmit { performSearch() }
+                                .onChange(of: searchText) { _, _ in performSearch() }
+                            
                             Button {
-                                searchText = ""
+                                withAnimation(.spring(response: 0.4, dampingFraction: 0.9)) {
+                                    showSearch = false
+                                    searchText = ""
+                                    searchResults = []
+                                }
                             } label: {
                                 Image(systemName: "xmark.circle.fill")
                                     .foregroundColor(.secondary)
-                                    .font(.system(size: 17))
                             }
                             .buttonStyle(.plain)
                         }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(Color(.systemBackground))
+                        )
+                        
                     }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(
-                        RoundedRectangle(cornerRadius: 10)
-                            .fill(Color(.systemBackground))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 10)
-                                    .stroke(Color(.separator), lineWidth: 1)
-                            )
-                    )
-                    .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
+                    .padding(.horizontal)
+                    .padding(.top, 8)
+                    .padding(.bottom, 6)
                     
-                    // Кнопка отмены
-                    Button("Cancel") {
-                        withAnimation {
-                            showSearch = false
-                            searchText = ""
-                            searchResults = []
+                    if !searchResults.isEmpty {
+                        HStack(spacing: 16) {
+                            Text("\(selectedSearchResultIndex + 1) of \(searchResults.count)")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            
+                            Spacer()
+                            
+                            Button { goToPreviousSearchResult() } label: {
+                                Image(systemName: "chevron.left")
+                            }
+                            .disabled(searchResults.count <= 1)
+                            
+                            Button { goToNextSearchResult() } label: {
+                                Image(systemName: "chevron.right")
+                            }
+                            .disabled(searchResults.count <= 1)
                         }
+                        .padding(.horizontal)
+                        .padding(.bottom, 8)
+                        .transition(.opacity)
                     }
-                    .font(.system(size: 17))
-                    .foregroundColor(.accentColor)
-                    .transition(.move(edge: .trailing))
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 8)
-                .padding(.bottom, 8)
                 .background(
-                    Rectangle()
+                    RoundedRectangle(cornerRadius: 16)
                         .fill(Color(.systemBackground))
-                        .shadow(color: .black.opacity(0.1), radius: 3, x: 0, y: 2)
-                        .edgesIgnoringSafeArea(.top)
+                        .shadow(color: .black.opacity(0.12), radius: 4, y: 2)
                 )
-                .transition(.move(edge: .top))
-                
-                // Индикатор результатов поиска (только если есть результаты)
-                if !searchResults.isEmpty {
-                    HStack(spacing: 16) {
-                        // Счетчик результатов
-                        Text("\(selectedSearchResultIndex + 1) of \(searchResults.count)")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                        
-                        Spacer()
-                        
-                        // Кнопка предыдущего результата
-                        Button {
-                            goToPreviousSearchResult()
-                        } label: {
-                            Image(systemName: "chevron.left")
-                                .font(.system(size: 22))
-                                .opacity(searchResults.count > 1 ? 1 : 0.3)
-                        }
-                        .disabled(searchResults.count <= 1)
-                        
-                        // Кнопка следующего результата
-                        Button {
-                            goToNextSearchResult()
-                        } label: {
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 22))
-                                .opacity(searchResults.count > 1 ? 1 : 0.3)
-                        }
-                        .disabled(searchResults.count <= 1)
-                    }
-                    .padding()
-                    .background(
-                        Rectangle()
-                            .fill(Color(.systemBackground).opacity(0.9))
-                            .overlay(
-                                Rectangle()
-                                    .frame(height: 1)
-                                    .foregroundColor(Color(.separator)),
-                                alignment: .bottom
-                            )
+                .transition(
+                    .asymmetric(
+                        insertion: .move(edge: .top).combined(with: .opacity),
+                        removal: .move(edge: .top).combined(with: .opacity)
                     )
-                    .transition(.opacity)
-                }
+                )
             }
             
             Spacer()
         }
-        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: showSearch)
-        .animation(.easeInOut(duration: 0.2), value: !searchResults.isEmpty)
-        .onChange(of: showSearch) { oldValue, newValue in
+        .padding(16)
+        .animation(.spring(response: 0.4, dampingFraction: 0.85), value: showSearch)
+        .onChange(of: showSearch) { _, newValue in
             if newValue {
-                // При показе поиска фокусируем поле ввода
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                     isSearchFieldFocused = true
                 }
@@ -444,7 +391,8 @@ struct NodeMapView: View {
             ForEach(appModel.nodes) { node in
                 NodeView(
                     node: node,
-                    isSelected: false
+                    isSelected: false,
+                    isMatchingSearch: false
                 )
                 .position(node.position.position2D)
             }
@@ -478,9 +426,6 @@ struct NodeMapView: View {
             targetSize.height / contentHeight
         )
 
-        /// ❗️ВАЖНО:
-        /// Сначала сдвигаем bounding в (0,0),
-        /// потом центрируем в targetSize
         let offsetX = targetSize.width / 2 - ((minX + maxX) / 2) * scale
         let offsetY = targetSize.height / 2 - ((minY + maxY) / 2) * scale
 
@@ -489,7 +434,6 @@ struct NodeMapView: View {
             offset: CGSize(width: offsetX, height: offsetY)
         )
     }
-
 
     // MARK: - PAN
 
@@ -624,9 +568,11 @@ struct GridLayer: View {
 struct NodeView: View {
     let node: Node
     let isSelected: Bool
+    let isMatchingSearch: Bool
 
     @Environment(\.colorScheme) private var colorScheme
-    @State var showDetail: Bool = false
+    @State private var showDetail: Bool = false
+    @State private var dashPhase: CGFloat = 0
 
     private var backgroundUIColor: UIColor {
         node.color ?? UIColor.systemBackground
@@ -675,8 +621,36 @@ struct NodeView: View {
             RoundedRectangle(cornerRadius: 25)
                 .fill(Color(uiColor: backgroundUIColor))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 25)
-                        .stroke(titleColor.opacity(0.2), lineWidth: 1)
+                    Group {
+                        if isMatchingSearch {
+                            RoundedRectangle(cornerRadius: 28)
+                                .stroke(
+                                    Color.blue,
+                                    style: StrokeStyle(
+                                        lineWidth: 3,
+                                        lineCap: .round,
+                                        lineJoin: .round,
+                                        dash: [6, 6],
+                                        dashPhase: dashPhase
+                                    )
+                                )
+                                .onAppear {
+                                    dashPhase = 0
+                                    withAnimation(
+                                        .linear(duration: 1.2)
+                                        .repeatForever(autoreverses: false)
+                                    ) {
+                                        dashPhase = -24
+                                    }
+                                }
+                                .onDisappear {
+                                    dashPhase = 0
+                                }
+                        } else {
+                            RoundedRectangle(cornerRadius: 25)
+                                .stroke(titleColor.opacity(0.2), lineWidth: 1)
+                        }
+                    }
                 )
         )
         .frame(maxWidth: 400)
@@ -689,6 +663,7 @@ struct NodeView: View {
         }
     }
 }
+
 
 
 // MARK: - CONNECTION
