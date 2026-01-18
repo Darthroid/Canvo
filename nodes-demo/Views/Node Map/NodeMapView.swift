@@ -138,10 +138,9 @@ struct NodeMapView: View {
                     }
                 }
 
-                // Nodes - теперь раздельно для правильного overlay
+                // Nodes
                 ForEach(appModel.nodes) { node in
                     ZStack {
-                        // Основная нода
                         NodeView(
                             node: node,
                             isSelected: appModel.selectedNodeId == node.id,
@@ -171,7 +170,6 @@ struct NodeMapView: View {
         }
     }
     
-    // Вью поиска в стиле Apple
     var searchView: some View {
         VStack(spacing: 0) {
             if showSearch {
@@ -291,18 +289,21 @@ struct NodeMapView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItemGroup(placement: .bottomBar) {
+                    // zoom out
                     Button {
                         applyZoom(multiplier: 0.8)
                     } label: {
                         Image(systemName: "minus.magnifyingglass")
                     }
                     
+                    // zoom in
                     Button {
                         applyZoom(multiplier: 1.2)
                     } label: {
                         Image(systemName: "plus.magnifyingglass")
                     }
                     
+                    // reset zoom
                     Button {
                         resetZoom()
                     } label: {
@@ -311,7 +312,7 @@ struct NodeMapView: View {
                 }
                 
                 ToolbarItemGroup(placement: .topBarTrailing) {
-                    // Кнопка поиска (скрывается при активном поиске)
+                    // search
                     if !showSearch {
                         Button {
                             withAnimation {
@@ -322,12 +323,15 @@ struct NodeMapView: View {
                         }
                     }
                     
+                    // new node
                     Button {
                         pendingNodePosition = visibleCenterPosition()
                         showNodeForm = true
                     } label: {
                         Image(systemName: "plus")
                     }
+                    
+                    // ai edit
                     if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *), AIGenerationService.shared.isAvailable {
                         Button {
                             showAIEditCanvas = true
@@ -335,7 +339,9 @@ struct NodeMapView: View {
                             Image(systemName: "apple.intelligence")
                         }
                     }
+                    
                     #if os(visionOS)
+                    // visionOS immersive map
                     Button {
                         showNodeSpace.toggle()
                         if showNodeSpace {
@@ -526,162 +532,5 @@ struct NodeMapView: View {
             image: image,
             for: canvas.id
         )
-    }
-}
-
-// MARK: - Helper extension для безопасного доступа к массиву
-extension Array {
-    subscript(safe index: Int) -> Element? {
-        return indices.contains(index) ? self[index] : nil
-    }
-}
-
-// MARK: - GRID
-
-struct GridLayer: View {
-    private let spacing: CGFloat = 60
-    private let dotSize: CGFloat = 2
-
-    var body: some View {
-        GeometryReader { geo in
-            Path { p in
-                for x in stride(from: -geo.size.width,
-                                to: geo.size.width * 2,
-                                by: spacing) {
-                    for y in stride(from: -geo.size.height,
-                                    to: geo.size.height * 2,
-                                    by: spacing) {
-                        p.addEllipse(
-                            in: CGRect(x: x, y: y, width: dotSize, height: dotSize)
-                        )
-                    }
-                }
-            }
-            .fill(Color.gray.opacity(0.6))
-        }
-        .allowsHitTesting(false)
-    }
-}
-
-// MARK: - NODE VIEW
-
-struct NodeView: View {
-    let node: Node
-    let isSelected: Bool
-    let isMatchingSearch: Bool
-
-    @Environment(\.colorScheme) private var colorScheme
-    @State private var showDetail: Bool = false
-    @State private var dashPhase: CGFloat = 0
-
-    private var backgroundUIColor: UIColor {
-        node.color ?? UIColor.systemBackground
-    }
-
-    private var titleColor: Color {
-        Color(
-            uiColor: backgroundUIColor.readableTextColor(
-                isDarkMode: colorScheme == .dark
-            )
-        )
-    }
-
-    private var secondaryColor: Color {
-        titleColor.opacity(0.75)
-    }
-
-    var body: some View {
-        HStack(spacing: 8) {
-            VStack(spacing: 8) {
-                Text(node.name)
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(titleColor)
-                    .multilineTextAlignment(.center)
-
-                if isSelected {
-                    Text(node.detail.isEmpty ? "No description" : node.detail)
-                        .font(.system(size: 14))
-                        .foregroundColor(secondaryColor)
-                        .multilineTextAlignment(.center)
-                }
-            }
-
-            if isSelected {
-                Button {
-                    showDetail.toggle()
-                } label: {
-                    Image(systemName: "info.circle")
-                        .foregroundColor(titleColor.opacity(0.7))
-                }
-            }
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .background(
-            RoundedRectangle(cornerRadius: 25)
-                .fill(Color(uiColor: backgroundUIColor))
-                .overlay(
-                    Group {
-                        if isMatchingSearch {
-                            RoundedRectangle(cornerRadius: 28)
-                                .stroke(
-                                    Color.blue,
-                                    style: StrokeStyle(
-                                        lineWidth: 3,
-                                        lineCap: .round,
-                                        lineJoin: .round,
-                                        dash: [6, 6],
-                                        dashPhase: dashPhase
-                                    )
-                                )
-                                .onAppear {
-                                    dashPhase = 0
-                                    withAnimation(
-                                        .linear(duration: 1.2)
-                                        .repeatForever(autoreverses: false)
-                                    ) {
-                                        dashPhase = -24
-                                    }
-                                }
-                                .onDisappear {
-                                    dashPhase = 0
-                                }
-                        } else {
-                            RoundedRectangle(cornerRadius: 25)
-                                .stroke(titleColor.opacity(0.2), lineWidth: 1)
-                        }
-                    }
-                )
-        )
-        .frame(maxWidth: 400)
-        .transition(.scale.combined(with: .opacity))
-        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
-        .sheet(isPresented: $showDetail) {
-            NavigationStack {
-                NodeDetailView(node: node)
-            }
-        }
-    }
-}
-
-
-
-// MARK: - CONNECTION
-
-struct ConnectionView: Shape {
-    let from: CGPoint
-    let to: CGPoint
-
-    func path(in rect: CGRect) -> Path {
-        var p = Path()
-        p.move(to: from)
-        p.addLine(to: to)
-        return p
-    }
-}
-
-public extension CGSize {
-    static func * (lhs: CGSize, rhs: CGFloat) -> CGSize {
-        CGSize(width: lhs.width * rhs, height: lhs.height * rhs)
     }
 }
