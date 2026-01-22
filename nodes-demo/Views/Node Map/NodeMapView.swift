@@ -269,6 +269,52 @@ struct NodeMapView: View {
                 canvas
                 
                 searchView
+                
+                HStack {
+                    Spacer()
+                    
+                    VStack(spacing: 24) {
+                        // zoom in
+                        Button {
+                            applyZoom(multiplier: 1.2)
+                        } label: {
+                            Image(systemName: "plus.magnifyingglass")
+                                .resizable()
+                                .frame(width: 25, height: 25)
+                                .foregroundStyle(Color(uiColor: .label))
+                        }
+                        
+                        // reset zoom
+                        Button {
+                            resetZoom()
+                        } label: {
+                            Image(systemName: "text.magnifyingglass")
+                                .resizable()
+                                .frame(width: 25, height: 25)
+                                .foregroundStyle(Color(uiColor: .label))
+                        }
+                        
+                        // zoom out
+                        Button {
+                            applyZoom(multiplier: 0.8)
+                        } label: {
+                            Image(systemName: "minus.magnifyingglass")
+                                .resizable()
+                                .frame(width: 25, height: 25)
+                                .foregroundStyle(Color(uiColor: .label))
+                        }
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 12)
+                    .background(
+                        Capsule()
+                            .fill(Color(uiColor: .systemBackground))
+                            .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
+                    )
+                }
+                .padding(.horizontal)
+                .padding(.vertical, 80)
+                
             }
             .onAppear {
                 containerSize = geo.size
@@ -288,29 +334,6 @@ struct NodeMapView: View {
             .navigationTitle(appModel.currentCanvas?.name ?? "Nodes Demo")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItemGroup(placement: .bottomBar) {
-                    // zoom out
-                    Button {
-                        applyZoom(multiplier: 0.8)
-                    } label: {
-                        Image(systemName: "minus.magnifyingglass")
-                    }
-                    
-                    // zoom in
-                    Button {
-                        applyZoom(multiplier: 1.2)
-                    } label: {
-                        Image(systemName: "plus.magnifyingglass")
-                    }
-                    
-                    // reset zoom
-                    Button {
-                        resetZoom()
-                    } label: {
-                        Image(systemName: "text.magnifyingglass")
-                    }
-                }
-                
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     // search
                     if !showSearch {
