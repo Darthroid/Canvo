@@ -35,8 +35,10 @@ class Node: Identifiable, Codable {
     var positionDescription: String { "(\(x), \(y), \(z))" }
     var positionDescriptionMeters: String { "(\(x)m, \(y)m, \(z)m)" }
     
+    var tags: [Tag] = []
+    
     private enum CodingKeys: String, CodingKey {
-        case id, name, detail, x, y, z, colorRaw = "color"
+        case id, name, detail, x, y, z, colorRaw = "color", tags
     }
     
     required init(from decoder: Decoder) throws {
@@ -51,7 +53,7 @@ class Node: Identifiable, Codable {
     }
     
     init(id: String = UUID().uuidString, name: String, detail: String,
-         x: Float, y: Float, z: Float, color: String? = nil, canvas: Canvas? = nil) {
+         x: Float, y: Float, z: Float, color: String? = nil, canvas: Canvas? = nil, tags: [Tag] = []) {
         self.id = id
         self.name = name
         self.detail = detail
@@ -60,6 +62,7 @@ class Node: Identifiable, Codable {
         self.z = z
         self.colorRaw = color
         self.canvas = canvas
+        self.tags = tags
     }
     
     func encode(to encoder: any Encoder) throws {

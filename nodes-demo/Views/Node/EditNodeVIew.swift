@@ -16,6 +16,7 @@ struct EditNodeView: View {
     @State var name: String
     @State var detail: String
     @State var color: Color
+    @State var tagsRaw: String
 
     @FocusState private var isNameFocused: Bool
 
@@ -40,6 +41,16 @@ struct EditNodeView: View {
                 Section {
                     ColorPicker("Color", selection: $color, supportsOpacity: true)
                 }
+                
+                Section {
+                    TextField(
+                        "Tags (separate with commas)",
+                        text: $tagsRaw,
+                        axis: .horizontal
+                    )
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                }
             }
             .navigationTitle("Edit Node")
             .navigationBarTitleDisplayMode(.inline)
@@ -56,7 +67,8 @@ struct EditNodeView: View {
                             id: nodeId,
                             name: name,
                             detail: detail,
-                            color: color.toHex(includeAlpha: true)
+                            color: color.toHex(includeAlpha: true),
+                            tagsRaw: tagsRaw
                         )
                         dismiss()
                     }

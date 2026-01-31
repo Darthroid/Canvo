@@ -16,6 +16,7 @@ struct CreateNodeView: View {
     @State private var name: String = ""
     @State private var detail: String = ""
     @State private var color: Color = .white
+    @State private var tagsRaw: String = ""
 
     @FocusState private var isNameFocused: Bool
 
@@ -40,6 +41,16 @@ struct CreateNodeView: View {
                 Section {
                     ColorPicker("Color", selection: $color, supportsOpacity: true)
                 }
+                
+                Section {
+                    TextField(
+                        "Tags (separate with commas)",
+                        text: $tagsRaw,
+                        axis: .horizontal
+                    )
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                }
             }
             .navigationTitle("Create Node")
             .navigationBarTitleDisplayMode(.inline)
@@ -58,7 +69,8 @@ struct CreateNodeView: View {
                             position: position.map {
                                 (x: $0.x, y: $0.y, z: $0.z)
                             },
-                            color: color.toHex(includeAlpha: true)
+                            color: color.toHex(includeAlpha: true),
+                            tagsRaw: tagsRaw
                         )
                         dismiss()
                     }

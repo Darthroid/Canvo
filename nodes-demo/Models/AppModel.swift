@@ -159,10 +159,12 @@ final class AppModel: Sendable {
         save()
     }
     
-    func addNode(name: String, detail: String, position: (x: Float, y: Float, z: Float)?, color: String? = nil) {
+    func addNode(name: String, detail: String, position: (x: Float, y: Float, z: Float)?, color: String? = nil, tagsRaw: String? = nil) {
         guard let currentCanvas = currentCanvas else { return }
         
         let position = position ?? (0, 1.0, -1.5)
+        
+        let tags = resolveTags(from: tagsRaw ?? "")
         
         let node = Node(
             name: name,
@@ -171,7 +173,8 @@ final class AppModel: Sendable {
             y: position.y,
             z: position.z,
             color: color,
-            canvas: currentCanvas
+            canvas: currentCanvas,
+            tags: tags
         )
         
         context?.insert(node)
@@ -192,13 +195,14 @@ final class AppModel: Sendable {
         save()
     }
     
-    func updateNode(id: String, name: String, detail: String, color: String? = nil) {
+    func updateNode(id: String, name: String, detail: String, color: String? = nil, tagsRaw: String? = nil) {
         if let objectToUpdate = try? context?.fetch(
             FetchDescriptor<Node>(predicate: #Predicate { $0.id == id })
         ).first {
             objectToUpdate.name = name
             objectToUpdate.detail = detail
             objectToUpdate.colorRaw = color
+            objectToUpdate.tags = resolveTags(from: tagsRaw ?? "")
         }
         save()
     }
@@ -291,6 +295,49 @@ final class AppModel: Sendable {
         if let connection = connections.first(where: { $0.fromNodeId == nodeId || $0.toNodeId == nodeId }) {
             removeConnection(connection)
         }
+    }
+    
+    // MARK: - Tags Management
+    
+    func resolveTags(from rawText: String) -> [Tag] {
+
+        let names = Set(rawText.parseTags())
+
+        guard !names.isEmpty else { return [] }
+
+        // 1. Забираем уже существующие
+        let existing = (try? context?.fetch(
+            FetchDescriptor<Tag>(predicate: #Predicate {
+                names.contains($0.name)
+            })
+        )) ?? []
+
+        var result = existing
+        let existingNames = Set(existing.map(\.name))
+
+        // 2. Создаём недостающие
+        let missing = names.subtracting(existingNames)
+        for name in missing {
+            let tag = Tag(name: name)
+            context?.insert(tag)
+            result.append(tag)
+        }
+
+        return result
+    }
+    
+    func updateNodeTags(nodeId: String, rawTags: String) {
+        guard
+            let context,
+            let node = try? context.fetch(
+                FetchDescriptor<Node>(predicate: #Predicate { $0.id == nodeId })
+            ).first
+        else { return }
+
+        let tags = resolveTags(from: rawTags)
+        node.tags = tags
+
+        save()
     }
     
     // MARK: - Helper Methods
