@@ -3,4 +3,68 @@
    uuid = "6A6DA3D9-402C-4A81-8DA7-7BC06FFE15C9"
    type = "1"
    version = "2.0">
+   <Breakpoints>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "87296A29-15D0-402A-A6BE-20EC9FCF434E"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "nodes-demo/Views/Node Map/NodeMapView.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "94"
+            endingLineNumber = "94"
+            landmarkName = "performSearch()"
+            landmarkType = "7">
+            <Locations>
+               <Location
+                  uuid = "87296A29-15D0-402A-A6BE-20EC9FCF434E - 2d74553af14e08b5"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "nodes_demo.NodeMapView.performSearch() -&gt; ()"
+                  moduleName = "nodes-demo.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/olegkomaristy/Work/nodes-demo/nodes-demo/Views/Node%20Map/NodeMapView.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "94"
+                  endingLineNumber = "94">
+               </Location>
+               <Location
+                  uuid = "87296A29-15D0-402A-A6BE-20EC9FCF434E - 9559f485a883fde4"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "closure #1 (nodes_demo.Node) -&gt; Swift.Bool in nodes_demo.NodeMapView.performSearch() -&gt; ()"
+                  moduleName = "nodes-demo.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/olegkomaristy/Work/nodes-demo/nodes-demo/Views/Node%20Map/NodeMapView.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "95"
+                  endingLineNumber = "95">
+               </Location>
+            </Locations>
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "571F32D7-ECBF-4298-AD3D-0CCE2707D085"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "../../../../var/folders/zs/rtjwcfrx3zzbyy32_yrjn15h0000gn/T/swift-generated-sources/@__swiftmacro_10nodes_demo8AppModelC12selectedTags18ObservationTrackedfMp_.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "1"
+            endingLineNumber = "1"
+            landmarkName = "unknown"
+            landmarkType = "0">
+         </BreakpointContent>
+      </BreakpointProxy>
+   </Breakpoints>
 </Bucket>

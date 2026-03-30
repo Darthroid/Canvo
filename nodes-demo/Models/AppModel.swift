@@ -22,12 +22,37 @@ final class AppModel: Sendable {
     private(set) var currentCanvas: Canvas?
     var selectedNodeId: String?
     
+    /// Tags that the user has toggled in the filter UI
+    var selectedTags: Set<Tag> = []
+    
+    var tags: [Tag] = []
+    
     var nodes: [Node] {
         currentCanvas?.nodes ?? []
     }
     
+    /// All nodes that match the current tag filter
+    var visibleNodes: [Node] {
+        guard !selectedTags.isEmpty else { return nodes }
+
+        // A node is visible if **any** of its tags is in the selected set
+        return nodes.filter { node in
+            !Set(node.tags).isDisjoint(with: selectedTags)
+        }
+    }
+    
     var connections: [NodeConnection] {
         currentCanvas?.connections ?? []
+    }
+    
+    /// All connections that should be drawn – only when both ends are visible
+    var visibleConnections: [NodeConnection] {
+        connections.filter { conn in
+            guard let a = node(forId: conn.fromNodeId),
+                  let b = node(forId: conn.toNodeId) else { return false }
+
+            return visibleNodes.contains(a) && visibleNodes.contains(b)
+        }
     }
     
     init() {
@@ -38,6 +63,7 @@ final class AppModel: Sendable {
         )
         
         fetchCanvases()
+        fetchTags()
     }
     
     // MARK: - Canvas Management
@@ -82,6 +108,16 @@ final class AppModel: Sendable {
     
     func switchToCanvas(_ canvas: Canvas) {
         currentCanvas = canvas
+        
+        selectedNodeId = nil
+        selectedTags = []
+        
+        let _nodes = nodes
+        _nodes.forEach { node in
+            node.isHidden = false
+        }
+        
+        currentCanvas?.nodes = _nodes
     }
     
     func removeCanvas(_ canvas: Canvas) {
@@ -299,6 +335,16 @@ final class AppModel: Sendable {
     
     // MARK: - Tags Management
     
+    func fetchTags() {
+        do {
+            let descriptor = FetchDescriptor<Tag>()
+            tags = try context?.fetch(descriptor) ?? []
+        } catch {
+            print("Failed to fetch canvases: \(error)")
+            tags = []
+        }
+    }
+    
     func resolveTags(from rawText: String) -> [Tag] {
 
         let names = Set(rawText.parseTags())
@@ -340,6 +386,15 @@ final class AppModel: Sendable {
         save()
     }
     
+    /// Called from the menu when a tag button is tapped
+    func toggleTag(_ tag: Tag) {
+        if selectedTags.contains(tag) {
+            selectedTags.remove(tag)
+        } else {
+            selectedTags.insert(tag)
+        }
+    }
+    
     // MARK: - Helper Methods
     
     func save() {
@@ -353,5 +408,7 @@ final class AppModel: Sendable {
         
         // Refresh canvases to update lists
         fetchCanvases()
+        
+        fetchTags()
     }
 }

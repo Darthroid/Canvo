@@ -17,6 +17,7 @@ struct NodeMapView: View {
     
     @State var showAIEditCanvas = false
     @State var showNodeForm = false
+    @State var showtagsFilter: Bool = false
     @State var showNodeSpace = false
     @State var pendingNodePosition: SIMD3<Float>? = nil
     @State private var containerSize: CGSize = .zero
@@ -91,8 +92,9 @@ struct NodeMapView: View {
         
         let query = searchText.lowercased()
         searchResults = appModel.nodes.filter { node in
-            node.name.lowercased().contains(query) ||
-            node.detail.lowercased().contains(query)
+            !node.isHidden &&
+            (node.name.lowercased().contains(query) ||
+             node.detail.lowercased().contains(query))
         }
         
         selectedSearchResultIndex = 0
@@ -127,9 +129,10 @@ struct NodeMapView: View {
                 GridLayer()
 
                 // Connections
-                ForEach(appModel.connections) { c in
+                ForEach(appModel.visibleConnections) { c in
                     if let a = appModel.node(forId: c.fromNodeId),
-                       let b = appModel.node(forId: c.toNodeId) {
+                       let b = appModel.node(forId: c.toNodeId),
+                       !a.isHidden && !b.isHidden {
                         ConnectionView(
                             from: a.position.position2D,
                             to: b.position.position2D
@@ -139,14 +142,12 @@ struct NodeMapView: View {
                 }
 
                 // Nodes
-                ForEach(appModel.nodes) { node in
-                    ZStack {
-                        NodeView(
-                            node: node,
-                            isSelected: appModel.selectedNodeId == node.id,
-                            isMatchingSearch: searchResults.contains(where: { $0.id == node.id })
-                        )
-                    }
+                ForEach(appModel.visibleNodes) { node in
+                    NodeView(
+                        node: node,
+                        isSelected: appModel.selectedNodeId == node.id,
+                        isMatchingSearch: searchResults.contains(where: { $0.id == node.id })
+                    )
                     .position(node.position.position2D)
                     .gesture(nodeDrag(node))
                     .onTapGesture {
@@ -346,6 +347,19 @@ struct NodeMapView: View {
                         }
                     }
                     
+                    // tag filter
+                    Menu {
+                        ForEach(appModel.tags, id: \.name) { tag in
+                            Button {
+                                appModel.toggleTag(tag)
+                            } label: {
+                                Label(tag.name, systemImage: (appModel.selectedTags.contains(tag) ? "checkmark" : ""))
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "tag")
+                    }
+                    
                     // new node
                     Button {
                         pendingNodePosition = visibleCenterPosition()
@@ -353,6 +367,8 @@ struct NodeMapView: View {
                     } label: {
                         Image(systemName: "plus")
                     }
+                    
+
                     
                     // ai edit
                     if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *), AIGenerationService.shared.isAvailable {

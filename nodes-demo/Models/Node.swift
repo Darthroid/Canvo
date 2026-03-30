@@ -22,6 +22,8 @@ class Node: Identifiable, Codable {
     var y: Float
     var z: Float
     
+    @Transient var isHidden: Bool = false
+    
     /// Hex formatted color
     var colorRaw: String?
     
