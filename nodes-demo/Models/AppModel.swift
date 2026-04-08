@@ -394,6 +394,10 @@ final class AppModel: Sendable {
         }
     }
     
+    func showAllTags() {
+        selectedTags.removeAll()
+    }
+    
     // MARK: - Helper Methods
     
     func save() {

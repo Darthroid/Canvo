@@ -356,8 +356,16 @@ struct NodeMapView: View {
                                 Label(tag.name, systemImage: (appModel.selectedTags.contains(tag) ? "checkmark" : ""))
                             }
                         }
+                        
+                        Divider()
+                        
+                        Button {
+                            appModel.showAllTags()
+                        } label: {
+                            Text("Show All")
+                        }
                     } label: {
-                        Image(systemName: "tag")
+                        Image(systemName: appModel.selectedTags.isEmpty ? "tag" : "tag.fill")
                     }
                     
                     // new node

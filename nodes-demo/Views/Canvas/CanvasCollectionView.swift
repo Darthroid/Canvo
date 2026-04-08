@@ -229,7 +229,7 @@ struct CanvasCardView: View {
                         .frame(height: 160)
                     
                     // Canvas icon (fallback when no preview exists)
-                    Image(systemName: "rectangle.split.3x3")
+                    Image(systemName: "point.bottomleft.forward.to.point.topright.scurvepath")
                         .font(.system(size: 48, weight: .medium))
                         .foregroundStyle(
                             .linearGradient(
