@@ -332,7 +332,7 @@ struct NodeMapView: View {
                     AIEditCanvasView()
                 }
             }
-            .navigationTitle(appModel.currentCanvas?.name ?? "Nodes Demo")
+            .navigationTitle(appModel.currentCanvas?.name ?? "Canvo")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItemGroup(placement: .topBarTrailing) {
@@ -349,7 +349,7 @@ struct NodeMapView: View {
                     
                     // tag filter
                     Menu {
-                        ForEach(appModel.tags, id: \.name) { tag in
+                        ForEach(appModel.currentCanvas?.tags ?? [], id: \.name) { tag in
                             Button {
                                 appModel.toggleTag(tag)
                             } label: {

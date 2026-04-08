@@ -38,7 +38,8 @@ struct CanvasCollectionView: View {
     @Environment(AppModel.self) var appModel
     @State var showCreateCanvas: Bool = false
     @State var showAICreateCanvas: Bool = false
-    @State var selectedCanvas: Canvas?
+    @State var renameCanvas: Canvas?
+    @State var deleteCanvas: Canvas?
     
     private let minCardWidth: CGFloat = 320
     private let gridSpacing: CGFloat = 24
@@ -47,7 +48,7 @@ struct CanvasCollectionView: View {
     var body: some View {
         NavigationStack {
             canvasesGrid
-                .navigationTitle("Nodes Demo")
+                .navigationTitle("Canvo")
                 .toolbar {
                     ToolbarItemGroup(placement: .primaryAction) {
                         Button {
@@ -77,12 +78,25 @@ struct CanvasCollectionView: View {
             })
             .environment(appModel)
         }
-        .sheet(item: $selectedCanvas) { canvas in
+        .sheet(item: $renameCanvas) { canvas in
             NameCanvasView(name: canvas.name, isCreating: false, onSubmit: { name in
                 appModel.renameCanvas(id: canvas.id, name: name)
             })
             .environment(appModel)
         }
+        .alert(item: $deleteCanvas) { canvas in
+            Alert(
+                title: Text("Delete Canvas"),
+                message: Text("Are you sure you want to delete \(canvas.name)? This cannot be undone."),
+                primaryButton: .destructive(Text("Delete")) {
+                    if let index = appModel.canvases.firstIndex(where: { $0.id == canvas.id }) {
+                        appModel.removeCanvas(at: IndexSet([index]))
+                    }
+                },
+                secondaryButton: .cancel()
+            )
+        }
+        
     }
     
     var canvasesGrid: some View {
@@ -160,15 +174,13 @@ struct CanvasCollectionView: View {
                 Label(canvas.isPined ? "Unpin" : "Pin", systemImage: canvas.isPined ? "pin.slash" : "pin")
             }
             Button {
-                self.selectedCanvas = canvas
+                self.renameCanvas = canvas
             } label: {
                 Label("Rename", systemImage: "pencil")
             }
             
             Button(role: .destructive) {
-                if let index = appModel.canvases.firstIndex(where: { $0.id == canvas.id }) {
-                    appModel.removeCanvas(at: IndexSet([index]))
-                }
+                self.deleteCanvas = canvas
             } label: {
                 Label("Delete", systemImage: "trash")
             }
@@ -266,7 +278,7 @@ struct CanvasCardView: View {
                     Spacer()
                     
                     // Node count badge
-                    Text("\(canvas.nodes.count) nodes")
+                    Text("\(canvas.nodes?.count ?? 0) nodes")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }

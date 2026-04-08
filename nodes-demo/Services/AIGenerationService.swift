@@ -117,7 +117,7 @@ extension AIGenerationService {
 
         let summary = canvas.makeSemanticSummary()
         let chunks = canvas.makeChunks()
-        let existingIDs = Set(canvas.nodes.map(\.id))
+        let existingIDs = Set(canvas.nodes?.map(\.id) ?? [])
 
         var newNodes: [NodeSchema] = []
         var newConnections: [NodeConnectionSchema] = []

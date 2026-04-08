@@ -8,7 +8,7 @@
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
             uuid = "87296A29-15D0-402A-A6BE-20EC9FCF434E"
-            shouldBeEnabled = "Yes"
+            shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "nodes-demo/Views/Node Map/NodeMapView.swift"
@@ -18,36 +18,6 @@
             endingLineNumber = "94"
             landmarkName = "performSearch()"
             landmarkType = "7">
-            <Locations>
-               <Location
-                  uuid = "87296A29-15D0-402A-A6BE-20EC9FCF434E - 2d74553af14e08b5"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "nodes_demo.NodeMapView.performSearch() -&gt; ()"
-                  moduleName = "nodes-demo.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/olegkomaristy/Work/nodes-demo/nodes-demo/Views/Node%20Map/NodeMapView.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "94"
-                  endingLineNumber = "94">
-               </Location>
-               <Location
-                  uuid = "87296A29-15D0-402A-A6BE-20EC9FCF434E - 9559f485a883fde4"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "closure #1 (nodes_demo.Node) -&gt; Swift.Bool in nodes_demo.NodeMapView.performSearch() -&gt; ()"
-                  moduleName = "nodes-demo.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/olegkomaristy/Work/nodes-demo/nodes-demo/Views/Node%20Map/NodeMapView.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "95"
-                  endingLineNumber = "95">
-               </Location>
-            </Locations>
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy

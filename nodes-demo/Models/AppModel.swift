@@ -25,7 +25,9 @@ final class AppModel: Sendable {
     /// Tags that the user has toggled in the filter UI
     var selectedTags: Set<Tag> = []
     
-    var tags: [Tag] = []
+    var tags: [Tag] {
+        currentCanvas?.tags ?? []
+    }
     
     var nodes: [Node] {
         currentCanvas?.nodes ?? []
@@ -37,7 +39,8 @@ final class AppModel: Sendable {
 
         // A node is visible if **any** of its tags is in the selected set
         return nodes.filter { node in
-            !Set(node.tags).isDisjoint(with: selectedTags)
+            let tags = (node.tagsRaw ?? "").components(separatedBy: ",")
+            return !Set(tags).isDisjoint(with: selectedTags.map(\.name))
         }
     }
     
@@ -63,7 +66,7 @@ final class AppModel: Sendable {
         )
         
         fetchCanvases()
-        fetchTags()
+//        fetchTags()
     }
     
     // MARK: - Canvas Management
@@ -210,7 +213,7 @@ final class AppModel: Sendable {
             z: position.z,
             color: color,
             canvas: currentCanvas,
-            tags: tags
+            tagsRaw: tags.map(\.name).joined(separator: ",")
         )
         
         context?.insert(node)
@@ -238,7 +241,7 @@ final class AppModel: Sendable {
             objectToUpdate.name = name
             objectToUpdate.detail = detail
             objectToUpdate.colorRaw = color
-            objectToUpdate.tags = resolveTags(from: tagsRaw ?? "")
+            objectToUpdate.tagsRaw = resolveTags(from: tagsRaw ?? "").map(\.name).joined(separator: ",")
         }
         save()
     }
@@ -287,7 +290,7 @@ final class AppModel: Sendable {
     }
     
     func addConnection(_ connection: NodeConnection) {
-        guard let currentCanvas = currentCanvas else { return }
+//        guard let currentCanvas = currentCanvas else { return }
         
         context?.insert(connection)
         save()
@@ -335,15 +338,15 @@ final class AppModel: Sendable {
     
     // MARK: - Tags Management
     
-    func fetchTags() {
-        do {
-            let descriptor = FetchDescriptor<Tag>()
-            tags = try context?.fetch(descriptor) ?? []
-        } catch {
-            print("Failed to fetch canvases: \(error)")
-            tags = []
-        }
-    }
+//    func fetchTags() {
+//        do {
+//            let descriptor = FetchDescriptor<Tag>()
+//            tags = try context?.fetch(descriptor) ?? []
+//        } catch {
+//            print("Failed to fetch canvases: \(error)")
+//            tags = []
+//        }
+//    }
     
     func resolveTags(from rawText: String) -> [Tag] {
 
@@ -352,11 +355,7 @@ final class AppModel: Sendable {
         guard !names.isEmpty else { return [] }
 
         // 1. Забираем уже существующие
-        let existing = (try? context?.fetch(
-            FetchDescriptor<Tag>(predicate: #Predicate {
-                names.contains($0.name)
-            })
-        )) ?? []
+        let existing = currentCanvas?.tags ?? []
 
         var result = existing
         let existingNames = Set(existing.map(\.name))
@@ -364,7 +363,7 @@ final class AppModel: Sendable {
         // 2. Создаём недостающие
         let missing = names.subtracting(existingNames)
         for name in missing {
-            let tag = Tag(name: name)
+            let tag = Tag(name: name, canvas: currentCanvas)
             context?.insert(tag)
             result.append(tag)
         }
@@ -381,7 +380,7 @@ final class AppModel: Sendable {
         else { return }
 
         let tags = resolveTags(from: rawTags)
-        node.tags = tags
+        node.tagsRaw = tags.map(\.name).joined(separator: ",")
 
         save()
     }
@@ -409,6 +408,6 @@ final class AppModel: Sendable {
         // Refresh canvases to update lists
         fetchCanvases()
         
-        fetchTags()
+//        fetchTags()
     }
 }

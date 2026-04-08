@@ -10,18 +10,22 @@ import Foundation
 
 @Model
 class Canvas: Identifiable, Codable {
-    @Attribute(.unique) var id: String
-    var name: String
-    var createdAt: Date
-    var updatedAt: Date
+//    @Attribute(.unique)
+    var id: String = UUID().uuidString
+    var name: String = ""
+    var createdAt: Date = Date()
+    var updatedAt: Date = Date()
     
-    var isPined: Bool
+    var isPined: Bool = false
     
     @Relationship(deleteRule: .cascade, inverse: \Node.canvas)
-    var nodes: [Node] = []
+    var nodes: [Node]? = []
+    
+    @Relationship(deleteRule: .cascade, inverse: \Tag.canvas)
+    var tags: [Tag]? = []
     
     @Relationship(deleteRule: .cascade, inverse: \NodeConnection.canvas)
-    var connections: [NodeConnection] = []
+    var connections: [NodeConnection]? = []
     
     init(id: String = UUID().uuidString, name: String, isPined: Bool = false, nodes: [Node] = [], connections: [NodeConnection] = []) {
         self.id = id
@@ -63,8 +67,8 @@ extension Canvas {
             id: id,
             name: name,
             isPinned: isPined,
-            nodes: nodes.map { $0.toSchema() },
-            connections: connections.map { $0.toSchema() }
+            nodes: nodes?.map { $0.toSchema() } ?? [],
+            connections: connections?.map { $0.toSchema() } ?? []
         )
     }
     
@@ -84,7 +88,7 @@ extension Canvas {
     
     @available(iOS 26.0, macOS 26.0, visionOS 26.0, *)
     func makeSemanticSummary(maxClusters: Int = 6) -> String {
-        let names = nodes.map(\.name)
+        let names = nodes?.map(\.name) ?? []
 
         let clusters = Dictionary(grouping: names) { name in
             name.split(separator: " ").first.map(String.init) ?? name
@@ -93,7 +97,7 @@ extension Canvas {
         .prefix(maxClusters)
         .map { "\($0.key): \($0.value.count) nodes" }
 
-        let mainIdea = nodes.first {
+        let mainIdea = nodes?.first {
             abs($0.position.x) < 1 && abs($0.position.y) < 1
         }?.name
 
@@ -113,7 +117,7 @@ extension Canvas {
         var chunks: [CanvasChunk] = []
         var buffer: [NodeSchema] = []
 
-        for node in nodes {
+        for node in (nodes ?? []) {
             buffer.append(node.toSchema())
 
             if buffer.count >= maxNodesPerChunk {
@@ -132,9 +136,9 @@ extension Canvas {
     @available(iOS 26.0, macOS 26.0, visionOS 26.0, *)
     private func buildChunk(from nodes: [NodeSchema]) -> CanvasChunk {
         let ids = Set(nodes.map(\.id))
-        let relatedConnections = connections.filter {
+        let relatedConnections = connections?.filter {
             ids.contains($0.fromNodeId) || ids.contains($0.toNodeId)
-        }.map { $0.toSchema() }
+        }.map { $0.toSchema() } ?? []
 
         return CanvasChunk(
             nodeIds: ids,

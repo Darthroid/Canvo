@@ -41,9 +41,9 @@ struct NodeDetailView: View {
                     Text("Position")
                 }
                 
-                if !node.tags.isEmpty {
+                if !(node.tagsRaw ?? "").isEmpty {
                     Section {
-                        Text(node.tags.map(\.name).joined(separator: ", "))
+                        Text(node.tagsRaw ?? "")
                     } header: {
                         Text("Tags")
                     }
@@ -125,7 +125,7 @@ struct NodeDetailView: View {
                     name: node.name,
                     detail: node.detail,
                     color: Color(uiColor: node.color ?? .white),
-                    tagsRaw: node.tags.map(\.name).joined(separator: ",")
+                    tagsRaw: node.tagsRaw ?? ""
                 )
             }
             .sheet(isPresented: $showLinkEditor) {

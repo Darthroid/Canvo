@@ -14,13 +14,14 @@ import SwiftUI
 
 @Model
 class Node: Identifiable, Codable {
-    @Attribute(.unique) var id: String
-    var name: String
-    var detail: String
+//    @Attribute(.unique)
+    var id: String = UUID().uuidString
+    var name: String = ""
+    var detail: String = ""
     
-    var x: Float
-    var y: Float
-    var z: Float
+    var x: Float = 0
+    var y: Float = 0
+    var z: Float = 0
     
     @Transient var isHidden: Bool = false
     
@@ -37,7 +38,7 @@ class Node: Identifiable, Codable {
     var positionDescription: String { "(\(x), \(y), \(z))" }
     var positionDescriptionMeters: String { "(\(x)m, \(y)m, \(z)m)" }
     
-    var tags: [Tag] = []
+    var tagsRaw: String? = ""
     
     private enum CodingKeys: String, CodingKey {
         case id, name, detail, x, y, z, colorRaw = "color", tags
@@ -55,7 +56,7 @@ class Node: Identifiable, Codable {
     }
     
     init(id: String = UUID().uuidString, name: String, detail: String,
-         x: Float, y: Float, z: Float, color: String? = nil, canvas: Canvas? = nil, tags: [Tag] = []) {
+         x: Float, y: Float, z: Float, color: String? = nil, canvas: Canvas? = nil, tagsRaw: String? = nil) {
         self.id = id
         self.name = name
         self.detail = detail
@@ -64,7 +65,7 @@ class Node: Identifiable, Codable {
         self.z = z
         self.colorRaw = color
         self.canvas = canvas
-        self.tags = tags
+        self.tagsRaw = tagsRaw
     }
     
     func encode(to encoder: any Encoder) throws {
@@ -108,9 +109,10 @@ extension Node {
 
 @Model
 class NodeConnection: Identifiable, Equatable {
-    @Attribute(.unique) var id: String
-    var fromNodeId: String
-    var toNodeId: String
+//    @Attribute(.unique)
+    var id: String = UUID().uuidString
+    var fromNodeId: String = ""
+    var toNodeId: String = ""
     
     var canvas: Canvas?
     
