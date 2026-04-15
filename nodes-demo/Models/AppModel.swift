@@ -414,4 +414,81 @@ final class AppModel: Sendable {
         
 //        fetchTags()
     }
+    
+    // MARK: - Outline
+    
+    func buildChildrenMap(connections: [NodeConnection]) -> [String: [String]] {
+        var map: [String: [String]] = [:]
+        
+        for c in connections {
+            map[c.fromNodeId, default: []].append(c.toNodeId)
+        }
+        
+        return map
+    }
+    
+    func findRootNodes(
+        nodes: [Node],
+        connections: [NodeConnection]
+    ) -> [Node] {
+        let allToIds = Set(connections.map { $0.toNodeId })
+        
+        return nodes.filter { !allToIds.contains($0.id) }
+    }
+    
+    func buildTree(
+        node: Node,
+        nodeDict: [String: Node],
+        childrenMap: [String: [String]],
+        visited: Set<String> = []
+    ) -> NodeTree {
+        
+        // prevent cycles
+        if visited.contains(node.id) {
+            return NodeTree(id: node.id, node: node, children: [])
+        }
+        
+        let newVisited = visited.union([node.id])
+        
+        let childrenIds = childrenMap[node.id] ?? []
+        
+        let children = childrenIds.compactMap { childId -> NodeTree? in
+            guard let childNode = nodeDict[childId] else { return nil }
+            return buildTree(
+                node: childNode,
+                nodeDict: nodeDict,
+                childrenMap: childrenMap,
+                visited: newVisited
+            )
+        }
+        
+        return NodeTree(
+            id: node.id,
+            node: node,
+            children: children
+        )
+    }
+    
+    func buildOutline() -> [NodeTree] {
+        guard let canvas = currentCanvas else { return [] }
+        let nodes = canvas.nodes ?? []
+        let connections = canvas.connections ?? []
+        
+        let nodeDict = Dictionary(uniqueKeysWithValues: nodes.map { ($0.id, $0) })
+        
+        let childrenMap = buildChildrenMap(connections: connections)
+        var roots = findRootNodes(nodes: nodes, connections: connections)
+        
+        if roots.isEmpty, let first = nodes.first {
+            roots = [first]
+        }
+        
+        return roots.map {
+            buildTree(
+                node: $0,
+                nodeDict: nodeDict,
+                childrenMap: childrenMap
+            )
+        }
+    }
 }

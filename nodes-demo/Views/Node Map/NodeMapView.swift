@@ -24,9 +24,18 @@ struct NodeMapView: View {
     
     @State private var searchText = ""
     @State private var showSearch = false
+    @State private var showOutline = false
     @State private var searchResults: [Node] = []
     @State private var selectedSearchResultIndex = 0
     @FocusState private var isSearchFieldFocused: Bool
+    
+    // --- SIDEBAR
+    @State private var sidebarWidth: CGFloat = 320
+    @State private var isResizingSidebar = false
+
+    private let minSidebarWidth: CGFloat = 240
+    private let maxSidebarWidth: CGFloat = 500
+    // ---
     
     private let minScale: CGFloat = 0.1
     private let maxScale: CGFloat = 4.0
@@ -121,6 +130,29 @@ struct NodeMapView: View {
         if let node = searchResults[safe: selectedSearchResultIndex] {
             centerOnNode(node)
         }
+    }
+    
+    func sidebar(width: CGFloat) -> some View {
+        let outline = appModel.buildOutline()
+        return VStack(alignment: .leading, spacing: 16) {
+            Text("Outline")
+                .font(.headline)
+                .padding(.top, 20)
+                .padding(.horizontal, 16)
+            List {
+                ForEach(outline) { tree in
+                    NodeTreeView(tree: tree)
+                        .listRowBackground(Color.clear)
+                }
+            }
+            .listStyle(.plain)
+            .background(.ultraThinMaterial)
+        }
+        .frame(width: width)
+        .background(.ultraThinMaterial)
+        .clipShape(.rect(cornerRadius: 20))
+        .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
+        .padding(.horizontal, 20)
     }
     
     var canvas: some View {
@@ -264,57 +296,82 @@ struct NodeMapView: View {
         }
     }
     
+    var controlButtons: some View {
+        HStack {
+            Spacer()
+            
+            VStack(spacing: 24) {
+                // zoom in
+                Button {
+                    applyZoom(multiplier: 1.2)
+                } label: {
+                    Image(systemName: "plus.magnifyingglass")
+                        .resizable()
+                        .frame(width: 25, height: 25)
+                        .foregroundStyle(Color(uiColor: .label))
+                }
+                
+                // reset zoom
+                Button {
+                    resetZoom()
+                } label: {
+                    Image(systemName: "text.magnifyingglass")
+                        .resizable()
+                        .frame(width: 25, height: 25)
+                        .foregroundStyle(Color(uiColor: .label))
+                }
+                
+                // zoom out
+                Button {
+                    applyZoom(multiplier: 0.8)
+                } label: {
+                    Image(systemName: "minus.magnifyingglass")
+                        .resizable()
+                        .frame(width: 25, height: 25)
+                        .foregroundStyle(Color(uiColor: .label))
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 12)
+            .background(
+                Capsule()
+                    .fill(Color(uiColor: .systemBackground))
+                    .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
+            )
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 120)
+    }
+    
     var body: some View {
         GeometryReader { geo in
-            ZStack(alignment: .top) {
+            ZStack {
+                // CANVAS
                 canvas
+                    .ignoresSafeArea()
                 
-                searchView
-                
-                HStack {
-                    Spacer()
+                // UI LAYER
+                VStack(spacing: 0) {
                     
-                    VStack(spacing: 24) {
-                        // zoom in
-                        Button {
-                            applyZoom(multiplier: 1.2)
-                        } label: {
-                            Image(systemName: "plus.magnifyingglass")
-                                .resizable()
-                                .frame(width: 25, height: 25)
-                                .foregroundStyle(Color(uiColor: .label))
-                        }
+                    // This spacer pushes content below nav bar
+                    Color.clear
+                        .frame(height: 40)
+                    
+                    ZStack(alignment: .topLeading) {
+                        searchView
                         
-                        // reset zoom
-                        Button {
-                            resetZoom()
-                        } label: {
-                            Image(systemName: "text.magnifyingglass")
-                                .resizable()
-                                .frame(width: 25, height: 25)
-                                .foregroundStyle(Color(uiColor: .label))
-                        }
+                        controlButtons
                         
-                        // zoom out
-                        Button {
-                            applyZoom(multiplier: 0.8)
-                        } label: {
-                            Image(systemName: "minus.magnifyingglass")
-                                .resizable()
-                                .frame(width: 25, height: 25)
-                                .foregroundStyle(Color(uiColor: .label))
+                        // sidebar
+                        if showOutline {
+                            sidebar(width: 300 /*geo.size.width / 3*/)
+                                .transition(.move(edge: .leading))
                         }
                     }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 12)
-                    .background(
-                        Capsule()
-                            .fill(Color(uiColor: .systemBackground))
-                            .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
-                    )
+                    
+                    Spacer()
                 }
-                .padding(.horizontal)
-                .padding(.vertical, 120)
+                
                 
             }
             .onAppear {
@@ -335,6 +392,15 @@ struct NodeMapView: View {
             .navigationTitle(appModel.currentCanvas?.name ?? "Canvo")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        withAnimation {
+                            showOutline.toggle()
+                        }
+                    } label: {
+                        Image(systemName: "list.bullet.indent")
+                    }
+                }
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     // search
                     if !showSearch {
