@@ -1,0 +1,39 @@
+{
+  "fill" : {
+    "solid" : "extended-gray:0.25000,1.00000"
+  },
+  "groups" : [
+    {
+      "blur-material-specializations" : [
+        {
+          "value" : 0.5
+        },
+        {
+          "appearance" : "tinted",
+          "value" : null
+        }
+      ],
+      "layers" : [
+        {
+          "image-name" : "ChatGPT Image 15 апр. 2026 г., 10_42_51.png",
+          "name" : "ChatGPT Image 15 апр. 2026 г., 10_42_51"
+        }
+      ],
+      "lighting" : "individual",
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.2
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "circles" : [
+      "watchOS"
+    ],
+    "squares" : "shared"
+  }
+}

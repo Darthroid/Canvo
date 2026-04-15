@@ -314,7 +314,7 @@ struct NodeMapView: View {
                     )
                 }
                 .padding(.horizontal)
-                .padding(.vertical, 80)
+                .padding(.vertical, 120)
                 
             }
             .onAppear {
