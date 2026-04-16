@@ -3,6 +3,12 @@ import SwiftData
 
 struct NodeMapView: View {
     @Environment(AppModel.self) private var appModel
+    @Environment(\.horizontalSizeClass) var horizontalSizeClass
+    @Environment(\.verticalSizeClass) var verticalSizeClass
+
+    var isCompact: Bool {
+        return horizontalSizeClass == .compact || verticalSizeClass == .compact
+    }
     
     #if os(visionOS)
     @Environment(\.openImmersiveSpace) var openImmersiveSpace
@@ -28,15 +34,7 @@ struct NodeMapView: View {
     @State private var searchResults: [Node] = []
     @State private var selectedSearchResultIndex = 0
     @FocusState private var isSearchFieldFocused: Bool
-    
-    // --- SIDEBAR
-    @State private var sidebarWidth: CGFloat = 320
-    @State private var isResizingSidebar = false
 
-    private let minSidebarWidth: CGFloat = 240
-    private let maxSidebarWidth: CGFloat = 500
-    // ---
-    
     private let minScale: CGFloat = 0.1
     private let maxScale: CGFloat = 4.0
     private let zoomSensitivity: CGFloat = 0.35
@@ -130,29 +128,6 @@ struct NodeMapView: View {
         if let node = searchResults[safe: selectedSearchResultIndex] {
             centerOnNode(node)
         }
-    }
-    
-    func sidebar(width: CGFloat) -> some View {
-        let outline = appModel.buildOutline()
-        return VStack(alignment: .leading, spacing: 16) {
-            Text("Outline")
-                .font(.headline)
-                .padding(.top, 20)
-                .padding(.horizontal, 16)
-            List {
-                ForEach(outline) { tree in
-                    NodeTreeView(tree: tree)
-                        .listRowBackground(Color.clear)
-                }
-            }
-            .listStyle(.plain)
-            .background(.ultraThinMaterial)
-        }
-        .frame(width: width)
-        .background(.ultraThinMaterial)
-        .clipShape(.rect(cornerRadius: 20))
-        .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
-        .padding(.horizontal, 20)
     }
     
     var canvas: some View {
@@ -352,21 +327,27 @@ struct NodeMapView: View {
                 
                 // UI LAYER
                 VStack(spacing: 0) {
-                    
                     // This spacer pushes content below nav bar
-                    Color.clear
-                        .frame(height: 40)
+                    if !isCompact {
+                        Color.clear
+                            .frame(height: 40)
+                    }
+                    
                     
                     ZStack(alignment: .topLeading) {
-                        searchView
+                        
                         
                         controlButtons
                         
                         // sidebar
-                        if showOutline {
-                            sidebar(width: 300 /*geo.size.width / 3*/)
+                        if showOutline && !isCompact {
+                            let size = min(300, geo.size.width - 40)
+                            OutlineView(preferredWidth: size, style: .overlay)
+                                .environment(appModel)
                                 .transition(.move(edge: .leading))
                         }
+                        
+                        searchView
                     }
                     
                     Spacer()
@@ -379,6 +360,19 @@ struct NodeMapView: View {
             }
             .onChange(of: geo.size) { oldSize, newSize in
                 containerSize = newSize
+            }
+            .sheet(isPresented: Binding(
+                get: { showOutline && isCompact },
+                set: { newValue in
+                    if !newValue {
+                        showOutline = false
+                    }
+                }
+            )) {
+                OutlineView(preferredWidth: nil, style: .sheet)
+                    .environment(appModel)
+                    .presentationDetents([.large])
+                    .presentationDragIndicator(.visible)
             }
             .sheet(isPresented: $showNodeForm) {
                 CreateNodeView(position: pendingNodePosition)
