@@ -87,6 +87,21 @@ struct CanvasCollectionView: View {
                     text: $searchQuery,
 //                    prompt: "Search canvases"
                 )
+                .searchToolbarBehavior(.minimize)
+                .toolbar {
+                        if #available(iOS 26.0, *) {
+                            DefaultToolbarItem(kind: .search, placement: .bottomBar)
+                            ToolbarSpacer(.flexible, placement: .bottomBar)
+                        }
+                        ToolbarItem(placement: .bottomBar) {
+                            Button {
+                                showCreateCanvas = true
+                            } label: {
+                                Image(systemName: "plus")
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
 //                .toolbar {
 //                    ToolbarItemGroup(placement: .primaryAction) {
 //                        Button {
@@ -104,28 +119,6 @@ struct CanvasCollectionView: View {
 //                        }
 //                    }
 //                }
-                .safeAreaInset(edge: .bottom) {
-                    HStack {
-                        Spacer()
-                        
-                        Button {
-                            showCreateCanvas = true
-                        } label: {
-                            Image(systemName: "plus")
-                                .font(.system(size: 20, weight: .semibold))
-                                .foregroundStyle(.white)
-                                .frame(width: 56, height: 56)
-                                .background(
-                                    Circle()
-                                        .fill(Color.accentColor)
-                                        .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 4)
-                                )
-                        }
-                        .glassEffect()
-                        .padding(.trailing, 20)
-                        .padding(.bottom, 8)
-                    }
-                }
         }
         .sheet(isPresented: $showAICreateCanvas) {
             if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
@@ -302,12 +295,20 @@ struct CanvasCardView: View {
             // Card content
             VStack(alignment: .leading, spacing: 12) {
                 // Canvas name
-                Text(canvas.name)
-                    .font(.title3)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.primary)
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
+                HStack {
+                    if canvas.isPined {
+                        Image(systemName: "star.fill")
+                            .font(.callout)
+                            .foregroundStyle(.blue)
+                    }
+                    Text(canvas.name)
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.primary)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                
                 
                 // Metadata footer
                 HStack {
