@@ -221,7 +221,7 @@ struct CanvasCardView: View {
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
                         .fill(
                             LinearGradient(
-                                colors: [.blue.opacity(0.3), .purple.opacity(0.2)],
+                                colors: [Color("AccentColor_secondary").opacity(0.3), Color("AccentColor").opacity(0.2)],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
@@ -229,13 +229,17 @@ struct CanvasCardView: View {
                         .frame(height: 160)
                     
                     // Canvas icon (fallback when no preview exists)
-                    Image(systemName: "point.bottomleft.forward.to.point.topright.scurvepath")
-                        .font(.system(size: 48, weight: .medium))
+//                    Image(systemName: "point.bottomleft.forward.to.point.topright.scurvepath")
+//                        .font(.system(size: 48, weight: .medium))
+                    Image("canvas_placeholder")
+                        .resizable()
+                        .frame(maxWidth: 80, maxHeight: 80)
+                        .opacity(0.5)
                         .foregroundStyle(
                             .linearGradient(
-                                colors: [.blue, .purple],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
+                                colors: [Color("AccentColor_secondary"), Color("AccentColor")],
+                                startPoint: .leading,
+                                endPoint: .trailing
                             )
                         )
                         .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
