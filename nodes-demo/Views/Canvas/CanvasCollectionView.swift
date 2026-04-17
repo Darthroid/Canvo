@@ -70,7 +70,6 @@ enum CanvasFilter: String, CaseIterable, Identifiable {
 struct CanvasCollectionView: View {
     @Environment(AppModel.self) var appModel
     @State var showCreateCanvas: Bool = false
-    @State var showAICreateCanvas: Bool = false
     @State var renameCanvas: Canvas?
     @State var deleteCanvas: Canvas?
     
@@ -132,28 +131,6 @@ struct CanvasCollectionView: View {
                         .tint(.accent)
                     }
                 }
-//                .toolbar {
-//                    ToolbarItemGroup(placement: .primaryAction) {
-//                        Button {
-//                            showCreateCanvas = true
-//                        } label: {
-//                            Image(systemName: "plus")
-//                        }
-//                        if #available(iOS 26, macOS 26, visionOS 26, *),
-//                           AIGenerationService.shared.isAvailable {
-//                            Button {
-//                                showAICreateCanvas = true
-//                            } label: {
-//                                Image(systemName: "apple.intelligence")
-//                            }
-//                        }
-//                    }
-//                }
-        }
-        .sheet(isPresented: $showAICreateCanvas) {
-            if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
-                AICreateCanvasView()
-            }
         }
         .sheet(isPresented: $showCreateCanvas) {
             EditCanvasView(mode: .create)
@@ -178,46 +155,46 @@ struct CanvasCollectionView: View {
         
     }
     
+    @ViewBuilder
     var canvasesGrid: some View {
-        VStack {
-            CanvasTabsView(selectedFilter: $selectedFilter)
+        if displayedCanvases.isEmpty {
+            VStack {
+                CanvasTabsView(selectedFilter: $selectedFilter)
+                ContentUnavailableView(
+                    searchQuery.isEmpty ? "No Canvases" : "Nothing found",
+                    systemImage: searchQuery.isEmpty ? "rectangle.split.3x3" : "exclamationmark.magnifyingglass",
+                    description: Text(
+                        searchQuery.isEmpty
+                        ? "Tap the + button to create your first canvas"
+                        : "Try changing the request"
+                    )
+                )
+                .frame(maxWidth: .infinity)
+                .padding(.top, 40)
+            }
+        } else {
             GeometryReader { geo in
                 let availableWidth = geo.size.width - horizontalPadding * 2
                 let columnCount = max(Int(availableWidth / minCardWidth), 1)
                 let cardWidth = (availableWidth - CGFloat(columnCount - 1) * gridSpacing) / CGFloat(columnCount)
-
-                if displayedCanvases.isEmpty {
-                    ContentUnavailableView(
-                        searchQuery.isEmpty ? "No Canvases" : "Nothing found",
-                        systemImage: searchQuery.isEmpty ? "rectangle.split.3x3" : "exclamationmark.magnifyingglass",
-                        description: Text(
-                            searchQuery.isEmpty
-                            ? "Tap the + button to create your first canvas"
-                            : "Try changing the request"
-                        )
-                    )
-                    .frame(maxWidth: .infinity)
-                    .padding(.top, 40)
-                }  else {
-                    ScrollView {
-                        LazyVGrid(
-                            columns: Array(
-                                repeating: GridItem(.fixed(cardWidth), spacing: gridSpacing),
-                                count: columnCount
-                            ),
-                            spacing: gridSpacing
-                        ) {
-                            ForEach(displayedCanvases) { canvas in
-                                canvasCard(for: canvas)
-                                    .frame(width: cardWidth)
-                            }
+                ScrollView {
+                    CanvasTabsView(selectedFilter: $selectedFilter)
+                    LazyVGrid(
+                        columns: Array(
+                            repeating: GridItem(.fixed(cardWidth), spacing: gridSpacing),
+                            count: columnCount
+                        ),
+                        spacing: gridSpacing
+                    ) {
+                        ForEach(displayedCanvases) { canvas in
+                            canvasCard(for: canvas)
+                                .frame(width: cardWidth)
                         }
-                        .padding(horizontalPadding)
                     }
+                    .padding(horizontalPadding)
                 }
             }
         }
-        
     }
 
     
