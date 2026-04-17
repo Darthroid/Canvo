@@ -65,7 +65,7 @@ struct EditCanvasView: View {
                     VStack(spacing: 20) {
                         
                         // MARK: Mode cards
-                        if mode != .edit, AIGenerationService.shared.isAvailable {
+                        if mode != .edit {
                             VStack(spacing: 12) {
                                 modeCard(
                                     title: "Create manually",
@@ -76,10 +76,13 @@ struct EditCanvasView: View {
                                 
                                 modeCard(
                                     title: "Generate with AI",
-                                    subtitle: "Describe your idea",
+                                    subtitle: AIGenerationService.shared.isAvailable
+                                                ? "Describe your idea"
+                                                : "Currently not available",
                                     icon: "sparkles",
                                     current: .aiCreate
                                 )
+                                .disabled(!AIGenerationService.shared.isAvailable)
                             }
                             .padding(.top, 8)
                         }
