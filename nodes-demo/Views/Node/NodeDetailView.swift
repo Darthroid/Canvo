@@ -88,7 +88,7 @@ struct NodeDetailView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") {
+                    Button(role: .cancel) {
                         dismiss()
                     }
                 }
@@ -140,7 +140,7 @@ struct NodeDetailView: View {
                     appModel.removeNode(node)
                 }
 
-                Button("Cancel", role: .cancel) {}
+                Button(role: .cancel) {}
             } message: {
                 Text("Are you sure you want to delete this node?")
             }

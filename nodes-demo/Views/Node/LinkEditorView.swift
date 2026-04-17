@@ -54,13 +54,13 @@ struct LinkEditorView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
+                    Button(role: .cancel) {
                         dismiss()
                     }
                 }
 
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Add") {
+                    Button(role: .confirm) {
                         guard let toNodeId = selectedNodeId else { return }
                         appModel.addConnection(
                             from: fromNode.id,

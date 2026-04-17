@@ -50,14 +50,14 @@ struct AIEditCanvasView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
+                    Button(role: .cancel) {
                         dismiss()
                     }
                     .disabled(isGenerating)
                 }
 
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Create") {
+                    Button(role: .confirm) {
                         generateCanvas()
                     }
                     .disabled(
