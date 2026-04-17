@@ -16,13 +16,42 @@ struct CanvasTabsView: View {
     
     var body: some View {
         HStack {
-            Picker("", selection: $selectedFilter) {
-                ForEach(CanvasFilter.allCases) { filter in
-                    Text(filter.rawValue).tag(filter)
+//            Picker("", selection: $selectedFilter) {
+//                ForEach(CanvasFilter.allCases) { filter in
+//                    Text(filter.rawValue).tag(filter)
+//                }
+//            }
+//            .pickerStyle(.segmented)
+//            .fixedSize()
+            ForEach(CanvasFilter.allCases) { filter in
+                Button {
+                    withAnimation(.easeInOut(duration: 0.15)) {
+                        selectedFilter = filter
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        
+                        Text(filter.rawValue)
+                            .font(.system(size: 15, weight: .medium))
+                    }
+                    .foregroundStyle(selectedFilter == filter ? .white : .primary)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(
+                        ZStack {
+                            if selectedFilter == filter {
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(Color.accentColor)
+                            } else {
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(Color(.secondarySystemBackground))
+                            }
+                        }
+                    )
                 }
+                .buttonStyle(.plain)
+                
             }
-            .pickerStyle(.segmented)
-            
             Spacer()
         }
         .padding(.horizontal, 24)
@@ -89,19 +118,20 @@ struct CanvasCollectionView: View {
                 )
                 .searchToolbarBehavior(.minimize)
                 .toolbar {
-                        if #available(iOS 26.0, *) {
-                            DefaultToolbarItem(kind: .search, placement: .bottomBar)
-                            ToolbarSpacer(.flexible, placement: .bottomBar)
+                    DefaultToolbarItem(kind: .search, placement: .bottomBar)
+                    ToolbarSpacer(.flexible, placement: .bottomBar)
+                    ToolbarItem(placement: .bottomBar) {
+                        Button {
+                            showCreateCanvas = true
+                        } label: {
+                            Image(systemName: "plus")
                         }
-                        ToolbarItem(placement: .bottomBar) {
-                            Button {
-                                showCreateCanvas = true
-                            } label: {
-                                Image(systemName: "plus")
-                            }
-                            .buttonStyle(.plain)
-                        }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.large)
+                        .clipShape(Capsule())
+                        .tint(.accent)
                     }
+                }
 //                .toolbar {
 //                    ToolbarItemGroup(placement: .primaryAction) {
 //                        Button {
@@ -126,16 +156,12 @@ struct CanvasCollectionView: View {
             }
         }
         .sheet(isPresented: $showCreateCanvas) {
-            NameCanvasView(isCreating: true, onSubmit: { name in
-                appModel.createCanvas(name: name)
-            })
-            .environment(appModel)
+            EditCanvasView(mode: .create)
+                .environment(appModel)
         }
         .sheet(item: $renameCanvas) { canvas in
-            NameCanvasView(name: canvas.name, isCreating: false, onSubmit: { name in
-                appModel.renameCanvas(id: canvas.id, name: name)
-            })
-            .environment(appModel)
+            EditCanvasView(mode: .edit, editCanvas: canvas)
+                .environment(appModel)
         }
         .alert(item: $deleteCanvas) { canvas in
             Alert(
@@ -261,23 +287,20 @@ struct CanvasCardView: View {
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
                         .fill(
                             LinearGradient(
-                                colors: [.accentColorSecondary.opacity(0.3), .accentColor.opacity(0.2)],
+                                colors: [.accentColorSecondary.opacity(0.3), .accent.opacity(0.2)],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
                         )
                         .frame(height: 160)
                     
-                    // Canvas icon (fallback when no preview exists)
-//                    Image(systemName: "point.bottomleft.forward.to.point.topright.scurvepath")
-//                        .font(.system(size: 48, weight: .medium))
                     Image("canvas_placeholder")
                         .resizable()
                         .frame(maxWidth: 80, maxHeight: 80)
                         .opacity(0.5)
                         .foregroundStyle(
                             .linearGradient(
-                                colors: [.accentColorSecondary, .accentColor],
+                                colors: [.accentColorSecondary, .accent],
                                 startPoint: .leading,
                                 endPoint: .trailing
                             )

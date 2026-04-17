@@ -22,7 +22,7 @@ struct AICreateCanvasView: View {
     
     var body: some View {
         ZStack {
-            contentView // твой NavigationStack / Form
+            contentView
 
             if isGenerating {
                 AIOverlayView(title: "Generating Canvas")
