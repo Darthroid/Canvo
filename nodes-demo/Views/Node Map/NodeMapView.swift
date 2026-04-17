@@ -5,16 +5,16 @@ struct NodeMapView: View {
     @Environment(AppModel.self) private var appModel
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     @Environment(\.verticalSizeClass) var verticalSizeClass
-
+    
     var isCompact: Bool {
         return horizontalSizeClass == .compact || verticalSizeClass == .compact
     }
     
-    #if os(visionOS)
+#if os(visionOS)
     @Environment(\.openImmersiveSpace) var openImmersiveSpace
     @Environment(\.dismissImmersiveSpace) var dismissImmersiveSpace
-    #endif
-
+#endif
+    
     @State private var scale: CGFloat = 1.0
     @State private var baseScale: CGFloat = 1.0
     @State private var offset: CGSize = .zero
@@ -34,7 +34,8 @@ struct NodeMapView: View {
     @State private var searchResults: [Node] = []
     @State private var selectedSearchResultIndex = 0
     @FocusState private var isSearchFieldFocused: Bool
-
+    
+    @State private var showZoomLevel = false
     private let minScale: CGFloat = 0.1
     private let maxScale: CGFloat = 4.0
     private let zoomSensitivity: CGFloat = 0.35
@@ -45,6 +46,11 @@ struct NodeMapView: View {
         let clamped = min(max(next, minScale), maxScale)
         scale = clamped
         baseScale = clamped
+        showZoomLevel = true
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            self.showZoomLevel = false
+        }
     }
     
     private func resetZoom() {
@@ -134,7 +140,7 @@ struct NodeMapView: View {
         ZStack {
             ZStack {
                 GridLayer()
-
+                
                 // Connections
                 ForEach(appModel.visibleConnections) { c in
                     if let a = appModel.node(forId: c.fromNodeId),
@@ -147,7 +153,7 @@ struct NodeMapView: View {
                         .stroke(.secondary, lineWidth: 2)
                     }
                 }
-
+                
                 // Nodes
                 ForEach(appModel.visibleNodes) { node in
                     NodeView(
@@ -271,53 +277,6 @@ struct NodeMapView: View {
         }
     }
     
-    var controlButtons: some View {
-        HStack {
-            Spacer()
-            
-            VStack(spacing: 24) {
-                // zoom in
-                Button {
-                    applyZoom(multiplier: 1.2)
-                } label: {
-                    Image(systemName: "plus.magnifyingglass")
-                        .resizable()
-                        .frame(width: 25, height: 25)
-                        .foregroundStyle(Color(uiColor: .label))
-                }
-                
-                // reset zoom
-                Button {
-                    resetZoom()
-                } label: {
-                    Image(systemName: "text.magnifyingglass")
-                        .resizable()
-                        .frame(width: 25, height: 25)
-                        .foregroundStyle(Color(uiColor: .label))
-                }
-                
-                // zoom out
-                Button {
-                    applyZoom(multiplier: 0.8)
-                } label: {
-                    Image(systemName: "minus.magnifyingglass")
-                        .resizable()
-                        .frame(width: 25, height: 25)
-                        .foregroundStyle(Color(uiColor: .label))
-                }
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 12)
-            .background(
-                Capsule()
-                    .fill(Color(uiColor: .systemBackground))
-                    .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
-            )
-        }
-        .padding(.horizontal)
-        .padding(.vertical, 120)
-    }
-    
     var body: some View {
         GeometryReader { geo in
             ZStack {
@@ -327,6 +286,14 @@ struct NodeMapView: View {
                 
                 // UI LAYER
                 VStack(spacing: 0) {
+                    
+                    if showZoomLevel {
+                        Text(String(format: "%.0f %%", scale * 100))
+                            .frame(width: 60)
+                            .padding()
+                            .glassEffect()
+                    }
+                    
                     // This spacer pushes content below nav bar
                     if !isCompact {
                         Color.clear
@@ -335,9 +302,6 @@ struct NodeMapView: View {
                     
                     
                     ZStack(alignment: .topLeading) {
-                        
-                        
-                        controlButtons
                         
                         // sidebar
                         if showOutline && !isCompact {
@@ -386,6 +350,66 @@ struct NodeMapView: View {
             .navigationTitle(appModel.currentCanvas?.name ?? "Canvo")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                if !showSearch {
+                    ToolbarItem(placement: .bottomBar) {
+                        Button {
+                            withAnimation {
+                                showSearch = true
+                            }
+                        } label: {
+                            Image(systemName: "magnifyingglass")
+                        }
+                    }
+                }
+                
+//                ToolbarSpacer(.flexible, placement: .bottomBar)
+                
+//                ToolbarItemGroup(placement: .bottomBar) {
+//                    Button {
+//                        applyZoom(multiplier: 1.2)
+//                    } label: {
+//                        Image(systemName: "plus.magnifyingglass")
+//                            .resizable()
+//                            .frame(width: 25, height: 25)
+//                            .foregroundStyle(Color(uiColor: .label))
+//                    }
+//                    
+//                    // reset zoom
+//                    Button {
+//                        resetZoom()
+//                    } label: {
+//                        Image(systemName: "text.magnifyingglass")
+//                            .resizable()
+//                            .frame(width: 25, height: 25)
+//                            .foregroundStyle(Color(uiColor: .label))
+//                    }
+//                    
+//                    // zoom out
+//                    Button {
+//                        applyZoom(multiplier: 0.8)
+//                    } label: {
+//                        Image(systemName: "minus.magnifyingglass")
+//                            .resizable()
+//                            .frame(width: 25, height: 25)
+//                            .foregroundStyle(Color(uiColor: .label))
+//                    }
+//                }
+                
+                ToolbarSpacer(.flexible, placement: .bottomBar)
+                
+                ToolbarItem(placement: .bottomBar) {
+                    Button {
+                        pendingNodePosition = visibleCenterPosition()
+                        showNodeForm = true
+                    } label: {
+                        Image(systemName: "plus")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+                    .clipShape(Capsule())
+                    .tint(.accent)
+                }
+                
                 ToolbarItem(placement: .topBarLeading) {
                     Button {
                         withAnimation {
@@ -396,17 +420,6 @@ struct NodeMapView: View {
                     }
                 }
                 ToolbarItemGroup(placement: .topBarTrailing) {
-                    // search
-                    if !showSearch {
-                        Button {
-                            withAnimation {
-                                showSearch = true
-                            }
-                        } label: {
-                            Image(systemName: "magnifyingglass")
-                        }
-                    }
-                    
                     // tag filter
                     Menu {
                         ForEach(appModel.currentCanvas?.tags ?? [], id: \.name) { tag in
@@ -428,26 +441,16 @@ struct NodeMapView: View {
                         Image(systemName: appModel.selectedTags.isEmpty ? "tag" : "tag.fill")
                     }
                     
-                    // new node
-                    Button {
-                        pendingNodePosition = visibleCenterPosition()
-                        showNodeForm = true
-                    } label: {
-                        Image(systemName: "plus")
-                    }
+//                    // ai edit
+//                    if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *), AIGenerationService.shared.isAvailable {
+//                        Button {
+//                            showAIEditCanvas = true
+//                        } label: {
+//                            Image(systemName: "apple.intelligence")
+//                        }
+//                    }
                     
-
-                    
-                    // ai edit
-                    if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *), AIGenerationService.shared.isAvailable {
-                        Button {
-                            showAIEditCanvas = true
-                        } label: {
-                            Image(systemName: "apple.intelligence")
-                        }
-                    }
-                    
-                    #if os(visionOS)
+#if os(visionOS)
                     // visionOS immersive map
                     Button {
                         showNodeSpace.toggle()
@@ -463,7 +466,7 @@ struct NodeMapView: View {
                     } label: {
                         Image(systemName: "graph.3d")
                     }
-                    #endif
+#endif
                 }
             }
             .background(Color(uiColor: .systemBackground))
@@ -482,9 +485,9 @@ struct NodeMapView: View {
             generatePreview()
         }
     }
-    
-    // MARK: - PREVIEW FIT UTILS
-    
+}
+
+extension NodeMapView {
     @ViewBuilder
     private func previewCanvas(
         layout: PreviewLayout
@@ -500,7 +503,7 @@ struct NodeMapView: View {
                     .stroke(.secondary, lineWidth: 1.25)
                 }
             }
-
+            
             ForEach(appModel.nodes) { node in
                 NodeView(
                     node: node,
@@ -513,43 +516,43 @@ struct NodeMapView: View {
         .scaleEffect(layout.scale, anchor: .topLeading)
         .offset(layout.offset)
     }
-
-
+    
+    
     private struct PreviewLayout {
         let scale: CGFloat
         let offset: CGSize
     }
-
+    
     private func previewLayout(targetSize: CGSize) -> PreviewLayout? {
         let points = appModel.nodes.map { $0.position.position2D }
         guard !points.isEmpty else { return nil }
-
+        
         let minX = points.map(\.x).min()!
         let maxX = points.map(\.x).max()!
         let minY = points.map(\.y).min()!
         let maxY = points.map(\.y).max()!
-
+        
         let padding: CGFloat = 80
-
+        
         let contentWidth = (maxX - minX) + padding * 2
         let contentHeight = (maxY - minY) + padding * 2
-
+        
         let scale = min(
             targetSize.width / contentWidth,
             targetSize.height / contentHeight
         )
-
+        
         let offsetX = targetSize.width / 2 - ((minX + maxX) / 2) * scale
         let offsetY = targetSize.height / 2 - ((minY + maxY) / 2) * scale
-
+        
         return PreviewLayout(
             scale: scale,
             offset: CGSize(width: offsetX, height: offsetY)
         )
     }
-
+    
     // MARK: - PAN
-
+    
     private var panGesture: some Gesture {
         DragGesture()
             .onChanged { v in
@@ -563,22 +566,27 @@ struct NodeMapView: View {
                 lastPanTranslation = .zero
             }
     }
-
+    
     // MARK: - ZOOM
-
+    
     private var zoomGesture: some Gesture {
         MagnificationGesture()
             .onChanged { value in
                 let delta = 1 + (value - 1) * zoomSensitivity
                 scale = min(max(baseScale * delta, minScale), maxScale)
+                
+                showZoomLevel = true
             }
             .onEnded { _ in
                 baseScale = scale
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                    self.showZoomLevel = false
+                }
             }
     }
-
+    
     // MARK: - NODE DRAG
-
+    
     private func nodeDrag(_ node: Node) -> some Gesture {
         DragGesture(coordinateSpace: .named("canvas"))
             .onChanged { v in
@@ -599,27 +607,27 @@ struct NodeMapView: View {
     @MainActor
     private func generatePreview() {
         guard let canvas = appModel.currentCanvas else { return }
-
+        
         let targetSize = CGSize(width: 220, height: 160)
-        #if os(visionOS)
+#if os(visionOS)
         let scaleFactor: CGFloat = 1.0
-        #else
+#else
         let scaleFactor: CGFloat = UIScreen.main.scale
-        #endif
-
+#endif
+        
         let renderSize = CGSize(
             width: targetSize.width * scaleFactor,
             height: targetSize.height * scaleFactor
         )
-
+        
         let view: AnyView
-
+        
         if let layout = previewLayout(targetSize: targetSize) {
             let scaledLayout = PreviewLayout(
                 scale: layout.scale * scaleFactor,
                 offset: layout.offset * scaleFactor
             )
-
+            
             view = AnyView(
                 previewCanvas(layout: scaledLayout)
                     .frame(width: renderSize.width, height: renderSize.height)
@@ -630,11 +638,11 @@ struct NodeMapView: View {
                     .frame(width: renderSize.width, height: renderSize.height)
             )
         }
-
+        
         let image = view
             .asImage(removeBackground: true)
             .resizedWithAspect(targetSize: targetSize)
-
+        
         CanvasPreviewService.shared.generatePreview(
             image: image,
             for: canvas.id
