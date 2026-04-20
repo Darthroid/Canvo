@@ -241,6 +241,12 @@ struct NodeMapView: View {
                     performSearch()
                 }
             }
+            .onChange(of: appModel.centerOnNodeId, { _, _ in
+                guard let node = appModel.nodes.first(where: {
+                    $0.id == appModel.centerOnNodeId
+                }) else { return }
+                centerOnNode(node, animated: true)
+            })
             .sheet(isPresented: Binding(
                 get: { showOutline && isCompact },
                 set: { newValue in

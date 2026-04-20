@@ -22,6 +22,8 @@ final class AppModel: Sendable {
     private(set) var currentCanvas: Canvas?
     var selectedNodeId: String?
     
+    var centerOnNodeId: String?
+    
     /// Tags that the user has toggled in the filter UI
     var selectedTags: Set<Tag> = []
     

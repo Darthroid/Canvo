@@ -28,18 +28,20 @@ struct OutlineView: View {
             Text("Outline")
                 .font(.headline)
                 .padding(.top, 20)
-                .padding(.horizontal, 16)
+                .padding(.horizontal, isSheet ? 16 : 0)
             
             List {
                 ForEach(outline) { tree in
                     NodeTreeView(tree: tree)
                         .listRowBackground(Color.clear)
+                        .environment(appModel)
                 }
             }
             .listStyle(.plain)
-            .background(
-                Color.clear
-            )
+            .background(.clear)
+            .transaction { tx in
+                tx.animation = nil
+            }
         }
         .frame(
             width: style == .sheet ? nil : preferredWidth
