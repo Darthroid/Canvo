@@ -284,6 +284,39 @@ struct NodeMapView: View {
             }
             .toolbar {
                 DefaultToolbarItem(kind: .search, placement: .bottomBar)
+                
+                ToolbarItemGroup(placement: .bottomBar) {
+                    // tag filter
+                    Menu {
+                        ForEach(appModel.currentCanvas?.tags ?? [], id: \.name) { tag in
+                            Button {
+                                appModel.toggleTag(tag)
+                            } label: {
+                                Label(tag.name, systemImage: (appModel.selectedTags.contains(tag) ? "checkmark" : ""))
+                            }
+                        }
+                        
+                        Divider()
+                        
+                        Button {
+                            appModel.showAllTags()
+                        } label: {
+                            Text("Show All")
+                        }
+                    } label: {
+                        Image(systemName: appModel.selectedTags.isEmpty ? "tag" : "tag.fill")
+                    }
+                    
+                    // ai edit
+                    if AIGenerationService.shared.isAvailable {
+                        Button {
+                            showAIEditCanvas = true
+                        } label: {
+                            Image(systemName: "apple.intelligence")
+                        }
+                    }
+                }
+                
                 ToolbarSpacer(.flexible, placement: .bottomBar)
                 
                 ToolbarItem(placement: .bottomBar) {
@@ -309,35 +342,6 @@ struct NodeMapView: View {
                     }
                 }
                 ToolbarItemGroup(placement: .topBarTrailing) {
-                    // tag filter
-                    Menu {
-                        ForEach(appModel.currentCanvas?.tags ?? [], id: \.name) { tag in
-                            Button {
-                                appModel.toggleTag(tag)
-                            } label: {
-                                Label(tag.name, systemImage: (appModel.selectedTags.contains(tag) ? "checkmark" : ""))
-                            }
-                        }
-                        
-                        Divider()
-                        
-                        Button {
-                            appModel.showAllTags()
-                        } label: {
-                            Text("Show All")
-                        }
-                    } label: {
-                        Image(systemName: appModel.selectedTags.isEmpty ? "tag" : "tag.fill")
-                    }
-                    
-//                    // ai edit
-//                    if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *), AIGenerationService.shared.isAvailable {
-//                        Button {
-//                            showAIEditCanvas = true
-//                        } label: {
-//                            Image(systemName: "apple.intelligence")
-//                        }
-//                    }
                     
 #if os(visionOS)
                     // visionOS immersive map
