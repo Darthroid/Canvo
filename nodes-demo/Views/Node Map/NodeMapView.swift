@@ -40,6 +40,33 @@ struct NodeMapView: View {
     private let zoomSensitivity: CGFloat = 0.35
     private let searchAnimationDuration: Double = 0.5
     
+    private var updatedAt: String? {
+        guard let date = appModel.currentCanvas?.updatedAt else { return nil }
+        
+        if Calendar.current.isDateInToday(date) {
+            return "Today, " + date.formatted(
+                .dateTime
+                    .hour()
+                    .minute()
+            )
+        } else if Calendar.current.isDateInYesterday(date) {
+            return "Yesterday, " + date.formatted(
+                .dateTime
+                    .hour()
+                    .minute()
+            )
+        } else {
+            return date.formatted(
+                .dateTime
+                    .day()
+                    .month(.twoDigits)
+                    .year()
+                    .hour()
+                    .minute()
+            )
+        }
+    }
+    
     private func applyZoom(multiplier: CGFloat) {
         let next = scale * multiplier
         let clamped = min(max(next, minScale), maxScale)
@@ -269,7 +296,8 @@ struct NodeMapView: View {
                     AIEditCanvasView()
                 }
             }
-            .navigationTitle(appModel.currentCanvas?.name ?? "Canvo")
+//            .navigationTitle(appModel.currentCanvas?.name ?? "Canvo")
+//            .navigationSubtitle("Last Edit: \(updatedAt ?? "")")
             .navigationBarTitleDisplayMode(.inline)
             .searchable(
                 text: $searchText,
@@ -289,9 +317,32 @@ struct NodeMapView: View {
                 }
             }
             .toolbar {
+                ToolbarItem(placement: .title) {
+                    VStack {
+                        Text(appModel.currentCanvas?.name ?? "Canvo")
+                            .font(.headline)
+                        Text("Last Edit: \(updatedAt ?? "")")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 8)
+                    .glassEffect()
+                }
+                
                 DefaultToolbarItem(kind: .search, placement: .bottomBar)
                 
                 ToolbarItemGroup(placement: .bottomBar) {
+                    
+                    // outline
+                    Button {
+                        withAnimation {
+                            showOutline.toggle()
+                        }
+                    } label: {
+                        Image(systemName: "list.bullet.indent")
+                    }
+                    
                     // tag filter
                     Menu {
                         ForEach(appModel.currentCanvas?.tags ?? [], id: \.name) { tag in
@@ -338,15 +389,15 @@ struct NodeMapView: View {
                     .tint(.accent)
                 }
                 
-                ToolbarItem(placement: .topBarLeading) {
-                    Button {
-                        withAnimation {
-                            showOutline.toggle()
-                        }
-                    } label: {
-                        Image(systemName: "list.bullet.indent")
-                    }
-                }
+//                ToolbarItem(placement: .topBarLeading) {
+//                    Button {
+//                        withAnimation {
+//                            showOutline.toggle()
+//                        }
+//                    } label: {
+//                        Image(systemName: "list.bullet.indent")
+//                    }
+//                }
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     
 #if os(visionOS)
