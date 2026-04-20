@@ -14,23 +14,32 @@ struct SearchResultsBar: View {
     let onPrev: () -> Void
     
     var body: some View {
-        HStack(spacing: 16) {
-            Text("\(index + 1) of \(total)")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            
-            Spacer()
-            
+        HStack(spacing: 12) {
             Button(action: onPrev) {
                 Image(systemName: "chevron.left")
             }
+            .foregroundStyle(Color.primary)
+            .frame(width: 25, height: 25)
+            .padding(8)
+            .glassEffect()
+            
+            Text("\(index + 1) of \(total)")
+                .font(.body)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .glassEffect()
             
             Button(action: onNext) {
                 Image(systemName: "chevron.right")
             }
+            .foregroundStyle(Color.primary)
+            .frame(width: 25, height: 25)
+            .padding(8)
+            .glassEffect()
+            
+            Spacer()
         }
         .padding(12)
-        .glassEffect()
         .padding(.horizontal)
     }
 }
