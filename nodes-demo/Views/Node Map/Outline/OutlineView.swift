@@ -38,18 +38,14 @@ struct OutlineView: View {
             }
             .listStyle(.plain)
             .background(
-                isSheet
-                ? AnyShapeStyle(Color.clear)
-                : AnyShapeStyle(.ultraThinMaterial)
+                Color.clear
             )
         }
         .frame(
             width: style == .sheet ? nil : preferredWidth
         )
         .background(
-            isSheet
-            ? AnyShapeStyle(Color(.systemBackground))
-            : AnyShapeStyle(.ultraThinMaterial)
+            Color.clear
         )
         .clipShape(
             isSheet
@@ -62,5 +58,8 @@ struct OutlineView: View {
             y: isSheet ? 0 : 4
         )
         .padding(.horizontal, isSheet ? 0 : 20)
+        .glassEffect(isSheet ? .identity : .regular, in: isSheet
+                     ? AnyShape(Rectangle())
+                     : AnyShape(RoundedRectangle(cornerRadius: 20)))
     }
 }

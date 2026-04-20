@@ -29,7 +29,6 @@ struct NodeMapView: View {
     @State private var containerSize: CGSize = .zero
     
     @State private var searchText = ""
-    @State private var showSearch = false
     @State private var showOutline = false
     @State private var searchResults: [Node] = []
     @State private var selectedSearchResultIndex = 0
@@ -184,99 +183,6 @@ struct NodeMapView: View {
         }
     }
     
-    var searchView: some View {
-        VStack(spacing: 0) {
-            if showSearch {
-                VStack(spacing: 0) {
-                    HStack(spacing: 8) {
-                        HStack {
-                            Image(systemName: "magnifyingglass")
-                                .foregroundColor(.secondary)
-                            
-                            TextField("Search", text: $searchText)
-                                .focused($isSearchFieldFocused)
-                                .textFieldStyle(.plain)
-                                .submitLabel(.search)
-                                .autocapitalization(.none)
-                                .disableAutocorrection(true)
-                                .onSubmit { performSearch() }
-                                .onChange(of: searchText) { _, _ in performSearch() }
-                            
-                            Button {
-                                withAnimation(.spring(response: 0.4, dampingFraction: 0.9)) {
-                                    showSearch = false
-                                    searchText = ""
-                                    searchResults = []
-                                }
-                            } label: {
-                                Image(systemName: "xmark.circle.fill")
-                                    .foregroundColor(.secondary)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(
-                            RoundedRectangle(cornerRadius: 10)
-                                .fill(Color(.systemBackground))
-                        )
-                        
-                    }
-                    .padding(.horizontal)
-                    .padding(.top, 8)
-                    .padding(.bottom, 6)
-                    
-                    if !searchResults.isEmpty {
-                        HStack(spacing: 16) {
-                            Text("\(selectedSearchResultIndex + 1) of \(searchResults.count)")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            
-                            Spacer()
-                            
-                            Button { goToPreviousSearchResult() } label: {
-                                Image(systemName: "chevron.left")
-                            }
-                            .disabled(searchResults.count <= 1)
-                            
-                            Button { goToNextSearchResult() } label: {
-                                Image(systemName: "chevron.right")
-                            }
-                            .disabled(searchResults.count <= 1)
-                        }
-                        .padding(.horizontal)
-                        .padding(.bottom, 8)
-                        .transition(.opacity)
-                    }
-                }
-                .background(
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(Color(.systemBackground))
-                        .shadow(color: .black.opacity(0.12), radius: 4, y: 2)
-                )
-                .transition(
-                    .asymmetric(
-                        insertion: .move(edge: .top).combined(with: .opacity),
-                        removal: .move(edge: .top).combined(with: .opacity)
-                    )
-                )
-            }
-            
-            Spacer()
-        }
-        .padding(16)
-        .animation(.spring(response: 0.4, dampingFraction: 0.85), value: showSearch)
-        .onChange(of: showSearch) { _, newValue in
-            if newValue {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    isSearchFieldFocused = true
-                }
-            } else {
-                isSearchFieldFocused = false
-            }
-        }
-    }
-    
     var body: some View {
         GeometryReader { geo in
             ZStack {
@@ -306,12 +212,15 @@ struct NodeMapView: View {
                         // sidebar
                         if showOutline && !isCompact {
                             let size = min(300, geo.size.width - 40)
-                            OutlineView(preferredWidth: size, style: .overlay)
-                                .environment(appModel)
-                                .transition(.move(edge: .leading))
+                            HStack {
+                                OutlineView(preferredWidth: size, style: .overlay)
+                                    .environment(appModel)
+                                    
+                                Spacer()
+                            }
+                            .padding(.horizontal, 20)
+                            .transition(.move(edge: .leading))
                         }
-                        
-                        searchView
                     }
                     
                     Spacer()
@@ -324,6 +233,13 @@ struct NodeMapView: View {
             }
             .onChange(of: geo.size) { oldSize, newSize in
                 containerSize = newSize
+            }
+            .onChange(of: searchText) { _, newValue in
+                if newValue.isEmpty {
+                    searchResults = []
+                } else {
+                    performSearch()
+                }
             }
             .sheet(isPresented: Binding(
                 get: { showOutline && isCompact },
@@ -349,52 +265,25 @@ struct NodeMapView: View {
             }
             .navigationTitle(appModel.currentCanvas?.name ?? "Canvo")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                if !showSearch {
-                    ToolbarItem(placement: .bottomBar) {
-                        Button {
-                            withAnimation {
-                                showSearch = true
-                            }
-                        } label: {
-                            Image(systemName: "magnifyingglass")
-                        }
-                    }
+            .searchable(
+                text: $searchText,
+                prompt: "Search nodes"
+            )
+            .searchToolbarBehavior(.minimize)
+            .overlay(alignment: .top) {
+                if !searchText.isEmpty && !searchResults.isEmpty {
+                    SearchResultsBar(
+                        index: selectedSearchResultIndex,
+                        total: searchResults.count,
+                        onNext: goToNextSearchResult,
+                        onPrev: goToPreviousSearchResult
+                    )
+                    .padding(.top, 8)
+                    .transition(.move(edge: .top).combined(with: .opacity))
                 }
-                
-//                ToolbarSpacer(.flexible, placement: .bottomBar)
-                
-//                ToolbarItemGroup(placement: .bottomBar) {
-//                    Button {
-//                        applyZoom(multiplier: 1.2)
-//                    } label: {
-//                        Image(systemName: "plus.magnifyingglass")
-//                            .resizable()
-//                            .frame(width: 25, height: 25)
-//                            .foregroundStyle(Color(uiColor: .label))
-//                    }
-//                    
-//                    // reset zoom
-//                    Button {
-//                        resetZoom()
-//                    } label: {
-//                        Image(systemName: "text.magnifyingglass")
-//                            .resizable()
-//                            .frame(width: 25, height: 25)
-//                            .foregroundStyle(Color(uiColor: .label))
-//                    }
-//                    
-//                    // zoom out
-//                    Button {
-//                        applyZoom(multiplier: 0.8)
-//                    } label: {
-//                        Image(systemName: "minus.magnifyingglass")
-//                            .resizable()
-//                            .frame(width: 25, height: 25)
-//                            .foregroundStyle(Color(uiColor: .label))
-//                    }
-//                }
-                
+            }
+            .toolbar {
+                DefaultToolbarItem(kind: .search, placement: .bottomBar)
                 ToolbarSpacer(.flexible, placement: .bottomBar)
                 
                 ToolbarItem(placement: .bottomBar) {
