@@ -223,7 +223,8 @@ struct NodeMapView: View {
                     if showZoomLevel {
                         Text(String(format: "%.0f %%", scale * 100))
                             .frame(width: 60)
-                            .padding()
+                            .padding(.horizontal)
+                            .padding(.vertical, 8)
                             .glassEffect()
                     }
                     
