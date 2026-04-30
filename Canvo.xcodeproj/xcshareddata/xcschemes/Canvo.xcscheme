@@ -16,9 +16,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "D1ACB3212ECB560000411AD6"
-               BuildableName = "nodes-demo.app"
-               BlueprintName = "nodes-demo"
-               ReferencedContainer = "container:nodes-demo.xcodeproj">
+               BuildableName = "Canvo.app"
+               BlueprintName = "Canvo"
+               ReferencedContainer = "container:Canvo.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -45,9 +45,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "D1ACB3212ECB560000411AD6"
-            BuildableName = "nodes-demo.app"
-            BlueprintName = "nodes-demo"
-            ReferencedContainer = "container:nodes-demo.xcodeproj">
+            BuildableName = "Canvo.app"
+            BlueprintName = "Canvo"
+            ReferencedContainer = "container:Canvo.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -62,9 +62,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "D1ACB3212ECB560000411AD6"
-            BuildableName = "nodes-demo.app"
-            BlueprintName = "nodes-demo"
-            ReferencedContainer = "container:nodes-demo.xcodeproj">
+            BuildableName = "Canvo.app"
+            BlueprintName = "Canvo"
+            ReferencedContainer = "container:Canvo.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

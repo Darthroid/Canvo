@@ -11,12 +11,12 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		D1ACB3222ECB560000411AD6 /* nodes-demo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "nodes-demo.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		D1ACB3222ECB560000411AD6 /* Canvo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Canvo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D1ACB3262ECB560000411AD6 /* RealityKitContent */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = RealityKitContent; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		D1ACB3302ECB560200411AD6 /* Exceptions for "nodes-demo" folder in "nodes-demo" target */ = {
+		D1ACB3302ECB560200411AD6 /* Exceptions for "Canvo" folder in "Canvo" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -24,17 +24,17 @@
 			platformFiltersByRelativePath = {
 				"Views/Node Map/ImmersiveNodeMapView.swift" = (xros, );
 			};
-			target = D1ACB3212ECB560000411AD6 /* nodes-demo */;
+			target = D1ACB3212ECB560000411AD6 /* Canvo */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		D1ACB3242ECB560000411AD6 /* nodes-demo */ = {
+		D1ACB3242ECB560000411AD6 /* Canvo */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				D1ACB3302ECB560200411AD6 /* Exceptions for "nodes-demo" folder in "nodes-demo" target */,
+				D1ACB3302ECB560200411AD6 /* Exceptions for "Canvo" folder in "Canvo" target */,
 			);
-			path = "nodes-demo";
+			path = Canvo;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -54,7 +54,7 @@
 		D1ACB3192ECB560000411AD6 = {
 			isa = PBXGroup;
 			children = (
-				D1ACB3242ECB560000411AD6 /* nodes-demo */,
+				D1ACB3242ECB560000411AD6 /* Canvo */,
 				D1ACB3252ECB560000411AD6 /* Packages */,
 				D1ACB3232ECB560000411AD6 /* Products */,
 			);
@@ -63,7 +63,7 @@
 		D1ACB3232ECB560000411AD6 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				D1ACB3222ECB560000411AD6 /* nodes-demo.app */,
+				D1ACB3222ECB560000411AD6 /* Canvo.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -79,9 +79,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		D1ACB3212ECB560000411AD6 /* nodes-demo */ = {
+		D1ACB3212ECB560000411AD6 /* Canvo */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D1ACB3312ECB560200411AD6 /* Build configuration list for PBXNativeTarget "nodes-demo" */;
+			buildConfigurationList = D1ACB3312ECB560200411AD6 /* Build configuration list for PBXNativeTarget "Canvo" */;
 			buildPhases = (
 				D1ACB31E2ECB560000411AD6 /* Sources */,
 				D1ACB31F2ECB560000411AD6 /* Frameworks */,
@@ -92,14 +92,14 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				D1ACB3242ECB560000411AD6 /* nodes-demo */,
+				D1ACB3242ECB560000411AD6 /* Canvo */,
 			);
-			name = "nodes-demo";
+			name = Canvo;
 			packageProductDependencies = (
 				D1ACB3272ECB560000411AD6 /* RealityKitContent */,
 			);
 			productName = "nodes-demo";
-			productReference = D1ACB3222ECB560000411AD6 /* nodes-demo.app */;
+			productReference = D1ACB3222ECB560000411AD6 /* Canvo.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -117,7 +117,7 @@
 					};
 				};
 			};
-			buildConfigurationList = D1ACB31D2ECB560000411AD6 /* Build configuration list for PBXProject "nodes-demo" */;
+			buildConfigurationList = D1ACB31D2ECB560000411AD6 /* Build configuration list for PBXProject "Canvo" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -131,7 +131,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				D1ACB3212ECB560000411AD6 /* nodes-demo */,
+				D1ACB3212ECB560000411AD6 /* Canvo */,
 			);
 		};
 /* End PBXProject section */
@@ -164,7 +164,8 @@
 				"ASSETCATALOG_COMPILER_APPICON_NAME[sdk=iphoneos*]" = "Icon (iOS)";
 				"ASSETCATALOG_COMPILER_APPICON_NAME[sdk=xros*]" = "Icon (visionOS)";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = "nodes-demo/nodes-demo.entitlements";
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
+				CODE_SIGN_ENTITLEMENTS = Canvo/Canvo.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_TEAM = 97A6BHXBQU;
@@ -209,7 +210,8 @@
 				"ASSETCATALOG_COMPILER_APPICON_NAME[sdk=iphoneos*]" = "Icon (iOS)";
 				"ASSETCATALOG_COMPILER_APPICON_NAME[sdk=xros*]" = "Icon (visionOS)";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = "nodes-demo/nodes-demo.entitlements";
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
+				CODE_SIGN_ENTITLEMENTS = Canvo/Canvo.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_TEAM = 97A6BHXBQU;
@@ -367,7 +369,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		D1ACB31D2ECB560000411AD6 /* Build configuration list for PBXProject "nodes-demo" */ = {
+		D1ACB31D2ECB560000411AD6 /* Build configuration list for PBXProject "Canvo" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D1ACB3342ECB560200411AD6 /* Debug */,
@@ -376,7 +378,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		D1ACB3312ECB560200411AD6 /* Build configuration list for PBXNativeTarget "nodes-demo" */ = {
+		D1ACB3312ECB560200411AD6 /* Build configuration list for PBXNativeTarget "Canvo" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D1ACB3322ECB560200411AD6 /* Debug */,
