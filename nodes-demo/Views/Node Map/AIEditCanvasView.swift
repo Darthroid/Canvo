@@ -66,7 +66,7 @@ struct AIEditCanvasView: View {
             .toolbar {
                 ToolbarItem(placement: .title) {
                     HStack {
-                        Text("Generate with AI")
+                        Text("Extend canvas with AI")
                             .font(.body)
                             .fontWeight(.semibold)
                         Text("BETA")

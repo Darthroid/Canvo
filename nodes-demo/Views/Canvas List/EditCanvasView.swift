@@ -69,16 +69,16 @@ struct EditCanvasView: View {
                             VStack(spacing: 12) {
                                 modeCard(
                                     title: "Create manually",
-                                    subtitle: "Start from scratch",
+                                    subtitle: "Start with an empty canvas",
                                     icon: "pencil",
                                     current: .create
                                 )
-                                
+
                                 modeCard(
                                     title: "Generate with AI", isBeta: true,
                                     subtitle: AIGenerationService.shared.isAvailable
-                                                ? "Describe your idea"
-                                                : "Currently not available",
+                                        ? "Describe a topic and AI will build a canvas"
+                                        : "Currently not available",
                                     icon: "sparkles",
                                     current: .aiCreate
                                 )
@@ -94,7 +94,7 @@ struct EditCanvasView: View {
                             
                             if mode == .aiCreate {
                                 TextField(
-                                    "Build a mind map for launching a startup",
+                                    "E.g. launching a startup: idea, market, MVP, marketing",
                                     text: $ideas,
                                     axis: .vertical
                                 )
@@ -103,6 +103,10 @@ struct EditCanvasView: View {
                                 .background(.thinMaterial)
                                 .clipShape(RoundedRectangle(cornerRadius: 16))
                                 .lineLimit(5...10)
+                                
+                                Text("AI will generate a structured canvas based on your description")
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
                             } else {
                                 TextField("Canvas name", text: $name)
                                     .focused($isNameFocused)
@@ -122,7 +126,7 @@ struct EditCanvasView: View {
                     Spacer()
                     
                     Button(action: submit) {
-                        Text(mode == .aiCreate ? "Generate canvas" : mode.confirmActionTitle)
+                        Text(mode == .aiCreate ? "Generate with AI" : mode.confirmActionTitle)
                             .font(.system(size: 17, weight: .semibold))
                             .frame(maxWidth: .infinity)
                             .padding()
