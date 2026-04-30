@@ -155,20 +155,41 @@ struct CanvasCollectionView: View {
         
     }
     
+    private var emptyStateConfig: (title: String, systemImage: String, description: String) {
+        switch selectedFilter {
+        case .all:
+            return (
+                searchQuery.isEmpty ? "No Canvases Yet" : "No Results",
+                searchQuery.isEmpty ? "rectangle.split.3x3" : "magnifyingglass",
+                searchQuery.isEmpty ? "Create a canvas manually or generate one with AI" : "Try adjusting your search"
+            )
+
+        case .recent:
+            return (
+                "No Recent Canvases",
+                "clock",
+                "Your recently edited canvases will show up here automatically"
+            )
+
+        case .favorites:
+            return (
+                "No Favorites",
+                "star",
+                "Save important canvases for quick access anytime"
+            )
+        }
+    }
+    
     @ViewBuilder
     var canvasesGrid: some View {
         if displayedCanvases.isEmpty {
             VStack {
                 CanvasTabsView(selectedFilter: $selectedFilter)
-                ContentUnavailableView(
-                    searchQuery.isEmpty ? "No Canvases" : "Nothing found",
-                    systemImage: searchQuery.isEmpty ? "rectangle.split.3x3" : "exclamationmark.magnifyingglass",
-                    description: Text(
-                        searchQuery.isEmpty
-                        ? "Tap the + button to create your first canvas"
-                        : "Try changing the request"
-                    )
-                )
+                ContentUnavailableView {
+                    Label(emptyStateConfig.title, systemImage: emptyStateConfig.systemImage)
+                } description: {
+                    Text(emptyStateConfig.description)
+                }
                 .frame(maxWidth: .infinity)
                 .padding(.top, 40)
             }
@@ -196,7 +217,6 @@ struct CanvasCollectionView: View {
             }
         }
     }
-
     
     @ViewBuilder func canvasCard(for canvas: Canvas) -> some View {
         NavigationLink {
