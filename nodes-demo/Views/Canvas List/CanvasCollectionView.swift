@@ -160,7 +160,7 @@ struct CanvasCollectionView: View {
         case .all:
             return (
                 searchQuery.isEmpty ? "No Canvases Yet" : "No Results",
-                searchQuery.isEmpty ? "rectangle.split.3x3" : "magnifyingglass",
+                searchQuery.isEmpty ? "rectangle.3.group" : "magnifyingglass",
                 searchQuery.isEmpty ? "Create a canvas manually or generate one with AI" : "Try adjusting your search"
             )
 

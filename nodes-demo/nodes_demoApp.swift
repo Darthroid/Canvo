@@ -11,10 +11,19 @@ import SwiftUI
 struct nodes_demoApp: App {
     @State private var appModel: AppModel = AppModel()
     
+    @AppStorage("hasSeenOnboarding") var hasSeenOnboarding: Bool = false
+    
     var body: some Scene {
         WindowGroup {
-            CanvasCollectionView()
+            if hasSeenOnboarding {
+                CanvasCollectionView()
+                    .environment(appModel)
+            } else {
+                OnboardingView(onFinish: {
+                    hasSeenOnboarding = true
+                })
                 .environment(appModel)
+            }
         }
         #if os(visionOS)
         ImmersiveSpace(id: "ImmersiveNodeMapView") {
