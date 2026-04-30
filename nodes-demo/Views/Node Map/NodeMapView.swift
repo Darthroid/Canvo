@@ -370,7 +370,7 @@ struct NodeMapView: View {
                         Button {
                             showAIEditCanvas = true
                         } label: {
-                            Image(systemName: "apple.intelligence")
+                            Image(systemName: "sparkles")
                         }
                     }
                 }

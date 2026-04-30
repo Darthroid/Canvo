@@ -75,7 +75,7 @@ struct EditCanvasView: View {
                                 )
                                 
                                 modeCard(
-                                    title: "Generate with AI",
+                                    title: "Generate with AI", isBeta: true,
                                     subtitle: AIGenerationService.shared.isAvailable
                                                 ? "Describe your idea"
                                                 : "Currently not available",
@@ -175,7 +175,7 @@ struct EditCanvasView: View {
 
 private extension EditCanvasView {
     
-    func modeCard(title: String, subtitle: String, icon: String, current: EditCanvasMode) -> some View {
+    func modeCard(title: String, isBeta: Bool = false, subtitle: String, icon: String, current: EditCanvasMode) -> some View {
         Button {
             withAnimation(.easeInOut(duration: 0.2)) {
                 mode = current
@@ -191,8 +191,19 @@ private extension EditCanvasView {
                     .clipShape(RoundedRectangle(cornerRadius: 10))
                 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(title)
-                        .font(.system(size: 17, weight: .semibold))
+                    HStack {
+                        Text(title)
+                            .font(.system(size: 17, weight: .semibold))
+                        if isBeta {
+                            Text("BETA")
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 2)
+                                .font(.system(size: 11, weight: .regular))
+                                .foregroundStyle(.white)
+                                .background(Capsule(style: .circular).fill(.black))
+                        }
+                    }
+                    
                     
                     Text(subtitle)
                         .font(.system(size: 14))

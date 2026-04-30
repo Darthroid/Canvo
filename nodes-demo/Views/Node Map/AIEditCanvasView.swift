@@ -40,15 +40,44 @@ struct AIEditCanvasView: View {
         NavigationStack {
             Form {
                 Section {
-                    TextField("Enter your ideas", text: $ideas, axis: .vertical)
-                        .focused($isIdeasFocused)
-                        .textInputAutocapitalization(.sentences)
-                        .lineLimit(10...15)
+                    
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Describe what you want to add")
+                            .font(.headline)
+                        
+                        Text("AI will extend your current canvas with new connected nodes")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        
+                        TextField("E.g. marketing strategy, user journey, app architecture", text: $ideas, axis: .vertical)
+                            .focused($isIdeasFocused)
+                            .textInputAutocapitalization(.sentences)
+                            .lineLimit(10...15)
+                    }
+                    
+                } footer: {
+                    Text("Your input is used as a prompt for AI to extend the current canvas with additional nodes.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                 }
             }
-            .navigationTitle("AI Edit Canvas")
-            .navigationBarTitleDisplayMode(.inline)
+//            .navigationTitle("AI Edit Canvas")
+//            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .title) {
+                    HStack {
+                        Text("Generate with AI")
+                            .font(.body)
+                            .fontWeight(.semibold)
+                        Text("BETA")
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 2)
+                            .font(.system(size: 11, weight: .regular))
+                            .foregroundStyle(.white)
+                            .background(Capsule(style: .circular).fill(.black))
+                    }
+                }
+                
                 ToolbarItem(placement: .cancellationAction) {
                     Button(role: .cancel) {
                         dismiss()
