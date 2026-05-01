@@ -6,6 +6,7 @@
 //
 
 import FoundationModels
+import Foundation
 
 @available(iOS 26.0, macOS 26.0, visionOS 26.0, *)
 class AIGenerationService {
@@ -18,147 +19,143 @@ class AIGenerationService {
     }
     
     private init() {}
+
     
-    func generaeteCanvas(prompt: String) async throws -> CanvasSchema {
-        let session = LanguageModelSession(model: model)
+    func generateCanvasStream(prompt: String) -> AsyncThrowingStream<(CanvasSchema, String), Error> {
+        AsyncThrowingStream { continuation in
+            Task {
+                do {
+                    
+                    // Create canvas
+                    var canvas = try await generaeteEmptyCanvas(prompt: prompt)
+                    continuation.yield((canvas, "Creating main idea"))
+                    
+                    // Create main node
+                    let mainIdea = try await generateMainNode(prompt: prompt, canvasTitle: canvas.name)
+                    canvas.nodes = [mainIdea]
+                    continuation.yield((canvas, "Extending main idea"))
+                    
+                    // Create child nodes
+                    let childNodes = try await generateChildNodes(prompt: prompt, canvasTitle: canvas.name, mainNode: mainIdea)
+                    canvas.nodes.append(contentsOf: childNodes)
+                    
+                    // Connect child nodes to main idea node
+                    canvas.connections = childNodes.map {
+                        .init(id: UUID().uuidString, fromNodeId: $0.id, toNodeId: mainIdea.id)
+                    }
+                    
+                    // Position nodes aroind main idea node
+                    self.layoutNodesInCircle(nodes: &canvas.nodes, centerNodeId: mainIdea.id)
+                    
+                    continuation.yield((canvas, "Finalizing"))
+                    
+                    continuation.finish()
 
-        let result = try await session.respond(
-            to: """
-            You are an AI that designs a structured mind map.
-            Before you start, please check what is a mind map.
-            
-            Create a mind map following all the rules. 
-            Here are ideas for mind map: \(prompt). 
-            A summary of idea is also title for canvas.
-            
-            You must follow these rules:
-             
-            GENERAL RULES:
-            - mind map should have main idea node.
-            - mind map should have other nodes that relates to main idea.
-            - All other nodes must connect to main idea node and not connect to each other.
-
-            MAIN IDEA NODE:
-            - Create a single node that represents the core concept of the mind map.
-            - Place the main idea node exactly at position x:0, y: 0, z:0.
-
-            OTHER NODES:
-            - All other nodes must support, expand, or relate to the main idea node.
-            - place other nodes in graph tree-like shape, where main node is the root
-
-            CONNECTIONS:
-            - Nodes should be directly connected to the main idea node.
-
-            CONTENT RULES:
-            - Do not duplicate ideas.
-            - Generate 10 nodes that represents core concept of the mind map.
-            - Supporting nodes must not overlap in X and Y coordinates and must be spaced by 150 points.
-            """,
-            generating: CanvasSchema.self
-        )
-
-        return result.content
-    }
-
-}
-
-@available(iOS 26.0, macOS 26.0, visionOS 26.0, *)
-extension AIGenerationService {
-
-    func generateForChunk(
-        prompt: String,
-        summary: String,
-        chunk: CanvasChunk,
-        existingIDs: Set<String>
-    ) async throws -> CanvasSchema {
-
-        let session = LanguageModelSession(
-            model: model,
-            instructions: """
-            You are extending a mind map by adding NEW ideas only.
-            Before start, please check what is a mind map.
-
-            \(summary)
-
-            Active canvas chunk:
-            Nodes:
-            \(chunk.nodes.map { "- \($0.id): \($0.name)" }.joined(separator: "\n"))
-
-            Connections:
-            \(chunk.connections.map { "- \($0.fromNodeId) -> \($0.toNodeId)" }.joined(separator: "\n"))
-
-            Forbidden node IDs:
-            \(existingIDs.joined(separator: ", "))
-
-            Rules:
-            - Generate ONLY new nodes and connections
-            - Connections with existing and new nodes are allowed if there is a logical relationship
-            - Place nodes near related ones
-            - The distance between any two nodes on the X-Y plane must be at least 150 points.
-            """
-        )
-
-        let result = try await session.respond(
-            to: prompt,
-            generating: CanvasSchema.self
-        )
-
-        return result.content
-    }
-}
-
-@available(iOS 26.0, macOS 26.0, visionOS 26.0, *)
-extension AIGenerationService {
-
-    func generateNodesChunked(
-        prompt: String,
-        in canvas: Canvas
-    ) async throws -> ([NodeSchema], [NodeConnectionSchema]) {
-
-        let summary = canvas.makeSemanticSummary()
-        let chunks = canvas.makeChunks()
-        let existingIDs = Set(canvas.nodes?.map(\.id) ?? [])
-
-        var newNodes: [NodeSchema] = []
-        var newConnections: [NodeConnectionSchema] = []
-
-        for chunk in chunks {
-            if let result = try? await generateForChunk(
-                prompt: prompt,
-                summary: summary,
-                chunk: chunk,
-                existingIDs: existingIDs
-            ) {
-                newNodes += result.nodes
-                newConnections += result.connections
+                } catch {
+                    continuation.finish(throwing: error)
+                }
             }
         }
+    }
+}
 
-        return normalize(
-            nodes: newNodes,
-            connections: newConnections,
-            existing: existingIDs
+
+// MARK: - Helper methods to generate canvas
+extension AIGenerationService {
+    private func generaeteEmptyCanvas(prompt: String) async throws -> CanvasSchema {
+        let session = LanguageModelSession(model: model, instructions: """
+            You are an AI that designs a structured mind map.
+            Title of canvas = summary of main idea.
+            Title should be short and descriptive.
+            """
         )
+        
+        let prompt = "Generate a canvas name based on the idea: \(prompt)"
+
+        let name =  try await session.respond(
+            to: prompt,
+            generating: String.self,
+            options: .init(sampling: .greedy, temperature: 1)
+        ).content
+        
+        let canvas = CanvasSchema(id: UUID().uuidString, name: name, nodes: [], connections: [])
+        
+        return canvas
     }
     
-    func normalize(
-        nodes: [NodeSchema],
-        connections: [NodeConnectionSchema],
-        existing: Set<String>
-    ) -> ([NodeSchema], [NodeConnectionSchema]) {
-
-        let uniqueNodes = Dictionary(grouping: nodes, by: \.name)
-            .compactMap { $0.value.first }
-            .filter { !existing.contains($0.id) }
-
-        let validNodeIDs = Set(uniqueNodes.map(\.id))
-
-        let validConnections = connections.filter {
-            validNodeIDs.contains($0.fromNodeId)
-            || validNodeIDs.contains($0.toNodeId)
-        }
-
-        return (uniqueNodes, validConnections)
+    private func generateMainNode(prompt: String, canvasTitle: String) async throws -> NodeSchema {
+        let session = LanguageModelSession(model: model, instructions: """
+            You are an AI that designs a structured mind map.
+            NODE RULES:
+            - Exactly 1 node should be main idea.
+            - Main Idea node name should be short and descriptive.
+            """
+        )
+        
+        let prompt = "Create a main idea node for canvas '\(canvasTitle)' based on the ideas user described: \(prompt)"
+        
+        return try await session.respond(
+            to: prompt,
+            generating: NodeSchema.self,
+            options: .init(sampling: .greedy, temperature: 1)
+        ).content
     }
-
+    
+    private func generateChildNodes(prompt: String, canvasTitle: String, mainNode: NodeSchema) async throws -> [NodeSchema] {
+        let session = LanguageModelSession(model: model, instructions: """
+            You are an AI that designs a structured mind map.
+            NODE RULES:
+            - Exactly 10 nodes.
+            - Each node should describe unique idea extending main idea.
+            """
+        )
+        
+        let prompt = """
+            Create nodes for canvas '\(canvasTitle)' based on the ideas user described: \(prompt). 
+            The main idea node is: \(mainNode.name). 
+            Detail of main node: \(mainNode.detail).
+            """
+        
+        return try await session.respond(
+            to: prompt,
+            generating: [NodeSchema].self
+        ).content
+    }
+    
+    private func layoutNodesInCircle(
+        nodes: inout [NodeSchema],
+        centerNodeId: String,
+        radius: Float = 300
+    ) {
+        guard let centerIndex = nodes.firstIndex(where: { $0.id == centerNodeId }) else {
+            return
+        }
+        
+        // center
+        nodes[centerIndex].position = Position3DSchema(x: 0, y: 0, z: 0)
+        
+        // Все остальные
+        var otherIndices: [Int] = []
+        for i in nodes.indices {
+            if i != centerIndex {
+                otherIndices.append(i)
+            }
+        }
+        
+        let count = otherIndices.count
+        guard count > 0 else { return }
+        
+        for (i, index) in otherIndices.enumerated() {
+            let angle = (2 * Float.pi * Float(i)) / Float(count)
+            
+            let x = radius * cos(angle)
+            let y = radius * sin(angle)
+            
+            nodes[index].position = Position3DSchema(
+                x: x,
+                y: y,
+                z: 0
+            )
+        }
+    }
 }

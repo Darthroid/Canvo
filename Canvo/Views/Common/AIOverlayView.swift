@@ -56,7 +56,7 @@ struct IntelligenceEdgeGlow: View {
 
 struct IntelligenceThinkingView: View {
     @State private var pulse = false
-    @State var title: String = "Thinking"
+    @Binding var title: String
 
     var body: some View {
         VStack(spacing: 14) {
@@ -85,7 +85,7 @@ struct IntelligenceThinkingView: View {
 }
 
 struct AIOverlayView: View {
-    @State var title: String = "Thinking"
+    @Binding var title: String
     
     var body: some View {
         ZStack {
@@ -94,7 +94,7 @@ struct AIOverlayView: View {
             
             IntelligenceEdgeGlow()
 
-            IntelligenceThinkingView(title: title)
+            IntelligenceThinkingView(title: $title)
         }
         .transition(.opacity)
     }
@@ -108,6 +108,6 @@ struct AIOverlayView: View {
     }
     .frame(maxWidth: .infinity, maxHeight: .infinity)
     .overlay {
-        AIOverlayView()
+        AIOverlayView(title: .constant("Thinking"))
     }
 }

@@ -11,12 +11,12 @@ import FoundationModels
 @available(iOS 26.0, macOS 26.0, visionOS 26.0, *)
 @Generable
 struct NodeConnectionSchema: Codable, Sendable, Identifiable {
-    @Guide(description: "A unique identifier (UUID string) of connection")
+    @Guide(description: "UUID string")
     let id: String
     
-    @Guide(description: "An identifier of starting node (connection source)")
+    @Guide(description: "UUID string of starting node")
     let fromNodeId: String
     
-    @Guide(description: "An identifier of ending node (connection destination)")
+    @Guide(description: "UUID string of ending node")
     let toNodeId: String
 }

@@ -25,7 +25,7 @@ struct AIEditCanvasView: View {
             contentView // твой NavigationStack / Form
 
             if isGenerating {
-                AIOverlayView(title: "Generating Ideas")
+                AIOverlayView(title: .constant("Generating Ideas"))
                     .zIndex(100)
             }
         }
@@ -105,30 +105,32 @@ struct AIEditCanvasView: View {
     // MARK: - Actions
 
     private func generateCanvas() {
-        Task {
-            guard let currentCanvas = appModel.currentCanvas else {
-                return
-            }
-            isGenerating = true
-            isIdeasFocused = false
-            do {
-                let schema = try await AIGenerationService.shared
+        // TODO: new generation tools
+        
+//        Task {
+//            guard let currentCanvas = appModel.currentCanvas else {
+//                return
+//            }
+//            isGenerating = true
+//            isIdeasFocused = false
+//            do {
+//                let schema = try await AIGenerationService.shared
 //                    .generateNodes(prompt: ideas, in: currentCanvas)
-                    .generateNodesChunked(prompt: ideas, in: currentCanvas)
-
-                let nodes = schema.0.map { Node(from: $0) }
-                let connections = schema.1.map { NodeConnection(from: $0) }
-                
-                appModel.addNodes(nodes)
-                appModel.addConnections(connections)
-                
-                dismiss()
-            } catch {
-                errorMessage = error.localizedDescription
-                showErrorAlert = true
-            }
-
-            isGenerating = false
-        }
+//                    .generateNodesChunked(prompt: ideas, in: currentCanvas)
+//
+//                let nodes = schema.0.map { Node(from: $0) }
+//                let connections = schema.1.map { NodeConnection(from: $0) }
+//                
+//                appModel.addNodes(nodes)
+//                appModel.addConnections(connections)
+//                
+//                dismiss()
+//            } catch {
+//                errorMessage = error.localizedDescription
+//                showErrorAlert = true
+//            }
+//
+//            isGenerating = false
+//        }
     }
 }

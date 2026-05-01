@@ -66,7 +66,6 @@ extension Canvas {
         CanvasSchema(
             id: id,
             name: name,
-            isPinned: isPined,
             nodes: nodes?.map { $0.toSchema() } ?? [],
             connections: connections?.map { $0.toSchema() } ?? []
         )
@@ -77,7 +76,7 @@ extension Canvas {
         self.init(
             id: schema.id,
             name: schema.name,
-            isPined: schema.isPinned,
+            isPined: false,
             nodes: schema.nodes.map { Node(from: $0) },
             connections: schema.connections.map { NodeConnection(from: $0) }
         )

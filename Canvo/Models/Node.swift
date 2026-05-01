@@ -87,8 +87,8 @@ extension Node {
             id: id,
             name: name,
             detail: detail,
-            position: .init(x: x, y: y, z: z),
-            color: colorRaw
+            color: colorRaw,
+            position: .init(x: x, y: y, z: z)
         )
     }
     
