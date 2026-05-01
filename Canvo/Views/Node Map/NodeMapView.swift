@@ -366,13 +366,13 @@ struct NodeMapView: View {
                     }
                     
                     // ai edit
-                    if AIGenerationService.shared.isAvailable {
-                        Button {
-                            showAIEditCanvas = true
-                        } label: {
-                            Image(systemName: "sparkles")
-                        }
-                    }
+//                    if AIGenerationService.shared.isAvailable {
+//                        Button {
+//                            showAIEditCanvas = true
+//                        } label: {
+//                            Image(systemName: "sparkles")
+//                        }
+//                    }
                 }
                 
                 ToolbarSpacer(.flexible, placement: .bottomBar)

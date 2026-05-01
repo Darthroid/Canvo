@@ -57,10 +57,79 @@ class AIGenerationService {
             }
         }
     }
+    
+    private func layoutNodesInCircle(
+        nodes: inout [NodeSchema],
+        centerNodeId: String,
+        radius: Float = 300
+    ) {
+        guard let centerIndex = nodes.firstIndex(where: { $0.id == centerNodeId }) else {
+            return
+        }
+        
+        // center
+        nodes[centerIndex].position = Position3DSchema(x: 0, y: 0, z: 0)
+        
+        // Все остальные
+        var otherIndices: [Int] = []
+        for i in nodes.indices {
+            if i != centerIndex {
+                otherIndices.append(i)
+            }
+        }
+        
+        let count = otherIndices.count
+        guard count > 0 else { return }
+        
+        for (i, index) in otherIndices.enumerated() {
+            let angle = (2 * Float.pi * Float(i)) / Float(count)
+            
+            let x = radius * cos(angle)
+            let y = radius * sin(angle)
+            
+            nodes[index].position = Position3DSchema(
+                x: x,
+                y: y,
+                z: 0
+            )
+        }
+    }
+
+    private func layoutNodesInSemiCircleBelow(
+        nodes: inout [NodeSchema],
+        center: Position3DSchema,
+        radius: Float = 300
+    ) {
+
+        let indices = nodes.indices
+        let count = indices.count
+        guard count > 0 else { return }
+
+        let startAngle: Float = .pi       // 180°
+        let endAngle: Float = 2 * .pi     // 360°
+        let angleStep: Float = count > 1 ? (endAngle - startAngle) / Float(count - 1) : 0
+
+        for (i, index) in indices.enumerated() {
+            let angle: Float
+            if count == 1 {
+                // Единственную ноду ставим ровно снизу
+                angle = 3 * .pi / 2
+            } else {
+                angle = startAngle + angleStep * Float(i)
+            }
+
+            nodes[index].position = Position3DSchema(
+                x: center.x + radius * cos(angle),
+                y: center.y + radius * sin(angle),   // sin отрицательный на нижней дуге
+                z: center.z                          // остаёмся в плоскости центра
+            )
+        }
+    }
 }
 
 
 // MARK: - Helper methods to generate canvas
+
 extension AIGenerationService {
     private func generaeteEmptyCanvas(prompt: String) async throws -> CanvasSchema {
         let session = LanguageModelSession(model: model, instructions: """
@@ -121,41 +190,55 @@ extension AIGenerationService {
             generating: [NodeSchema].self
         ).content
     }
-    
-    private func layoutNodesInCircle(
-        nodes: inout [NodeSchema],
-        centerNodeId: String,
-        radius: Float = 300
-    ) {
-        guard let centerIndex = nodes.firstIndex(where: { $0.id == centerNodeId }) else {
-            return
-        }
+}
+
+// MARK: - Helper methods to extend canvas
+
+extension AIGenerationService {
+    func extendNodes(nodes: [Node], in canvas: Canvas) async throws -> ([NodeSchema], [NodeConnectionSchema]) {
+        var newNodes = [NodeSchema]()
+        var newConnections = [NodeConnectionSchema]()
         
-        // center
-        nodes[centerIndex].position = Position3DSchema(x: 0, y: 0, z: 0)
-        
-        // Все остальные
-        var otherIndices: [Int] = []
-        for i in nodes.indices {
-            if i != centerIndex {
-                otherIndices.append(i)
+        for node in nodes {
+            let schema = node.toSchema()
+            let session = LanguageModelSession(model: model, instructions: """
+                You are an AI that designs a structured mind map.
+                RULES:
+                - Exactly 2-3 nodes as extension to current input.
+                - Each node should describe unique idea extending current input.
+                """
+            )
+            
+            let prompt = """
+                extend node by suggesting sub-topics for the following node: \(schema.name). it's description: \(schema.detail)
+                """
+            
+            var extendedNodes = try await session.respond(
+                to: prompt,
+                generating: [NodeSchema].self
+            ).content
+            
+            layoutNodesInSemiCircleBelow(nodes: &extendedNodes, center: schema.position)
+            extendedNodes.forEach {
+                newConnections.append(NodeConnectionSchema(id: UUID().uuidString, fromNodeId: schema.id, toNodeId: $0.id))
             }
         }
         
-        let count = otherIndices.count
-        guard count > 0 else { return }
+        return (newNodes, newConnections)
+    }
+    
+    func summarize(nodes: [Node], in canvas: Canvas) async throws -> LanguageModelSession.ResponseStream<String> {
+        return askStereamed(prompt: "Provide a summary of the current nodes in mind map", nodes: nodes, in: canvas)
+    }
+    
+    func askStereamed(prompt: String, nodes: [Node], in canvas: Canvas) -> LanguageModelSession.ResponseStream<String> {
+        let nodeSchema = nodes.map { $0.toSchema() }
+        let session = LanguageModelSession(model: model, instructions: """
+            You are an AI expert that operates a structured mind map.
+            Yout main task is to answer question about canvas.
+            """
+        )
         
-        for (i, index) in otherIndices.enumerated() {
-            let angle = (2 * Float.pi * Float(i)) / Float(count)
-            
-            let x = radius * cos(angle)
-            let y = radius * sin(angle)
-            
-            nodes[index].position = Position3DSchema(
-                x: x,
-                y: y,
-                z: 0
-            )
-        }
+        return session.streamResponse(to: prompt)
     }
 }
