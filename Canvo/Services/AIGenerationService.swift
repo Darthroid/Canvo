@@ -41,7 +41,7 @@ class AIGenerationService {
                     
                     // Connect child nodes to main idea node
                     canvas.connections = childNodes.map {
-                        .init(id: UUID().uuidString, fromNodeId: $0.id, toNodeId: mainIdea.id)
+                        .init(id: UUID().uuidString, fromNodeId: mainIdea.id, toNodeId: $0.id)
                     }
                     
                     // Position nodes aroind main idea node
