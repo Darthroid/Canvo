@@ -234,7 +234,7 @@ private extension EditCanvasView {
     func submit() {
         switch mode {
         case .create:
-            appModel.createCanvas(name: name)
+            appModel.createCanvasAction(name: name)
             dismiss()
             
         case .aiCreate:
@@ -243,7 +243,7 @@ private extension EditCanvasView {
             
         case .edit:
             guard let editCanvas else { return }
-            appModel.renameCanvas(id: editCanvas.id, name: name)
+            appModel.renameCanvasAction(id: editCanvas.id, newName: name)
             dismiss()
         }
     }
@@ -263,7 +263,7 @@ private extension EditCanvasView {
                 }
                 
                 if let canvas = finalCanvas {
-                    appModel.addCanvas(canvas)
+                    appModel.addCanvasFromAIAction(canvas)
                     dismiss()
                 }
             } catch {

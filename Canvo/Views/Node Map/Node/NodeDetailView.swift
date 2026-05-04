@@ -64,10 +64,21 @@ struct NodeDetailView: View {
                                 Spacer()
 
                                 Button(role: .destructive) {
-                                    appModel.removeConnectionsBetween(
-                                        connectedNode,
-                                        and: node
+                                    
+                                    guard let connection = appModel.connections.first(where: {
+                                        ($0.fromNodeId == connectedNode.id && $0.toNodeId == node.id) ||
+                                        ($0.fromNodeId == node.id && $0.toNodeId == connectedNode.id)
+                                    }) else { return }
+                                    
+                                    let snapshot = ConnectionSnapshot(
+                                        id: connection.id,
+                                        fromNodeId: connection.fromNodeId,
+                                        toNodeId: connection.toNodeId
                                     )
+                                    
+                                    let action = RemoveConnectionAction(connection: snapshot)
+                                    appModel.actionService.perform(action)
+                                    
                                 } label: {
                                     Image(systemName: "xmark")
                                 }
@@ -137,7 +148,15 @@ struct NodeDetailView: View {
             ) {
                 Button("Delete", role: .destructive) {
                     dismiss()
-                    appModel.removeNode(node)
+                    
+                    let snapshot = appModel.makeNodeSnapshotWithConnections(node)
+                    
+                    let action = RemoveNodeAction(
+                        node: snapshot.node,
+                        connections: snapshot.connections
+                    )
+                    
+                    appModel.actionService.perform(action)
                 }
 
                 Button(role: .cancel) {}

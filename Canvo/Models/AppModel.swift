@@ -18,6 +18,8 @@ final class AppModel: Sendable {
         container?.mainContext
     }
     
+    var actionService = ActionService()
+    
     var canvases: [Canvas] = []
     private(set) var currentCanvas: Canvas?
     var selectedNodeId: String?
@@ -67,11 +69,10 @@ final class AppModel: Sendable {
             configurations: configuration
         )
         
+        actionService.set(model: self)
         fetchCanvases()
 //        fetchTags()
     }
-    
-    // MARK: - Canvas Management
     
     func fetchCanvases() {
         do {
@@ -85,33 +86,9 @@ final class AppModel: Sendable {
         }
     }
     
-    func addCanvas(_ canvas: Canvas) {
-        context?.insert(canvas)
-        save()
-        
-        fetchCanvases()
-    }
-    
-    func createCanvas(name: String) {
-        let canvas = Canvas(name: name)
-        context?.insert(canvas)
-        save()
-        
-        fetchCanvases()
-        currentCanvas = canvas
-    }
-    
-    func renameCanvas(id: String, name: String) {
-        if let objectToUpdate = try? context?.fetch(
-            FetchDescriptor<Canvas>(predicate: #Predicate { $0.id == id })
-        ).first {
-            objectToUpdate.name = name
-            objectToUpdate.updatedAt = Date()
-        }
-        save()
-    }
-    
     func switchToCanvas(_ canvas: Canvas) {
+        actionService.clear()
+        
         currentCanvas = canvas
         
         selectedNodeId = nil
@@ -124,41 +101,6 @@ final class AppModel: Sendable {
         
         currentCanvas?.nodes = _nodes
     }
-    
-    func removeCanvas(_ canvas: Canvas) {
-        CanvasPreviewService.shared.removePreview(for: canvas)
-        context?.delete(canvas)
-        save()
-        fetchCanvases()
-        
-        if currentCanvas?.id == canvas.id {
-            currentCanvas = nil
-        }
-    }
-    
-    func removeCanvas(at indexSet: IndexSet) {
-        let canvasesToDelete = canvases.enumerated()
-            .filter { indexSet.contains($0.offset) }
-            .map { $0.element }
-        
-        canvasesToDelete.forEach {
-            removeCanvas($0)
-            CanvasPreviewService.shared.removePreview(for: $0)
-        }
-    }
-    
-    func setPin(_ isPinned: Bool, forCanvas canvas: Canvas) {
-        canvas.isPined = isPinned
-        save()
-    }
-    
-    func updateCanvasName(_ canvas: Canvas, newName: String) {
-        canvas.name = newName
-        canvas.updatedAt = Date()
-        save()
-    }
-    
-    // MARK: - Node Management (with canvas context)
     
     func node(forId id: String) -> Node? {
         return nodes.first(where: { $0.id == id })
@@ -181,175 +123,9 @@ final class AppModel: Sendable {
         
         return connectedNodes
     }
-    
-    func addNode(_ node: Node) {
-        guard let currentCanvas = currentCanvas else { return }
-        
-        node.canvas = currentCanvas
-        context?.insert(node)
-        save()
-    }
-    
-    func addNodes(_ nodes: [Node]) {
-        guard let currentCanvas = currentCanvas else { return }
-        
-        nodes.forEach {
-            $0.canvas = currentCanvas
-            context?.insert($0)
-        }
-        save()
-    }
-    
-    func addNode(name: String, detail: String, position: (x: Float, y: Float, z: Float)?, color: String? = nil, tagsRaw: String? = nil) {
-        guard let currentCanvas = currentCanvas else { return }
-        
-        let position = position ?? (0, 1.0, -1.5)
-        
-        let tags = resolveTags(from: tagsRaw ?? "")
-        
-        let node = Node(
-            name: name,
-            detail: detail,
-            x: position.x,
-            y: position.y,
-            z: position.z,
-            color: color,
-            canvas: currentCanvas,
-            tagsRaw: tags.map(\.name).joined(separator: ",")
-        )
-        
-        context?.insert(node)
-        save()
-    }
-    
-    func updateNode(id: String, with node: Node) {
-        if let objectToUpdate = try? context?.fetch(
-            FetchDescriptor<Node>(predicate: #Predicate { $0.id == id })
-        ).first {
-            objectToUpdate.x = node.x
-            objectToUpdate.y = node.y
-            objectToUpdate.z = node.z
-            objectToUpdate.name = node.name
-            objectToUpdate.detail = node.detail
-            objectToUpdate.colorRaw = node.colorRaw
-        }
-        save()
-    }
-    
-    func updateNode(id: String, name: String, detail: String, color: String? = nil, tagsRaw: String? = nil) {
-        if let objectToUpdate = try? context?.fetch(
-            FetchDescriptor<Node>(predicate: #Predicate { $0.id == id })
-        ).first {
-            objectToUpdate.name = name
-            objectToUpdate.detail = detail
-            objectToUpdate.colorRaw = color
-            objectToUpdate.tagsRaw = resolveTags(from: tagsRaw ?? "").map(\.name).joined(separator: ",")
-        }
-        save()
-    }
-    
-    func removeNode(at indexSet: IndexSet) {
-        let nodesToDelete = nodes.enumerated()
-            .filter { indexSet.contains($0.offset) }
-            .map { $0.element }
-        
-        nodesToDelete.forEach { removeNode($0) }
-    }
-    
-    func removeNode(_ node: Node) {
-        let nodeId = node.id
-        context?.delete(node)
-        
-        // Delete connections involving this node
-        try? context?.delete(model: NodeConnection.self, where: #Predicate<NodeConnection> { item in
-            (item.fromNodeId == nodeId || item.toNodeId == nodeId) && item.canvas?.id == currentCanvas?.id
-        })
-        save()
-    }
-    
-    func updatePosition(for nodeId: String, newPosition: SIMD3<Float>) {
-        if let objectToUpdate = try? context?.fetch(
-            FetchDescriptor<Node>(predicate: #Predicate { $0.id == nodeId })
-        ).first {
-            objectToUpdate.x = newPosition.x
-            objectToUpdate.y = newPosition.y
-            objectToUpdate.z = newPosition.z
-        }
-        save()
-    }
-    
-    // MARK: - Connection Management
-    
-    func addConnections(_ connections: [NodeConnection]) {
-        guard let currentCanvas = currentCanvas else { return }
-        
-        connections.forEach {
-            $0.canvas = currentCanvas
-            context?.insert($0)
-        }
-        
-        save()
-    }
-    
-    func addConnection(_ connection: NodeConnection) {
-//        guard let currentCanvas = currentCanvas else { return }
-        
-        context?.insert(connection)
-        save()
-    }
-    
-    func addConnection(from fromNodeId: String, to toNodeId: String) {
-        guard let currentCanvas = currentCanvas,
-              fromNodeId != toNodeId,
-              nodes.contains(where: { $0.id == fromNodeId }),
-              nodes.contains(where: { $0.id == toNodeId }) else { return }
-        
-        guard !connections.contains(where: {
-            ($0.fromNodeId == fromNodeId && $0.toNodeId == toNodeId) ||
-            ($0.fromNodeId == toNodeId && $0.toNodeId == fromNodeId)
-        }) else { return }
-        
-        let connection = NodeConnection(
-            fromNodeId: fromNodeId,
-            toNodeId: toNodeId,
-            canvas: currentCanvas
-        )
-        context?.insert(connection)
-        save()
-    }
-    
-    func removeConnectionsBetween(_ node1: Node, and node2: Node) {
-        let connections = connections.filter {
-            ($0.fromNodeId == node1.id && $0.toNodeId == node2.id) ||
-            ($0.fromNodeId == node2.id && $0.toNodeId == node1.id)
-        }
-        
-        connections.forEach { removeConnection($0) }
-    }
-    
-    func removeConnection(_ connection: NodeConnection) {
-        context?.delete(connection)
-        save()
-    }
-    
-    func removeConnection(nodeId: String) {
-        if let connection = connections.first(where: { $0.fromNodeId == nodeId || $0.toNodeId == nodeId }) {
-            removeConnection(connection)
-        }
-    }
-    
+
     // MARK: - Tags Management
-    
-//    func fetchTags() {
-//        do {
-//            let descriptor = FetchDescriptor<Tag>()
-//            tags = try context?.fetch(descriptor) ?? []
-//        } catch {
-//            print("Failed to fetch canvases: \(error)")
-//            tags = []
-//        }
-//    }
-    
+
     func resolveTags(from rawText: String) -> [Tag] {
 
         let names = Set(rawText.parseTags())
@@ -373,19 +149,6 @@ final class AppModel: Sendable {
         return result
     }
     
-    func updateNodeTags(nodeId: String, rawTags: String) {
-        guard
-            let context,
-            let node = try? context.fetch(
-                FetchDescriptor<Node>(predicate: #Predicate { $0.id == nodeId })
-            ).first
-        else { return }
-
-        let tags = resolveTags(from: rawTags)
-        node.tagsRaw = tags.map(\.name).joined(separator: ",")
-
-        save()
-    }
     
     /// Called from the menu when a tag button is tapped
     func toggleTag(_ tag: Tag) {
@@ -416,8 +179,11 @@ final class AppModel: Sendable {
         
 //        fetchTags()
     }
-    
-    // MARK: - Outline
+}
+
+// MARK: - Outline
+
+extension AppModel {
     
     func buildChildrenMap(connections: [NodeConnection]) -> [String: [String]] {
         var map: [String: [String]] = [:]
@@ -491,6 +257,436 @@ final class AppModel: Sendable {
                 nodeDict: nodeDict,
                 childrenMap: childrenMap
             )
+        }
+    }
+}
+
+
+// MARK: - Public API
+
+extension AppModel {
+    
+    // MARK: Canvas actions
+    
+    func createCanvasAction(name: String) {
+        let id = UUID().uuidString
+        
+        let action = CreateCanvasAction(
+            canvasId: id,
+            name: name
+        )
+        
+        actionService.perform(action)
+        
+        currentCanvas = canvasEntity(id: id)
+    }
+    
+    func addCanvasFromAIAction(_ canvas: Canvas) {
+        actionService.beginBatch()
+        
+        // 1. canvas
+        let createCanvas = CreateCanvasAction(
+            canvasId: canvas.id,
+            name: canvas.name
+        )
+        actionService.perform(createCanvas)
+        
+        // 2. nodes
+        for node in canvas.nodes ?? [] {
+            let snapshot = NodeSnapshot(
+                id: node.id,
+                name: node.name,
+                detail: node.detail,
+                x: node.x,
+                y: node.y,
+                z: node.z,
+                color: node.colorRaw,
+                tagsRaw: node.tagsRaw
+            )
+            
+            actionService.perform(AddNodeAction(node: snapshot))
+        }
+        
+        // 3. connections
+        for conn in canvas.connections ?? [] {
+            let snapshot = ConnectionSnapshot(
+                id: conn.id,
+                fromNodeId: conn.fromNodeId,
+                toNodeId: conn.toNodeId
+            )
+            
+            actionService.perform(AddConnectionAction(connection: snapshot))
+        }
+        
+        actionService.endBatch()
+        
+        currentCanvas = canvas
+    }
+    
+    func renameCanvasAction(id: String, newName: String) {
+        guard let canvas = canvasEntity(id: id) else { return }
+        
+        let action = RenameCanvasAction(
+            canvasId: id,
+            oldName: canvas.name,
+            newName: newName
+        )
+        
+        actionService.perform(action)
+    }
+    
+    func deleteCanvasAction(_ canvas: Canvas) {
+        let snapshot = makeCanvasSnapshot(canvas)
+        
+        let action = DeleteCanvasAction(snapshot: snapshot)
+        
+        actionService.perform(action)
+    }
+    
+    func deleteCanvasIdAction(_ id: String) {
+        guard let canvas = canvasEntity(id: id) else { return }
+        let snapshot = makeCanvasSnapshot(canvas)
+        
+        let action = DeleteCanvasAction(snapshot: snapshot)
+        
+        actionService.perform(action)
+    }
+    
+    func toggleCanvasPinAction(_ canvas: Canvas) {
+        let action = TogglePinCanvasAction(
+            canvasId: canvas.id,
+            oldValue: canvas.isPined,
+            newValue: !canvas.isPined
+        )
+        
+        actionService.perform(action)
+    }
+    
+    func makeNodeSnapshotWithConnections(_ node: Node) -> (node: NodeSnapshot, connections: [ConnectionSnapshot]) {
+        
+        let nodeSnapshot = NodeSnapshot(
+            id: node.id,
+            name: node.name,
+            detail: node.detail,
+            x: node.x,
+            y: node.y,
+            z: node.z,
+            color: node.colorRaw,
+            tagsRaw: node.tagsRaw
+        )
+        
+        let connections = connections
+            .filter { $0.fromNodeId == node.id || $0.toNodeId == node.id }
+            .map {
+                ConnectionSnapshot(
+                    id: $0.id,
+                    fromNodeId: $0.fromNodeId,
+                    toNodeId: $0.toNodeId
+                )
+            }
+        
+        return (nodeSnapshot, connections)
+    }
+}
+
+// MARK: - Internal Helpers
+
+extension AppModel {
+    func nodeEntity(id: String) -> Node? {
+        try? context?.fetch(
+            FetchDescriptor<Node>(
+                predicate: #Predicate { $0.id == id }
+            )
+        ).first
+    }
+
+    func connectionEntity(id: String) -> NodeConnection? {
+        try? context?.fetch(
+            FetchDescriptor<NodeConnection>(
+                predicate: #Predicate { $0.id == id }
+            )
+        ).first
+    }
+
+    func canvasEntity(id: String) -> Canvas? {
+        try? context?.fetch(
+            FetchDescriptor<Canvas>(
+                predicate: #Predicate { $0.id == id }
+            )
+        ).first
+    }
+}
+
+extension AppModel {
+    // MARK: - Canvas actions
+    
+    func makeCanvasSnapshot(_ canvas: Canvas) -> CanvasSnapshot {
+        let nodes = (canvas.nodes ?? []).map {
+            NodeSnapshot(
+                id: $0.id,
+                name: $0.name,
+                detail: $0.detail,
+                x: $0.x,
+                y: $0.y,
+                z: $0.z,
+                color: $0.colorRaw,
+                tagsRaw: $0.tagsRaw
+            )
+        }
+        
+        let connections = (canvas.connections ?? []).map {
+            ConnectionSnapshot(
+                id: $0.id,
+                fromNodeId: $0.fromNodeId,
+                toNodeId: $0.toNodeId
+            )
+        }
+        
+        let tags = (canvas.tags ?? []).map(\.name)
+        
+        return CanvasSnapshot(
+            id: canvas.id,
+            name: canvas.name,
+            isPinned: canvas.isPined,
+            nodes: nodes,
+            connections: connections,
+            tags: tags
+        )
+    }
+    
+    func insertCanvasInternal(id: String, name: String) {
+        let canvas = Canvas(id: id, name: name)
+        context?.insert(canvas)
+        
+        fetchCanvases()
+    }
+    
+    func removeCanvasInternal(id: String) {
+        guard let canvas = canvasEntity(id: id) else { return }
+        
+        context?.delete(canvas)
+        
+        if currentCanvas?.id == id {
+            currentCanvas = nil
+        }
+        
+        fetchCanvases()
+    }
+    
+    func restoreCanvasInternal(_ snapshot: CanvasSnapshot) {
+        let canvas = Canvas(
+            id: snapshot.id,
+            name: snapshot.name
+        )
+        
+        canvas.isPined = snapshot.isPinned
+        
+        context?.insert(canvas)
+        
+        currentCanvas = canvas
+        
+        // tags
+        for tagName in snapshot.tags {
+            let tag = Tag(name: tagName, canvas: canvas)
+            context?.insert(tag)
+        }
+        
+        // nodes
+        for node in snapshot.nodes {
+            let n = Node(
+                id: node.id,
+                name: node.name,
+                detail: node.detail,
+                x: node.x,
+                y: node.y,
+                z: node.z,
+                color: node.color,
+                canvas: canvas,
+                tagsRaw: node.tagsRaw
+            )
+            context?.insert(n)
+        }
+        
+        // connections
+        for conn in snapshot.connections {
+            let c = NodeConnection(
+                id: conn.id,
+                fromNodeId: conn.fromNodeId,
+                toNodeId: conn.toNodeId,
+                canvas: canvas
+            )
+            context?.insert(c)
+        }
+        
+        fetchCanvases()
+    }
+    
+    func setPinInternal(canvasId: String, value: Bool) {
+        guard let canvas = canvasEntity(id: canvasId) else { return }
+        
+        canvas.isPined = value
+        canvas.updatedAt = Date()
+    }
+    
+    func renameCanvasInternal(id: String, name: String) {
+        guard let canvas = canvasEntity(id: id) else { return }
+        
+        canvas.name = name
+        canvas.updatedAt = Date()
+    }
+    
+    // MARK: - Nodes actions
+    
+    func insertNodeInternal(_ snapshot: NodeSnapshot) {
+        guard let currentCanvas else { return }
+        
+        let node = Node(
+            id: snapshot.id,
+            name: snapshot.name,
+            detail: snapshot.detail,
+            x: snapshot.x,
+            y: snapshot.y,
+            z: snapshot.z,
+            color: snapshot.color,
+            canvas: currentCanvas,
+            tagsRaw: snapshot.tagsRaw
+        )
+        
+        context?.insert(node)
+        
+        save()
+    }
+    
+    func updateNodeInternal(from snapshot: NodeSnapshot) {
+        guard let node = nodeEntity(id: snapshot.id) else { return }
+        
+        node.name = snapshot.name
+        node.detail = snapshot.detail
+        node.x = snapshot.x
+        node.y = snapshot.y
+        node.z = snapshot.z
+        node.colorRaw = snapshot.color
+        node.tagsRaw = snapshot.tagsRaw
+        
+        save()
+    }
+    
+    func removeNodeInternal(id: String) {
+        guard let node = nodeEntity(id: id) else { return }
+        
+        context?.delete(node)
+        
+        // удалить связанные коннекты
+        try? context?.delete(
+            model: NodeConnection.self,
+            where: #Predicate<NodeConnection> {
+                $0.fromNodeId == id || $0.toNodeId == id
+            }
+        )
+    }
+    
+    func updateNodeContentInternal(_ snapshot: NodeSnapshot) {
+        guard let node = nodeEntity(id: snapshot.id) else { return }
+        
+        node.name = snapshot.name
+        node.detail = snapshot.detail
+        node.colorRaw = snapshot.color
+        node.tagsRaw = snapshot.tagsRaw
+        
+        save()
+    }
+    
+    func updatePositionInternal(nodeId: String, position: SIMD3<Float>) {
+        guard let node = nodeEntity(id: nodeId) else { return }
+        
+        node.x = position.x
+        node.y = position.y
+        node.z = position.z
+        
+        save()
+    }
+    
+    // MARK: - Connection actions
+    
+    func insertConnectionInternal(_ snapshot: ConnectionSnapshot) {
+        guard let currentCanvas else { return }
+        
+        let connection = NodeConnection(
+            id: snapshot.id,
+            fromNodeId: snapshot.fromNodeId,
+            toNodeId: snapshot.toNodeId,
+            canvas: currentCanvas
+        )
+        
+        context?.insert(connection)
+    }
+    
+    func insertConnectionsInternal(_ snapshots: [ConnectionSnapshot]) {
+        guard let currentCanvas else { return }
+        
+        for s in snapshots {
+            let c = NodeConnection(
+                id: s.id,
+                fromNodeId: s.fromNodeId,
+                toNodeId: s.toNodeId,
+                canvas: currentCanvas
+            )
+            context?.insert(c)
+        }
+    }
+    
+    func removeConnectionInternal(id: String) {
+        guard let connection = connectionEntity(id: id) else { return }
+        
+        context?.delete(connection)
+    }
+    
+    func replaceConnectionsInternal(_ newConnections: [ConnectionSnapshot]) {
+        guard let currentCanvas else { return }
+        
+        // удалить все
+        try? context?.delete(model: NodeConnection.self, where: #Predicate<NodeConnection> { item in
+            (item.canvas?.id ?? "") == currentCanvas.id
+        })
+        
+        // вставить новые
+        insertConnectionsInternal(newConnections)
+    }
+    
+    // MARK: - Tags actions
+    
+    // FIXME: TAGS currently not working
+    func updateNodeTagsInternal(nodeId: String, raw: String) {
+        guard let node = nodeEntity(id: nodeId) else { return }
+        
+        let tags = resolveTags(from: raw)
+        node.tagsRaw = tags.map(\.name).joined(separator: ",")
+    }
+    
+    func createTagInternal(name: String) {
+        guard let currentCanvas else { return }
+        
+        let exists = currentCanvas.tags?.contains(where: { $0.name == name }) ?? false
+        guard !exists else { return }
+        
+        let tag = Tag(name: name, canvas: currentCanvas)
+        context?.insert(tag)
+    }
+    
+    func deleteTagInternal(name: String) {
+        guard let currentCanvas else { return }
+        
+        guard let tag = currentCanvas.tags?.first(where: { $0.name == name }) else { return }
+        
+        context?.delete(tag)
+        
+        // очистить у нод
+        for node in currentCanvas.nodes ?? [] {
+            let tags = (node.tagsRaw ?? "")
+                .components(separatedBy: ",")
+                .filter { $0 != name }
+            
+            node.tagsRaw = tags.joined(separator: ",")
         }
     }
 }

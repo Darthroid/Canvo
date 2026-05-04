@@ -107,50 +107,26 @@ extension Node {
     }
 }
 
-@Model
-class NodeConnection: Identifiable, Equatable {
-//    @Attribute(.unique)
-    var id: String = UUID().uuidString
-    var fromNodeId: String = ""
-    var toNodeId: String = ""
-    
-    var canvas: Canvas?
-    
-    init(id: String = UUID().uuidString, fromNodeId: String, toNodeId: String, canvas: Canvas? = nil) {
-        self.id = id
-        self.fromNodeId = fromNodeId
-        self.toNodeId = toNodeId
-        self.canvas = canvas
+extension Node: NSCopying {
+    func copy(with zone: NSZone? = nil) -> Any {
+        return Node(
+            id: self.id,
+            name: self.name,
+            detail: self.detail,
+            x: self.x,
+            y: self.y,
+            z: self.z,
+            color: self.colorRaw,
+            canvas: self.canvas,
+            tagsRaw: self.tagsRaw
+        )
     }
 }
 
-extension NodeConnection {
-    @available(iOS 26.0, macOS 26.0, visionOS 26.0, *)
-    func toSchema() -> NodeConnectionSchema {
-        .init(
-            id: id,
-            fromNodeId: fromNodeId,
-            toNodeId: toNodeId
-        )
-    }
-    
-    @available(iOS 26.0, macOS 26.0, visionOS 26.0, *)
-    convenience init(from schema: NodeConnectionSchema, canvas: Canvas? = nil) {
-        self.init(
-            id: schema.id,
-            fromNodeId: schema.fromNodeId,
-            toNodeId: schema.toNodeId,
-            canvas: canvas
-        )
-    }
-}
 
 #if os(visionOS)
 struct NodeDataComponent: Component {
     let node: Node
 }
 
-struct ConnectionDataComponent: Component {
-    let connection: NodeConnection
-}
 #endif

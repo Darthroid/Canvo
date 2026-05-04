@@ -63,15 +63,7 @@ struct CreateNodeView: View {
 
                 ToolbarItem(placement: .confirmationAction) {
                     Button(role: .confirm) {
-                        appModel.addNode(
-                            name: name,
-                            detail: detail,
-                            position: position.map {
-                                (x: $0.x, y: $0.y, z: $0.z)
-                            },
-                            color: color.toHex(includeAlpha: true),
-                            tagsRaw: tagsRaw
-                        )
+                        createNode()
                         dismiss()
                     }
                     .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -83,5 +75,26 @@ struct CreateNodeView: View {
                 }
             }
         }
+    }
+    
+    private func createNode() {        
+        let id = UUID().uuidString
+        
+        let positionValue = position ?? SIMD3<Float>(0, 1.0, -1.5)
+        
+        let snapshot = NodeSnapshot(
+            id: id,
+            name: name,
+            detail: detail,
+            x: positionValue.x,
+            y: positionValue.y,
+            z: positionValue.z,
+            color: color.toHex(includeAlpha: true),
+            tagsRaw: tagsRaw
+        )
+        
+        let action = AddNodeAction(node: snapshot)
+        
+        appModel.actionService.perform(action)
     }
 }

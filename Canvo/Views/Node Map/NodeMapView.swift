@@ -15,6 +15,9 @@ struct NodeMapView: View {
     @Environment(\.dismissImmersiveSpace) var dismissImmersiveSpace
 #endif
     
+    @State private var dragStartPositions: [String: SIMD3<Float>] = [:]
+    @State private var draggedNodeIds: Set<String> = []
+    
     @State private var scale: CGFloat = 1.0
     @State private var baseScale: CGFloat = 1.0
     @State private var offset: CGSize = .zero
@@ -164,6 +167,7 @@ struct NodeMapView: View {
     
     var canvas: some View {
         ZStack {
+            
             ZStack {
                 GridLayer()
                 
@@ -318,6 +322,23 @@ struct NodeMapView: View {
                 }
             }
             .toolbar {
+                ToolbarItemGroup(placement: .topBarLeading) {
+                    Button {
+                        appModel.actionService.undo()
+                    } label: {
+                        Image(systemName: "arrow.uturn.left")
+                    }
+                    .disabled(!appModel.actionService.canUndo)
+
+                    Button {
+                        appModel.actionService.redo()
+                    } label: {
+                        Image(systemName: "arrow.uturn.right")
+                    }
+                    .disabled(!appModel.actionService.canRedo)
+                }
+
+                
                 ToolbarItem(placement: .title) {
                     VStack {
                         Text(appModel.currentCanvas?.name ?? "Canvo")
@@ -366,13 +387,40 @@ struct NodeMapView: View {
                     }
                     
                     // ai edit
-//                    if AIGenerationService.shared.isAvailable {
+                    if AIGenerationService.shared.isAvailable {
+                        
+                        
+                        Menu {
+                            Button {
+                                showAIEditCanvas = true
+                            } label: {
+                                Text("Extend")
+                            }
+                            
+                            Button {
+                                showAIEditCanvas = true
+                            } label: {
+                                Text("Summarize")
+                            }
+                            
+                            Divider()
+                            
+                            Button {
+                                showAIEditCanvas = true
+                            } label: {
+                                Text("Enter your question")
+                            }
+                        } label: {
+                            Image(systemName: "sparkles")
+                        }
+
+                        
 //                        Button {
 //                            showAIEditCanvas = true
 //                        } label: {
 //                            Image(systemName: "sparkles")
 //                        }
-//                    }
+                    }
                 }
                 
                 ToolbarSpacer(.flexible, placement: .bottomBar)
@@ -389,16 +437,7 @@ struct NodeMapView: View {
                     .clipShape(Capsule())
                     .tint(.accent)
                 }
-                
-//                ToolbarItem(placement: .topBarLeading) {
-//                    Button {
-//                        withAnimation {
-//                            showOutline.toggle()
-//                        }
-//                    } label: {
-//                        Image(systemName: "list.bullet.indent")
-//                    }
-//                }
+
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     
 #if os(visionOS)
@@ -541,17 +580,39 @@ extension NodeMapView {
     private func nodeDrag(_ node: Node) -> some Gesture {
         DragGesture(coordinateSpace: .named("canvas"))
             .onChanged { v in
-                let dx = (v.translation.width - lastDragTranslation.width) / scale
-                let dy = (v.translation.height - lastDragTranslation.height) / scale
                 
-                node.x += Float(dx)
-                node.y += Float(dy)
+                // 1. init snapshot once
+                if dragStartPositions[node.id] == nil {
+                    dragStartPositions[node.id] = SIMD3(node.x, node.y, node.z)
+                }
                 
-                lastDragTranslation = v.translation
+                draggedNodeIds.insert(node.id)
+                
+                let dx = Float(v.translation.width) / Float(scale)
+                let dy = Float(v.translation.height) / Float(scale)
+                
+                let start = dragStartPositions[node.id] ?? SIMD3(node.x, node.y, node.z)
+                
+                // UI-only preview (NO persistence)
+                node.x = start.x + dx
+                node.y = start.y + dy
             }
             .onEnded { _ in
-                lastDragTranslation = .zero
-                appModel.save()
+                
+                guard let start = dragStartPositions[node.id] else { return }
+                
+                let end = SIMD3(node.x, node.y, node.z)
+                
+                let action = MoveNodeAction(
+                    nodeId: node.id,
+                    oldPosition: start,
+                    newPosition: end
+                )
+                
+                appModel.actionService.perform(action)
+                
+                dragStartPositions.removeValue(forKey: node.id)
+                draggedNodeIds.remove(node.id)
             }
     }
     

@@ -71,32 +71,94 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "66D29850-DFC5-4F14-A2FF-709E08364B5F"
+            uuid = "61607F37-5B95-4D44-8A5E-A960DA42FCA4"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "Canvo/Models/AppModel.swift"
+            filePath = "Canvo/Views/Node Map/Node/CreateNodeView.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "125"
-            endingLineNumber = "125"
-            landmarkName = "switchToCanvas(_:)"
+            startingLineNumber = "32"
+            endingLineNumber = "32"
+            landmarkName = "body"
+            landmarkType = "24">
+            <Locations>
+               <Location
+                  uuid = "61607F37-5B95-4D44-8A5E-A960DA42FCA4 - bd23af71af0218f6"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "closure #1 () -&gt; SwiftUI.TupleView&lt;(SwiftUI.Section&lt;SwiftUI.EmptyView, &lt;&lt;opaque return type of SwiftUI.View.textInputAutocapitalization(Swift.Optional&lt;SwiftUI.TextInputAutocapitalization&gt;) -&gt; some&gt;&gt;.0, SwiftUI.EmptyView&gt;, SwiftUI.Section&lt;SwiftUI.EmptyView, &lt;&lt;opaque return type of SwiftUI.View.lineLimit(Swift.ClosedRange&lt;Swift.Int&gt;) -&gt; some&gt;&gt;.0, SwiftUI.EmptyView&gt;, SwiftUI.Section&lt;SwiftUI.EmptyView, SwiftUI.ColorPicker&lt;SwiftUI.Text&gt;, SwiftUI.EmptyView&gt;, SwiftUI.Section&lt;SwiftUI.EmptyView, &lt;&lt;opaque return type of SwiftUI.View.autocorrectionDisabled(Swift.Bool) -&gt; some&gt;&gt;.0, SwiftUI.EmptyView&gt;)&gt; in closure #1 () -&gt; &lt;&lt;opaque return type of SwiftUI.View.onAppear(perform: Swift.Optional&lt;() -&gt; ()&gt;) -&gt; some&gt;&gt;.0 in Canvo.CreateNodeView.body.getter : some"
+                  moduleName = "Canvo.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/olegkomaristy/Work/nodes-demo/Canvo/Views/Node%20Map/Node/CreateNodeView.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "32"
+                  endingLineNumber = "32">
+               </Location>
+               <Location
+                  uuid = "61607F37-5B95-4D44-8A5E-A960DA42FCA4 - 66f1dffeb24eddf1"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "closure #2 () -&gt; &lt;&lt;opaque return type of SwiftUI.View.lineLimit(Swift.ClosedRange&lt;Swift.Int&gt;) -&gt; some&gt;&gt;.0 in closure #1 () -&gt; SwiftUI.TupleView&lt;(SwiftUI.Section&lt;SwiftUI.EmptyView, &lt;&lt;opaque return type of SwiftUI.View.textInputAutocapitalization(Swift.Optional&lt;SwiftUI.TextInputAutocapitalization&gt;) -&gt; some&gt;&gt;.0, SwiftUI.EmptyView&gt;, SwiftUI.Section&lt;SwiftUI.EmptyView, &lt;&lt;opaque return type of SwiftUI.View.lineLimit(Swift.ClosedRange&lt;Swift.Int&gt;) -&gt; some&gt;&gt;.0, SwiftUI.EmptyView&gt;, SwiftUI.Section&lt;SwiftUI.EmptyView, SwiftUI.ColorPicker&lt;SwiftUI.Text&gt;, SwiftUI.EmptyView&gt;, SwiftUI.Section&lt;SwiftUI.EmptyView, &lt;&lt;opaque return type of SwiftUI.View.autocorrectionDisabled(Swift.Bool) -&gt; some&gt;&gt;.0, SwiftUI.EmptyView&gt;)&gt; in closure #1 () -&gt; &lt;&lt;opaque return type of SwiftUI.View.onAppear(perform: Swift.Optional&lt;() -&gt; ()&gt;) -&gt; some&gt;&gt;.0 in Canvo.CreateNodeView.body.getter : some"
+                  moduleName = "Canvo.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/olegkomaristy/Work/nodes-demo/Canvo/Views/Node%20Map/Node/CreateNodeView.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "34"
+                  endingLineNumber = "34">
+               </Location>
+            </Locations>
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "984DCA71-6A53-4F66-A81E-035E008F5456"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "Canvo/Views/Node Map/NodeMapView.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "602"
+            endingLineNumber = "602"
+            landmarkName = "nodeDrag(_:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "D341B843-D49D-4944-ADA9-BEB5B03372C7"
+            uuid = "3420AD6B-39E0-49CE-8621-AE417B7549BC"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "Canvo/Views/Canvas List/EditCanvasView.swift"
+            filePath = "Canvo/Models/AppModel.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "261"
-            endingLineNumber = "261"
-            landmarkName = "generateCanvasStream()"
+            startingLineNumber = "600"
+            endingLineNumber = "600"
+            landmarkName = "updatePositionInternal(nodeId:position:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "74BCA3DA-53B8-43F7-ADD6-AB42DE5F7024"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "Canvo/Models/AppModel.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "660"
+            endingLineNumber = "660"
+            landmarkName = "updateNodeTagsInternal(nodeId:raw:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
