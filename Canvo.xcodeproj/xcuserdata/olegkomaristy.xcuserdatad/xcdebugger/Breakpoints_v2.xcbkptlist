@@ -140,8 +140,8 @@
             filePath = "Canvo/Models/AppModel.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "600"
-            endingLineNumber = "600"
+            startingLineNumber = "631"
+            endingLineNumber = "631"
             landmarkName = "updatePositionInternal(nodeId:position:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -156,8 +156,8 @@
             filePath = "Canvo/Models/AppModel.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "660"
-            endingLineNumber = "660"
+            startingLineNumber = "691"
+            endingLineNumber = "691"
             landmarkName = "updateNodeTagsInternal(nodeId:raw:)"
             landmarkType = "7">
          </BreakpointContent>

@@ -43,8 +43,8 @@ final class AppModel: Sendable {
 
         // A node is visible if **any** of its tags is in the selected set
         return nodes.filter { node in
-            let tags = (node.tagsRaw ?? "").components(separatedBy: ",")
-            return !Set(tags).isDisjoint(with: selectedTags.map(\.name))
+            let tags = Set((node.tagsRaw ?? "").parseTags())
+            return !tags.isDisjoint(with: selectedTags.map(\.name))
         }
     }
     
@@ -147,6 +147,31 @@ final class AppModel: Sendable {
         }
 
         return result
+    }
+    
+    func recomputeCanvasTags(canvasId: String) {
+        guard let canvas = canvasEntity(id: canvasId) else { return }
+        
+        let nodes = canvas.nodes ?? []
+        
+        // 1. собрать все теги из нод
+        let allTags: Set<String> = Set(
+            nodes
+                .flatMap { ($0.tagsRaw ?? "").parseTags() }
+        )
+        
+        // 2. удалить старые
+        for tag in canvas.tags ?? [] {
+            context?.delete(tag)
+        }
+        
+        // 3. создать новые
+        for name in allTags {
+            let tag = Tag(name: name, canvas: canvas)
+            context?.insert(tag)
+        }
+        
+        save()
     }
     
     
@@ -554,6 +579,7 @@ extension AppModel {
         
         context?.insert(node)
         
+        recomputeCanvasTags(canvasId: currentCanvas.id)
         save()
     }
     
@@ -572,27 +598,32 @@ extension AppModel {
     }
     
     func removeNodeInternal(id: String) {
-        guard let node = nodeEntity(id: id) else { return }
+        guard let node = nodeEntity(id: id),
+              let canvas = node.canvas else { return }
         
         context?.delete(node)
         
-        // удалить связанные коннекты
         try? context?.delete(
             model: NodeConnection.self,
             where: #Predicate<NodeConnection> {
                 $0.fromNodeId == id || $0.toNodeId == id
             }
         )
+        
+        recomputeCanvasTags(canvasId: canvas.id)
+        save()
     }
     
     func updateNodeContentInternal(_ snapshot: NodeSnapshot) {
-        guard let node = nodeEntity(id: snapshot.id) else { return }
+        guard let node = nodeEntity(id: snapshot.id),
+              let canvas = node.canvas else { return }
         
         node.name = snapshot.name
         node.detail = snapshot.detail
         node.colorRaw = snapshot.color
         node.tagsRaw = snapshot.tagsRaw
         
+        recomputeCanvasTags(canvasId: canvas.id)
         save()
     }
     
