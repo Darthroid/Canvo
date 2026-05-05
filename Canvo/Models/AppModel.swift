@@ -307,45 +307,14 @@ extension AppModel {
     }
     
     func addCanvasFromAIAction(_ canvas: Canvas) {
-        actionService.beginBatch()
         
-        // 1. canvas
-        let createCanvas = CreateCanvasAction(
-            canvasId: canvas.id,
-            name: canvas.name
-        )
+        let createCanvas = CreateAICanvasAction(canvas: canvas)
+        
         actionService.perform(createCanvas)
         
-        // 2. nodes
-        for node in canvas.nodes ?? [] {
-            let snapshot = NodeSnapshot(
-                id: node.id,
-                name: node.name,
-                detail: node.detail,
-                x: node.x,
-                y: node.y,
-                z: node.z,
-                color: node.colorRaw,
-                tagsRaw: node.tagsRaw
-            )
-            
-            actionService.perform(AddNodeAction(node: snapshot))
-        }
-        
-        // 3. connections
-        for conn in canvas.connections ?? [] {
-            let snapshot = ConnectionSnapshot(
-                id: conn.id,
-                fromNodeId: conn.fromNodeId,
-                toNodeId: conn.toNodeId
-            )
-            
-            actionService.perform(AddConnectionAction(connection: snapshot))
-        }
-        
-        actionService.endBatch()
-        
-        currentCanvas = canvas
+        currentCanvas = canvasEntity(id: canvas.id)
+
+        recomputeCanvasTags(canvasId: canvas.id)
     }
     
     func renameCanvasAction(id: String, newName: String) {
@@ -481,6 +450,12 @@ extension AppModel {
     
     func insertCanvasInternal(id: String, name: String) {
         let canvas = Canvas(id: id, name: name)
+        context?.insert(canvas)
+        
+        fetchCanvases()
+    }
+    
+    func insertCanvasInternal(canvas: Canvas) {
         context?.insert(canvas)
         
         fetchCanvases()
