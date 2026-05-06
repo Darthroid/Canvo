@@ -24,11 +24,13 @@ struct NodeMapView: View {
     @State private var lastPanTranslation: CGSize = .zero
     @State private var lastDragTranslation: CGSize = .zero
     
-    @State var showAIEditCanvas = false
-    @State var showNodeForm = false
-    @State var showtagsFilter: Bool = false
-    @State var showNodeSpace = false
-    @State var pendingNodePosition: SIMD3<Float>? = nil
+    @State private var showGrid = true
+    
+    @State private var showAIEditCanvas = false
+    @State private var showNodeForm = false
+    @State private var showtagsFilter: Bool = false
+    @State private var showNodeSpace = false
+    @State private var pendingNodePosition: SIMD3<Float>? = nil
     @State private var containerSize: CGSize = .zero
     
     @State private var searchText = ""
@@ -69,6 +71,12 @@ struct NodeMapView: View {
             )
         }
     }
+    
+    // MARK: Notifications
+    private var zoomIn = NotificationCenter.default.publisher(for: .init("zoomin"))
+    private var zoomOut = NotificationCenter.default.publisher(for: .init("zoomout"))
+    private var outline = NotificationCenter.default.publisher(for: .init("outline"))
+    private var toggleGrid = NotificationCenter.default.publisher(for: .init("togglegrid"))
     
     private func applyZoom(multiplier: CGFloat) {
         let next = scale * multiplier
@@ -169,7 +177,10 @@ struct NodeMapView: View {
         ZStack {
             
             ZStack {
-                GridLayer()
+                // Canvas grid
+                if showGrid {
+                    GridLayer()
+                }
                 
                 // Connections
                 ForEach(appModel.visibleConnections) { c in
@@ -322,23 +333,6 @@ struct NodeMapView: View {
                 }
             }
             .toolbar {
-                ToolbarItemGroup(placement: .topBarLeading) {
-                    Button {
-                        appModel.actionService.undo()
-                    } label: {
-                        Image(systemName: "arrow.uturn.left")
-                    }
-                    .disabled(!appModel.actionService.canUndo)
-
-                    Button {
-                        appModel.actionService.redo()
-                    } label: {
-                        Image(systemName: "arrow.uturn.right")
-                    }
-                    .disabled(!appModel.actionService.canRedo)
-                }
-
-                
                 ToolbarItem(placement: .title) {
                     VStack {
                         Text(appModel.currentCanvas?.name ?? "Canvo")
@@ -354,72 +348,97 @@ struct NodeMapView: View {
                 
                 DefaultToolbarItem(kind: .search, placement: .bottomBar)
                 
-                ToolbarItemGroup(placement: .bottomBar) {
-                    
-                    // outline
-                    Button {
-                        withAnimation {
-                            showOutline.toggle()
-                        }
-                    } label: {
-                        Image(systemName: "list.bullet.indent")
-                    }
-                    
-                    // tag filter
+                ToolbarItem(placement: .confirmationAction) {
                     Menu {
-                        ForEach(appModel.currentCanvas?.tags ?? [], id: \.name) { tag in
-                            Button {
-                                appModel.toggleTag(tag)
-                            } label: {
-                                Label(tag.name, systemImage: (appModel.selectedTags.contains(tag) ? "checkmark" : ""))
-                            }
+                        // undo/redo
+                        Button {
+                            appModel.actionService.undo()
+                        } label: {
+                            Label("Undo", systemImage: "arrow.uturn.left")
                         }
+                        .disabled(!appModel.actionService.canUndo)
+
+                        Button {
+                            appModel.actionService.redo()
+                        } label: {
+                            Label("Redo", systemImage: "arrow.uturn.right")
+                        }
+                        .disabled(!appModel.actionService.canRedo)
                         
                         Divider()
                         
+                        // outline
                         Button {
-                            appModel.showAllTags()
-                        } label: {
-                            Text("Show All")
-                        }
-                    } label: {
-                        Image(systemName: appModel.selectedTags.isEmpty ? "tag" : "tag.fill")
-                    }
-                    
-                    // ai edit
-                    if AIGenerationService.shared.isAvailable {
-                        
-                        
-                        Menu {
-                            Button {
-                                showAIEditCanvas = true
-                            } label: {
-                                Text("Extend")
+                            withAnimation {
+                                showOutline.toggle()
                             }
-                            
-                            Button {
-                                showAIEditCanvas = true
-                            } label: {
-                                Text("Summarize")
+                        } label: {
+                            Label(showOutline ? "Hide Outlie" : "Show Outline",
+                                  systemImage: "list.bullet.indent"
+                            )
+                        }
+                        
+                        Button {
+                            withAnimation {
+                                showGrid.toggle()
+                            }
+                        } label: {
+                            Label(showGrid ? "Hide Grid" : "Show Grid",
+                                  systemImage: "squareshape.split.2x2.dotted.inside.and.outside"
+                            )
+                        }
+                        
+                        // tag filter
+                        Menu {
+                            ForEach(appModel.currentCanvas?.tags ?? [], id: \.name) { tag in
+                                Button {
+                                    appModel.toggleTag(tag)
+                                } label: {
+                                    Label(tag.name, systemImage: (appModel.selectedTags.contains(tag) ? "checkmark" : ""))
+                                }
                             }
                             
                             Divider()
                             
                             Button {
-                                showAIEditCanvas = true
+                                appModel.showAllTags()
                             } label: {
-                                Text("Enter your question")
+                                Text("Show All")
                             }
                         } label: {
-                            Image(systemName: "sparkles")
+                            Label("Tag Filter", systemImage: appModel.selectedTags.isEmpty ? "tag" : "tag.fill")
                         }
-
                         
-//                        Button {
-//                            showAIEditCanvas = true
-//                        } label: {
-//                            Image(systemName: "sparkles")
-//                        }
+                        // ai edit
+                        if AIGenerationService.shared.isAvailable {
+                            
+                            
+                            Menu {
+                                Button {
+                                    showAIEditCanvas = true
+                                } label: {
+                                    Text("Extend")
+                                }
+                                
+                                Button {
+                                    showAIEditCanvas = true
+                                } label: {
+                                    Text("Summarize")
+                                }
+                                
+                                Divider()
+                                
+                                Button {
+                                    showAIEditCanvas = true
+                                } label: {
+                                    Text("Enter your question")
+                                }
+                            } label: {
+                                Label("AI Edit", systemImage: "sparkles")
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis")
                     }
                 }
                 
@@ -432,6 +451,7 @@ struct NodeMapView: View {
                     } label: {
                         Image(systemName: "plus")
                     }
+                    .keyboardShortcut("n", modifiers: [.command])
                     .buttonStyle(.borderedProminent)
                     .controlSize(.large)
                     .clipShape(Capsule())
@@ -471,8 +491,26 @@ struct NodeMapView: View {
                 .opacity(0.5)
                 .allowsHitTesting(false)
         }
+        .onReceive(zoomIn, perform: { _ in
+            applyZoom(multiplier: 1.2)
+        })
+        .onReceive(zoomOut, perform: { _ in
+            applyZoom(multiplier: 0.8)
+        })
+        .onReceive(outline, perform: { _ in
+            withAnimation {
+                showOutline.toggle()
+            }
+            
+        })
+        .onReceive(toggleGrid, perform: { _ in
+            withAnimation {
+                showGrid.toggle()
+            }
+        })
         .onDisappear {
             generatePreview()
+            appModel.switchToCanvas(nil)
         }
     }
 }

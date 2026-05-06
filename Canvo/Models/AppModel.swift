@@ -86,7 +86,7 @@ final class AppModel: Sendable {
         }
     }
     
-    func switchToCanvas(_ canvas: Canvas) {
+    func switchToCanvas(_ canvas: Canvas?) {
         actionService.clear()
         
         currentCanvas = canvas
@@ -303,7 +303,7 @@ extension AppModel {
         
         actionService.perform(action)
         
-        currentCanvas = canvasEntity(id: id)
+//        currentCanvas = canvasEntity(id: id)
     }
     
     func addCanvasFromAIAction(_ canvas: Canvas) {
@@ -312,7 +312,7 @@ extension AppModel {
         
         actionService.perform(createCanvas)
         
-        currentCanvas = canvasEntity(id: canvas.id)
+//        currentCanvas = canvasEntity(id: canvas.id)
 
         recomputeCanvasTags(canvasId: canvas.id)
     }
@@ -483,7 +483,7 @@ extension AppModel {
         
         context?.insert(canvas)
         
-        currentCanvas = canvas
+//        currentCanvas = canvas
         
         // tags
         for tagName in snapshot.tags {
