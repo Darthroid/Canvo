@@ -28,31 +28,45 @@ struct nodes_demoApp: App {
         .commands {
             CommandGroup(replacing: .undoRedo) {
 
-                Button("Undo") {
+                Button {
                     appModel.actionService.undo()
+                } label: {
+                    Label("Undo", systemImage: "arrow.uturn.left")
                 }
                 .keyboardShortcut("z", modifiers: [.command])
                 .disabled(!appModel.actionService.canUndo)
                 
-                Button("Redo") {
+                Button {
                     appModel.actionService.redo()
+                } label: {
+                    Label("Redo", systemImage: "arrow.uturn.right")
                 }
                 .keyboardShortcut("z", modifiers: [.command, .shift])
                 .disabled(!appModel.actionService.canRedo)
             }
             
             CommandGroup(replacing: .toolbar) {
-                Button("Zoom in") {
+                Button {
                     NotificationCenter.default.post(name: .init(rawValue: "zoomin"), object: nil)
+                } label: {
+                    Label("Zoom In", systemImage: "plus.magnifyingglass")
                 }
                 .disabled(appModel.currentCanvas == nil)
                 .keyboardShortcut("=", modifiers: [.command])
                 
-                Button("Zoom out") {
+                Button {
                     NotificationCenter.default.post(name: .init(rawValue: "zoomout"), object: nil)
+                }  label: {
+                    Label("Zoom Out", systemImage: "minus.magnifyingglass")
                 }
                 .disabled(appModel.currentCanvas == nil)
                 .keyboardShortcut("-", modifiers: [.command])
+                
+                Button ("Real Size"){
+                    NotificationCenter.default.post(name: .init(rawValue: "resetzoom"), object: nil)
+                }
+                .disabled(appModel.currentCanvas == nil)
+                .keyboardShortcut("0", modifiers: [.command])
             }
             
             CommandGroup(replacing: .sidebar) {

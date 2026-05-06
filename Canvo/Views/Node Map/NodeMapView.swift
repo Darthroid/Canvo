@@ -75,6 +75,7 @@ struct NodeMapView: View {
     // MARK: Notifications
     private var zoomIn = NotificationCenter.default.publisher(for: .init("zoomin"))
     private var zoomOut = NotificationCenter.default.publisher(for: .init("zoomout"))
+    private var resetZoom = NotificationCenter.default.publisher(for: .init("resetzoom"))
     private var outline = NotificationCenter.default.publisher(for: .init("outline"))
     private var toggleGrid = NotificationCenter.default.publisher(for: .init("togglegrid"))
     
@@ -90,7 +91,7 @@ struct NodeMapView: View {
         }
     }
     
-    private func resetZoom() {
+    private func setDefaultZoom() {
         scale = 1.0
         baseScale = 1.0
         offset = .zero
@@ -367,6 +368,25 @@ struct NodeMapView: View {
                         
                         Divider()
                         
+#if os(visionOS)
+                    // visionOS immersive map
+                    Button {
+                        showNodeSpace.toggle()
+                        if showNodeSpace {
+                            Task {
+                                await openImmersiveSpace(id: "ImmersiveNodeMapView")
+                            }
+                        } else {
+                            Task {
+                                await dismissImmersiveSpace()
+                            }
+                        }
+                    } label: {
+                        Label(showNodeSpace ? "Hide Immersive Map" : "Show Immersive Map", systemImage: "graph.3d")
+                    }
+                        Divider()
+#endif
+                        
                         // outline
                         Button {
                             withAnimation {
@@ -457,27 +477,6 @@ struct NodeMapView: View {
                     .clipShape(Capsule())
                     .tint(.accent)
                 }
-
-                ToolbarItemGroup(placement: .topBarTrailing) {
-                    
-#if os(visionOS)
-                    // visionOS immersive map
-                    Button {
-                        showNodeSpace.toggle()
-                        if showNodeSpace {
-                            Task {
-                                await openImmersiveSpace(id: "ImmersiveNodeMapView")
-                            }
-                        } else {
-                            Task {
-                                await dismissImmersiveSpace()
-                            }
-                        }
-                    } label: {
-                        Image(systemName: "graph.3d")
-                    }
-#endif
-                }
             }
             .background(Color(uiColor: .systemBackground))
             .gesture(panGesture)
@@ -496,6 +495,9 @@ struct NodeMapView: View {
         })
         .onReceive(zoomOut, perform: { _ in
             applyZoom(multiplier: 0.8)
+        })
+        .onReceive(resetZoom, perform: { _ in
+            setDefaultZoom()
         })
         .onReceive(outline, perform: { _ in
             withAnimation {
