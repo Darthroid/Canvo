@@ -144,7 +144,7 @@ struct AIEditCanvasView: View {
     // MARK: - State
 
     @State private var selectedMode: AIMode = .extend
-    @State private var selectedScope: AIScope = .visible
+    @State private var selectedScope: AIScope = .selection
 
     @State private var prompt = ""
     @State private var isGenerating = false
@@ -256,7 +256,7 @@ struct AIEditCanvasView: View {
 
             HStack(spacing: 10) {
 
-                ForEach(AIScope.allCases) { scope in
+                ForEach([AIScope.selection, AIScope.canvas]) { scope in
 
                     Button {
                         selectedScope = scope
