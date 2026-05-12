@@ -12,13 +12,14 @@ struct AIEditCanvasView: View {
 
     @Environment(AppModel.self) private var appModel
     @Binding var showEditor: Bool
+    var visibleScopeIds: Set<String>
     
     private var scopeNodesCount: Int {
         switch selectedScope {
         case .selection:
             appModel.selectedNodeIds.count
         case .visible:
-            0
+            visibleScopeIds.count
         case .canvas:
             appModel.currentCanvas?.nodes?.count ?? 0
         }
