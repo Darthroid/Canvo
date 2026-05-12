@@ -72,7 +72,7 @@ struct LinkEditorView: View {
     
     private func createLink() {
         guard let toNodeId = selectedNodeId else { return }
-        guard let canvas = appModel.currentCanvas else { return }
+//        guard let canvas = appModel.currentCanvas else { return }
         
         // prevent duplicates (same logic as before but now explicit)
         guard !appModel.connections.contains(where: {

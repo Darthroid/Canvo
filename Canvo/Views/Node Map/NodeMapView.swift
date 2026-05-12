@@ -15,20 +15,19 @@ struct NodeMapView: View {
     @Environment(\.dismissImmersiveSpace) var dismissImmersiveSpace
 #endif
     
+    @GestureState private var isNodeDragActive = false
     @State private var dragStartPositions: [String: SIMD3<Float>] = [:]
     @State private var draggedNodeIds: Set<String> = []
     
     @State private var scale: CGFloat = 1.0
     @State private var baseScale: CGFloat = 1.0
-    @State private var offset: CGSize = .zero
+    @State private var cameraOffset: CGSize = .zero
     @State private var lastPanTranslation: CGSize = .zero
-    @State private var lastDragTranslation: CGSize = .zero
     
     @State private var showGrid = true
     
     @State private var showAIEditCanvas = false
     @State private var showNodeForm = false
-    @State private var showtagsFilter: Bool = false
     @State private var showNodeSpace = false
     @State private var pendingNodePosition: SIMD3<Float>? = nil
     @State private var containerSize: CGSize = .zero
@@ -94,44 +93,37 @@ struct NodeMapView: View {
     private func setDefaultZoom() {
         scale = 1.0
         baseScale = 1.0
-        offset = .zero
+        cameraOffset = .zero
     }
     
     private func visibleCenterPosition() -> SIMD3<Float> {
         let screenCenterX = containerSize.width / 2
         let screenCenterY = containerSize.height / 2
         
-        let canvasX = (screenCenterX - offset.width) / scale
-        let canvasY = (screenCenterY - offset.height) / scale
+        let canvasX = (screenCenterX - cameraOffset.width) / scale
+        let canvasY = (screenCenterY - cameraOffset.height) / scale
         
         return SIMD3(Float(canvasX), Float(canvasY), 0)
     }
     
     // Функция для центрирования ноды
     private func centerOnNode(_ node: Node, animated: Bool = true) {
-        let nodePosition = node.position.position2D
-        
-        // Центр экрана
-        let screenCenterX = containerSize.width / 2
-        let screenCenterY = containerSize.height / 2
-        
-        // Вычисляем нужный offset для центрирования ноды
-        // Формула: offset = screenCenter - nodePosition * scale
-        let targetOffset = CGSize(
-            width: screenCenterX - nodePosition.x * scale,
-            height: screenCenterY - nodePosition.y * scale
+        let p = node.position.position2D
+        let center = CGPoint(x: containerSize.width / 2,
+                             y: containerSize.height / 2)
+
+        let target = CGSize(
+            width: center.x - p.x * scale,
+            height: center.y - p.y * scale
         )
-        
+
         if animated {
             withAnimation(.easeInOut(duration: searchAnimationDuration)) {
-                offset = targetOffset
+                cameraOffset = target
             }
         } else {
-            offset = targetOffset
+            cameraOffset = target
         }
-        
-        // Выделяем ноду
-        appModel.selectedNodeId = node.id
     }
     
     // Функция поиска нод
@@ -174,6 +166,63 @@ struct NodeMapView: View {
         }
     }
     
+    var connections: some View {
+        // Connections
+        ForEach(appModel.visibleConnections) { c in
+            if let a = appModel.node(forId: c.fromNodeId),
+               let b = appModel.node(forId: c.toNodeId),
+               !a.isHidden && !b.isHidden {
+                ConnectionView(
+                    from: a.position.position2D,
+                    to: b.position.position2D
+                )
+                .stroke(.secondary, lineWidth: 2)
+            }
+        }
+    }
+    
+    var nodes: some View {
+        ForEach(appModel.visibleNodes) { node in
+            NodeView(
+                node: node,
+                isSelected: appModel.selectedNodeIds.contains(node.id),
+                isExpanded: appModel.expandedNodeIds.contains(node.id),
+                isMatchingSearch: searchResults.contains(where: { $0.id == node.id })
+            )
+            .position(node.position.position2D)
+            .highPriorityGesture(nodeDrag(node))
+            .onTapGesture(count: 2, perform: {
+                withAnimation(.bouncy(duration: 0.2), {
+                    if appModel.expandedNodeIds.contains(node.id) {
+                        appModel.expandedNodeIds.remove(node.id)
+                    } else {
+                        appModel.expandedNodeIds.insert(node.id)
+                    }
+                })
+            })
+            .onTapGesture(count: 1) {
+                withAnimation {
+                    if appModel.selectedNodeIds.contains(node.id) {
+                        appModel.selectedNodeIds.remove(node.id)
+                    } else {
+                        appModel.selectedNodeIds.insert(node.id)
+                    }
+                }
+            }
+        }
+    }
+    
+    var debugMarker: some View {
+        Circle()
+            .fill(Color.clear)
+            .frame(width: 12, height: 12)
+            .position(
+                x: CGFloat(pendingNodePosition?.x ?? 0),
+                y: CGFloat(pendingNodePosition?.y ?? 0)
+            )
+            .opacity(pendingNodePosition == nil ? 0 : 0.7)
+    }
+    
     var canvas: some View {
         ZStack {
             
@@ -184,44 +233,14 @@ struct NodeMapView: View {
                 }
                 
                 // Connections
-                ForEach(appModel.visibleConnections) { c in
-                    if let a = appModel.node(forId: c.fromNodeId),
-                       let b = appModel.node(forId: c.toNodeId),
-                       !a.isHidden && !b.isHidden {
-                        ConnectionView(
-                            from: a.position.position2D,
-                            to: b.position.position2D
-                        )
-                        .stroke(.secondary, lineWidth: 2)
-                    }
-                }
+                connections
                 
                 // Nodes
-                ForEach(appModel.visibleNodes) { node in
-                    NodeView(
-                        node: node,
-                        isSelected: appModel.selectedNodeId == node.id,
-                        isMatchingSearch: searchResults.contains(where: { $0.id == node.id })
-                    )
-                    .position(node.position.position2D)
-                    .gesture(nodeDrag(node))
-                    .onTapGesture {
-                        appModel.selectedNodeId = appModel.selectedNodeId == node.id ? nil : node.id
-                    }
-                }
+                nodes
                 
                 // Debug marker for node creation (DO NOT REMOVE!)
-                Circle()
-                    .fill(Color.clear)
-                    .frame(width: 12, height: 12)
-                    .position(
-                        x: CGFloat(pendingNodePosition?.x ?? 0),
-                        y: CGFloat(pendingNodePosition?.y ?? 0)
-                    )
-                    .opacity(pendingNodePosition == nil ? 0 : 0.7)
+                debugMarker
             }
-            .scaleEffect(scale)
-            .offset(offset)
             .coordinateSpace(name: "canvas")
         }
     }
@@ -231,6 +250,10 @@ struct NodeMapView: View {
             ZStack {
                 // CANVAS
                 canvas
+                    .scaleEffect(scale)
+                    .offset(cameraOffset)
+                    .position(x: geo.size.width / 2,
+                              y: geo.size.height / 2)
                     .ignoresSafeArea()
                 
                 // UI LAYER
@@ -254,17 +277,34 @@ struct NodeMapView: View {
                     ZStack(alignment: .topLeading) {
                         
                         // sidebar
-                        if showOutline && !isCompact {
-                            let size = min(300, geo.size.width - 40)
-                            HStack {
-                                OutlineView(preferredWidth: size, style: .overlay)
-                                    .environment(appModel)
-                                    
-                                Spacer()
+                        VStack {
+                            if showOutline && !isCompact {
+                                let size = min(300, geo.size.width - 40)
+                                HStack {
+                                    OutlineView(preferredWidth: size, style: .overlay)
+                                        .environment(appModel)
+                                        
+                                    Spacer()
+                                }
+                                .padding(.horizontal, 20)
+                                .transition(.move(edge: .leading))
                             }
-                            .padding(.horizontal, 20)
-                            .transition(.move(edge: .leading))
+//                            if showAIEditCanvas && !isCompact {
+//                                if !showOutline {
+//                                    Spacer()
+//                                }
+//                                HStack {
+//                                    AIEditCanvasView(showEditor: $showAIEditCanvas)
+//                                        .frame(maxWidth: isCompact ? .greatestFiniteMagnitude : 500,  maxHeight: 800)
+//                                        .padding(.horizontal)
+////                                    Rectangle()
+////                                        .backgroundStyle(.red)
+////                                        .frame(width: 400, height: 400)
+//                                    Spacer()
+//                                }
+//                            }
                         }
+                        
                     }
                     
                     Spacer()
@@ -272,6 +312,11 @@ struct NodeMapView: View {
                 
                 
             }
+            .background(
+                Color.clear
+                    .contentShape(Rectangle())
+                    .highPriorityGesture(panGesture)
+            )
             .onAppear {
                 containerSize = geo.size
             }
@@ -304,15 +349,22 @@ struct NodeMapView: View {
                     .presentationDetents([.large])
                     .presentationDragIndicator(.visible)
             }
+            
+            .sheet(isPresented: $showAIEditCanvas) {
+                AIEditCanvasView(showEditor: $showAIEditCanvas)
+                    .background(Color(.secondarySystemBackground))
+                    .environment(appModel)
+                    .presentationDetents([.large])
+            }
             .sheet(isPresented: $showNodeForm) {
                 CreateNodeView(position: pendingNodePosition)
                     .environment(appModel)
             }
-            .sheet(isPresented: $showAIEditCanvas) {
-                if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
-                    AIEditCanvasView()
-                }
-            }
+//            .sheet(isPresented: $showAIEditCanvas) {
+//                if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
+//                    AIEditCanvasView()
+//                }
+//            }
 //            .navigationTitle(appModel.currentCanvas?.name ?? "Canvo")
 //            .navigationSubtitle("Last Edit: \(updatedAt ?? "")")
             .navigationBarTitleDisplayMode(.inline)
@@ -388,24 +440,12 @@ struct NodeMapView: View {
 #endif
                         
                         // outline
-                        Button {
-                            withAnimation {
-                                showOutline.toggle()
-                            }
-                        } label: {
-                            Label(showOutline ? "Hide Outlie" : "Show Outline",
-                                  systemImage: "list.bullet.indent"
-                            )
+                        Toggle(isOn: $showOutline.animation()) {
+                            Label("Outline", systemImage: "list.bullet.indent")
                         }
                         
-                        Button {
-                            withAnimation {
-                                showGrid.toggle()
-                            }
-                        } label: {
-                            Label(showGrid ? "Hide Grid" : "Show Grid",
-                                  systemImage: "squareshape.split.2x2.dotted.inside.and.outside"
-                            )
+                        Toggle(isOn: $showGrid.animation()) {
+                            Label("Canvas Grid", systemImage: "squareshape.split.2x2.dotted.inside.and.outside")
                         }
                         
                         // tag filter
@@ -432,29 +472,8 @@ struct NodeMapView: View {
                         // ai edit
                         if AIGenerationService.shared.isAvailable {
                             
-                            
-                            Menu {
-                                Button {
-                                    showAIEditCanvas = true
-                                } label: {
-                                    Text("Extend")
-                                }
-                                
-                                Button {
-                                    showAIEditCanvas = true
-                                } label: {
-                                    Text("Summarize")
-                                }
-                                
-                                Divider()
-                                
-                                Button {
-                                    showAIEditCanvas = true
-                                } label: {
-                                    Text("Enter your question")
-                                }
-                            } label: {
-                                Label("AI Edit", systemImage: "sparkles")
+                            Toggle(isOn: $showAIEditCanvas.animation()) {
+                                Label("AI Editor", systemImage: "sparkles")
                             }
                         }
                     } label: {
@@ -479,8 +498,7 @@ struct NodeMapView: View {
                 }
             }
             .background(Color(uiColor: .systemBackground))
-            .gesture(panGesture)
-            .gesture(zoomGesture)
+            .simultaneousGesture(zoomGesture)
             
             // visible area center debug marker (DO NOT REMOVE!)
             Circle()
@@ -503,7 +521,6 @@ struct NodeMapView: View {
             withAnimation {
                 showOutline.toggle()
             }
-            
         })
         .onReceive(toggleGrid, perform: { _ in
             withAnimation {
@@ -538,6 +555,7 @@ extension NodeMapView {
                 NodeView(
                     node: node,
                     isSelected: false,
+                    isExpanded: false,
                     isMatchingSearch: false
                 )
                 .position(node.position.position2D)
@@ -586,10 +604,11 @@ extension NodeMapView {
     private var panGesture: some Gesture {
         DragGesture()
             .onChanged { v in
-                let dx = v.translation.width - lastPanTranslation.width
-                let dy = v.translation.height - lastPanTranslation.height
-                offset.width += dx
-                offset.height += dy
+                guard !isNodeDragActive else { return }
+
+                cameraOffset.width += v.translation.width - lastPanTranslation.width
+                cameraOffset.height += v.translation.height - lastPanTranslation.height
+
                 lastPanTranslation = v.translation
             }
             .onEnded { _ in
@@ -618,41 +637,91 @@ extension NodeMapView {
     // MARK: - NODE DRAG
     
     private func nodeDrag(_ node: Node) -> some Gesture {
-        DragGesture(coordinateSpace: .named("canvas"))
+        DragGesture()
+            .updating($isNodeDragActive) { _, state, _ in
+                state = true
+            }
             .onChanged { v in
                 
-                // 1. init snapshot once
+                // если это первый drag — снимаем snapshot
                 if dragStartPositions[node.id] == nil {
-                    dragStartPositions[node.id] = SIMD3(node.x, node.y, node.z)
+                    let selected = appModel.selectedNodeIds
+                    
+                    // если группа — фиксируем ВСЕ
+                    if selected.contains(node.id), selected.count > 1 {
+                        for id in selected {
+                            if let n = appModel.node(forId: id) {
+                                dragStartPositions[id] = SIMD3(n.x, n.y, n.z)
+                            }
+                        }
+                    } else {
+                        dragStartPositions[node.id] = SIMD3(node.x, node.y, node.z)
+                    }
                 }
                 
                 draggedNodeIds.insert(node.id)
                 
-                let dx = Float(v.translation.width) / Float(scale)
-                let dy = Float(v.translation.height) / Float(scale)
+                let dx = Float(v.translation.width)
+                let dy = Float(v.translation.height)
                 
-                let start = dragStartPositions[node.id] ?? SIMD3(node.x, node.y, node.z)
+                let selected = appModel.selectedNodeIds
                 
-                // UI-only preview (NO persistence)
-                node.x = start.x + dx
-                node.y = start.y + dy
+                // GROUP DRAG
+                if selected.contains(node.id), selected.count > 1 {
+                    
+                    for id in selected {
+                        guard let start = dragStartPositions[id],
+                              let n = appModel.node(forId: id) else { continue }
+                        
+                        n.x = start.x + dx
+                        n.y = start.y + dy
+                    }
+                    
+                } else {
+                    // SINGLE DRAG
+                    let start = dragStartPositions[node.id] ?? SIMD3(node.x, node.y, node.z)
+                    
+                    node.x = start.x + dx
+                    node.y = start.y + dy
+                }
             }
             .onEnded { _ in
+                let selected = appModel.selectedNodeIds
                 
-                guard let start = dragStartPositions[node.id] else { return }
+                // commit actions for all moved nodes
+                if selected.contains(node.id), selected.count > 1 {
+                    
+                    for id in selected {
+                        guard let start = dragStartPositions[id],
+                              let n = appModel.node(forId: id) else { continue }
+                        
+                        let end = SIMD3(n.x, n.y, n.z)
+                        
+                        let action = MoveNodeAction(
+                            nodeId: id,
+                            oldPosition: start,
+                            newPosition: end
+                        )
+                        
+                        appModel.actionService.perform(action)
+                    }
+                    
+                } else {
+                    guard let start = dragStartPositions[node.id] else { return }
+                    
+                    let end = SIMD3(node.x, node.y, node.z)
+                    
+                    let action = MoveNodeAction(
+                        nodeId: node.id,
+                        oldPosition: start,
+                        newPosition: end
+                    )
+                    
+                    appModel.actionService.perform(action)
+                }
                 
-                let end = SIMD3(node.x, node.y, node.z)
-                
-                let action = MoveNodeAction(
-                    nodeId: node.id,
-                    oldPosition: start,
-                    newPosition: end
-                )
-                
-                appModel.actionService.perform(action)
-                
-                dragStartPositions.removeValue(forKey: node.id)
-                draggedNodeIds.remove(node.id)
+                dragStartPositions.removeAll()
+                draggedNodeIds.removeAll()
             }
     }
     

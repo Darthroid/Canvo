@@ -22,7 +22,8 @@ final class AppModel: Sendable {
     
     var canvases: [Canvas] = []
     private(set) var currentCanvas: Canvas?
-    var selectedNodeId: String?
+    var expandedNodeIds: Set<String> = []
+    var selectedNodeIds: Set<String> = []
     
     var centerOnNodeId: String?
     
@@ -91,7 +92,7 @@ final class AppModel: Sendable {
         
         currentCanvas = canvas
         
-        selectedNodeId = nil
+        selectedNodeIds = []
         selectedTags = []
         
         let _nodes = nodes

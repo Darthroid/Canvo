@@ -87,7 +87,7 @@ struct NodeDetailView: View {
                             .contentShape(Rectangle())
                             .onTapGesture {
                                 dismiss()
-                                appModel.selectedNodeId = connectedNode.id
+                                appModel.selectedNodeIds = [connectedNode.id]
                             }
                         }
                     } header: {
