@@ -110,6 +110,6 @@ struct NodeView: View {
                 NodeDetailView(node: node)
             }
         }
-        .zIndex(isSelected ? 1 : 0)
+        .zIndex(isSelected || isExpanded ? 1 : 0)
     }
 }

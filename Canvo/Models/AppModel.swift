@@ -93,6 +93,7 @@ final class AppModel: Sendable {
         currentCanvas = canvas
         
         selectedNodeIds = []
+        expandedNodeIds = []
         selectedTags = []
         
         let _nodes = nodes
