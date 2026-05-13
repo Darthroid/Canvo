@@ -352,39 +352,59 @@ struct NodeMapView: View {
                 }
             }
             .toolbar {
-                ToolbarItem(placement: .title) {
-                    VStack {
-                        Text(appModel.currentCanvas?.name ?? "Canvo")
-                            .font(.headline)
-                        Text("Last Edit: \(updatedAt ?? "")")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                ToolbarItemGroup(placement: .topBarLeading) {
+                    Button {
+                        appModel.actionService.undo()
+                    } label: {
+                        Label("Undo", systemImage: "arrow.uturn.left")
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 8)
-                    .glassEffect()
+                    .disabled(!appModel.actionService.canUndo)
+
+                    Button {
+                        appModel.actionService.redo()
+                    } label: {
+                        Label("Redo", systemImage: "arrow.uturn.right")
+                    }
+                    .disabled(!appModel.actionService.canRedo)
+                    
                 }
+                
+//                ToolbarItem(placement: .title) {
+//                    VStack {
+//                        Text(appModel.currentCanvas?.name ?? "Canvo")
+//                            .font(.headline)
+//                        Text("Last Edit: \(updatedAt ?? "")")
+//                            .font(.caption)
+//                            .foregroundStyle(.secondary)
+//                    }
+//                    .padding(.horizontal, 20)
+//                    .padding(.vertical, 8)
+//                    .glassEffect()
+//                }
                 
                 DefaultToolbarItem(kind: .search, placement: .bottomBar)
                 
                 ToolbarItem(placement: .confirmationAction) {
                     Menu {
-                        // undo/redo
-                        Button {
-                            appModel.actionService.undo()
-                        } label: {
-                            Label("Undo", systemImage: "arrow.uturn.left")
-                        }
-                        .disabled(!appModel.actionService.canUndo)
-
-                        Button {
-                            appModel.actionService.redo()
-                        } label: {
-                            Label("Redo", systemImage: "arrow.uturn.right")
-                        }
-                        .disabled(!appModel.actionService.canRedo)
-                        
+                        Text(appModel.currentCanvas?.name ?? "Canvo")
+                            .font(.headline)
                         Divider()
+                        // undo/redo
+//                        Button {
+//                            appModel.actionService.undo()
+//                        } label: {
+//                            Label("Undo", systemImage: "arrow.uturn.left")
+//                        }
+//                        .disabled(!appModel.actionService.canUndo)
+//
+//                        Button {
+//                            appModel.actionService.redo()
+//                        } label: {
+//                            Label("Redo", systemImage: "arrow.uturn.right")
+//                        }
+//                        .disabled(!appModel.actionService.canRedo)
+//                        
+//                        Divider()
                         
 #if os(visionOS)
                     // visionOS immersive map
@@ -728,5 +748,32 @@ extension NodeMapView {
             image: image,
             for: canvas.id
         )
+    }
+}
+
+struct SelectedNodesBar: View {
+    let count: Int
+    let onClear: () -> Void
+    
+    var body: some View {
+        HStack {
+            Image(systemName: "checkmark.circle")
+                .foregroundStyle(.accent)
+            Text("Selected: \(count) node\(count == 1 ? "" : "s")")
+                .fontWeight(.medium)
+            Spacer()
+            Button("Clear") {
+                onClear()
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(.ultraThinMaterial)
+        .cornerRadius(20)
+        .padding(.horizontal, 16)
+        .padding(.bottom, 80)
+        .transition(.move(edge: .bottom).combined(with: .opacity))
     }
 }
