@@ -383,6 +383,42 @@ extension AppModel {
         
         return (nodeSnapshot, connections)
     }
+    
+    func addNodesFromAIAction(_ nodes: [Node], connections: [NodeConnection]) {
+        let nodeSnapshots: [NodeSnapshot] = nodes.map {
+            NodeSnapshot(
+                id: $0.id,
+                name: $0.name,
+                detail: $0.detail,
+                x: $0.x,
+                y: $0.y,
+                z: $0.z,
+                color: $0.colorRaw,
+                tagsRaw: $0.tagsRaw
+            )
+        }
+        
+        let connectionsSnapshots: [ConnectionSnapshot] = connections.map {
+            ConnectionSnapshot(
+                id: $0.id,
+                fromNodeId: $0.fromNodeId,
+                toNodeId: $0.toNodeId
+            )
+        }
+        
+        actionService.beginBatch()
+        let nodeActions = nodeSnapshots.map {
+            AddNodeAction(node: $0)
+        }
+        nodeActions.forEach { actionService.perform($0) }
+        
+        let connectionsActions = connectionsSnapshots.map {
+            AddConnectionAction(connection: $0)
+        }
+        connectionsActions.forEach { actionService.perform($0) }
+        
+        actionService.endBatch()
+    }
 }
 
 // MARK: - Internal Helpers
@@ -560,6 +596,31 @@ extension AppModel {
         save()
     }
     
+    func insertNodesInternal(_ snapshots: [NodeSnapshot]) {
+        guard let currentCanvas else { return }
+        
+        let nodes = snapshots.map { snapshot in
+            Node(
+                id: snapshot.id,
+                name: snapshot.name,
+                detail: snapshot.detail,
+                x: snapshot.x,
+                y: snapshot.y,
+                z: snapshot.z,
+                color: snapshot.color,
+                canvas: currentCanvas,
+                tagsRaw: snapshot.tagsRaw
+            )
+        }
+        
+        nodes.forEach {
+            context?.insert($0)
+        }
+        
+        recomputeCanvasTags(canvasId: currentCanvas.id)
+        save()
+    }
+    
     func updateNodeInternal(from snapshot: NodeSnapshot) {
         guard let node = nodeEntity(id: snapshot.id) else { return }
         
@@ -586,6 +647,25 @@ extension AppModel {
                 $0.fromNodeId == id || $0.toNodeId == id
             }
         )
+        
+        recomputeCanvasTags(canvasId: canvas.id)
+        save()
+    }
+    
+    func removeNodesInternal(ids: [String]) {
+        let nodes = ids.compactMap { nodeEntity(id: $0) }
+        guard let canvas = nodes.first?.canvas else { return }
+        
+        nodes.forEach { node in
+            context?.delete(node)
+            
+            try? context?.delete(
+                model: NodeConnection.self,
+                where: #Predicate<NodeConnection> {
+                    $0.fromNodeId == node.id || $0.toNodeId == node.id
+                }
+            )
+        }
         
         recomputeCanvasTags(canvasId: canvas.id)
         save()

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		9397B9E92FB5B1A100146914 /* MarkdownUI in Frameworks */ = {isa = PBXBuildFile; productRef = 9397B9E82FB5B1A100146914 /* MarkdownUI */; };
 		D1ACB3282ECB560000411AD6 /* RealityKitContent in Frameworks */ = {isa = PBXBuildFile; productRef = D1ACB3272ECB560000411AD6 /* RealityKitContent */; };
 /* End PBXBuildFile section */
 
@@ -45,6 +46,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				D1ACB3282ECB560000411AD6 /* RealityKitContent in Frameworks */,
+				9397B9E92FB5B1A100146914 /* MarkdownUI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -97,6 +99,7 @@
 			name = Canvo;
 			packageProductDependencies = (
 				D1ACB3272ECB560000411AD6 /* RealityKitContent */,
+				9397B9E82FB5B1A100146914 /* MarkdownUI */,
 			);
 			productName = "nodes-demo";
 			productReference = D1ACB3222ECB560000411AD6 /* Canvo.app */;
@@ -126,6 +129,9 @@
 			);
 			mainGroup = D1ACB3192ECB560000411AD6;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				9397B9E72FB5B1A100146914 /* XCRemoteSwiftPackageReference "swift-markdown-ui" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = D1ACB3232ECB560000411AD6 /* Products */;
 			projectDirPath = "";
@@ -389,7 +395,23 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		9397B9E72FB5B1A100146914 /* XCRemoteSwiftPackageReference "swift-markdown-ui" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/gonzalezreal/swift-markdown-ui";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.4.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
+		9397B9E82FB5B1A100146914 /* MarkdownUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 9397B9E72FB5B1A100146914 /* XCRemoteSwiftPackageReference "swift-markdown-ui" */;
+			productName = MarkdownUI;
+		};
 		D1ACB3272ECB560000411AD6 /* RealityKitContent */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = RealityKitContent;

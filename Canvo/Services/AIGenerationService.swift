@@ -19,7 +19,7 @@ class AIGenerationService {
     }
     
     private init() {}
-
+    
     
     func generateCanvasStream(prompt: String) -> AsyncThrowingStream<(CanvasSchema, String), Error> {
         AsyncThrowingStream { continuation in
@@ -50,7 +50,7 @@ class AIGenerationService {
                     continuation.yield((canvas, "Finalizing"))
                     
                     continuation.finish()
-
+                    
                 } catch {
                     continuation.finish(throwing: error)
                 }
@@ -98,34 +98,32 @@ class AIGenerationService {
     private func layoutNodesInSemiCircleBelow(
         nodes: inout [NodeSchema],
         center: Position3DSchema,
-        radius: Float = 300
+        radius: Float = 300,
+        minAngle: Float = .pi / 6,   // 30° от правой горизонтали
+        maxAngle: Float = 5 * .pi / 6 // 150° от правой горизонтали (т.е. 30° до левой горизонтали)
     ) {
-
         let indices = nodes.indices
         let count = indices.count
         guard count > 0 else { return }
-
-        let startAngle: Float = .pi       // 180°
-        let endAngle: Float = 2 * .pi     // 360°
-        let angleStep: Float = count > 1 ? (endAngle - startAngle) / Float(count - 1) : 0
-
+        
+        let angleStep: Float = count > 1 ? (maxAngle - minAngle) / Float(count - 1) : 0
+        
         for (i, index) in indices.enumerated() {
             let angle: Float
             if count == 1 {
-                // Единственную ноду ставим ровно снизу
-                angle = 3 * .pi / 2
+                // Один узел — строго вниз (90°)
+                angle = .pi / 2
             } else {
-                angle = startAngle + angleStep * Float(i)
+                angle = minAngle + angleStep * Float(i)
             }
-
+            
             nodes[index].position = Position3DSchema(
                 x: center.x + radius * cos(angle),
-                y: center.y + radius * sin(angle),   // sin отрицательный на нижней дуге
-                z: center.z                          // остаёмся в плоскости центра
+                y: center.y + radius * sin(angle),   // sin > 0 → ниже центра
+                z: center.z
             )
         }
-    }
-}
+    }}
 
 
 // MARK: - Helper methods to generate canvas
@@ -195,50 +193,97 @@ extension AIGenerationService {
 // MARK: - Helper methods to extend canvas
 
 extension AIGenerationService {
-    func extendNodes(nodes: [Node], in canvas: Canvas) async throws -> ([NodeSchema], [NodeConnectionSchema]) {
-        var newNodes = [NodeSchema]()
-        var newConnections = [NodeConnectionSchema]()
+    func extendNodes(nodes: [Node], in canvas: Canvas, userInput: String) -> AsyncThrowingStream<(([NodeSchema], [NodeConnectionSchema]), String), Error>  {
         
-        for node in nodes {
-            let schema = node.toSchema()
-            let session = LanguageModelSession(model: model, instructions: """
-                You are an AI that designs a structured mind map.
-                RULES:
-                - Exactly 2-3 nodes as extension to current input.
-                - Each node should describe unique idea extending current input.
-                """
-            )
-            
-            let prompt = """
-                extend node by suggesting sub-topics for the following node: \(schema.name). it's description: \(schema.detail)
-                """
-            
-            var extendedNodes = try await session.respond(
-                to: prompt,
-                generating: [NodeSchema].self
-            ).content
-            
-            layoutNodesInSemiCircleBelow(nodes: &extendedNodes, center: schema.position)
-            extendedNodes.forEach {
-                newConnections.append(NodeConnectionSchema(id: UUID().uuidString, fromNodeId: schema.id, toNodeId: $0.id))
+        AsyncThrowingStream { continuation in
+            Task {
+                do {
+                    var newConnections = [NodeConnectionSchema]()
+                    
+                    continuation.yield((([], []), "Reading Canvas"))
+                    
+                    for node in nodes {
+                        let schema = node.toSchema()
+                        let session = LanguageModelSession(model: model, instructions: """
+                            You are an AI that designs a structured mind map.
+                            RULES:
+                            - Exactly 2-3 nodes as extension to current input.
+                            - Each node should describe unique idea extending current input.
+                            - Make all decisions respecting user statement: \(userInput)
+                            """
+                        )
+                        
+                        let prompt = """
+                            extend nodes in canvas '\(canvas.name)' by suggesting sub-topics for the following node: \(schema.name). it's description: \(schema.detail).
+                            """
+                        
+                        var extendedNodes = try await session.respond(
+                            to: prompt,
+                            generating: [NodeSchema].self
+                        ).content
+                        
+                        // dirty fix: recreate generated result to be sure that ids are correct
+                        extendedNodes = extendedNodes.map {
+                            NodeSchema(
+                                id: UUID().uuidString,
+                                name: $0.name,
+                                detail: $0.detail,
+                                color: $0.color,
+                                position: $0.position
+                            )
+                        }
+                        
+                        layoutNodesInSemiCircleBelow(nodes: &extendedNodes, center: schema.position)
+                        extendedNodes.forEach {
+                            newConnections.append(
+                                NodeConnectionSchema(
+                                    id: UUID().uuidString,
+                                    fromNodeId: node.id,
+                                    toNodeId: $0.id
+                                )
+                            )
+                        }
+                        continuation.yield(((extendedNodes, newConnections), "Extending '\(node.name)'"))
+                    }
+                    
+                    continuation.finish()
+                }  catch {
+                    continuation.finish(throwing: error)
+                }
             }
         }
-        
-        return (newNodes, newConnections)
     }
     
-    func summarize(nodes: [Node], in canvas: Canvas) async throws -> LanguageModelSession.ResponseStream<String> {
-        return askStereamed(prompt: "Provide a summary of the current nodes in mind map", nodes: nodes, in: canvas)
+    func summarize(scope: [Node], userInput: String, in canvas: Canvas) async throws -> ([NodeSchema], [NodeConnectionSchema]) {
+        
+        return ([], [])
+    }
+    
+    func askQuestions(scope: [Node], userInput: String, in canvas: Canvas) async throws -> LanguageModelSession.ResponseStream<String> {
+        return askStereamed(prompt: userInput, nodes: scope, in: canvas)
     }
     
     func askStereamed(prompt: String, nodes: [Node], in canvas: Canvas) -> LanguageModelSession.ResponseStream<String> {
-        let nodeSchema = nodes.map { $0.toSchema() }
-        let session = LanguageModelSession(model: model, instructions: """
+        let instructions = """
             You are an AI expert that operates a structured mind map.
-            Yout main task is to answer question about canvas.
+            Your main task is to explain canvas and answer questions about canvas.
+            You don't ask questions, only answer them.
+            If there is no user question provided, explain key points of provided canvas & nodes.
+            Do not include any details provided from nodes list, they are provided for you to understand context
             """
-        )
+        let session = LanguageModelSession(model: model, instructions: instructions)
         
-        return session.streamResponse(to: prompt)
+        let list = nodes.map {
+            "- \($0.name): \($0.detail)"
+        }.joined(separator: "\n")
+        
+        let question = """
+            Take a look at this list of nodes in canvas '\(canvas.name)':
+            \(list)
+            ___
+            \(prompt.isEmpty ? "" : "Using the context provided above make key points of it explaining user provided question: \(prompt)")
+            """
+        
+        return session.streamResponse(to: question)
     }
 }

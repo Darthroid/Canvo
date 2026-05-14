@@ -6,12 +6,21 @@
 //
 
 import SwiftUI
+import FoundationModels
 
 @available(iOS 26.0, macOS 26.0, visionOS 26.0, *)
 struct AIEditCanvasView: View {
 
     @Environment(AppModel.self) private var appModel
     @Binding var showEditor: Bool
+    
+    @State private var generationStage: String = ""
+    
+    @State private var errorMessage: String?
+    
+    @State private var aiResponse: String = ""
+    @State private var showAiResponse: Bool = false
+    
     var visibleScopeIds: Set<String>
     
     private var scopeNodesCount: Int {
@@ -19,127 +28,12 @@ struct AIEditCanvasView: View {
         case .selection:
             appModel.selectedNodeIds.count
         case .visible:
-            visibleScopeIds.count
+            0//visibleScopeIds.count
         case .canvas:
             appModel.currentCanvas?.nodes?.count ?? 0
         }
     }
 
-    // MARK: - Mode
-
-    enum AIMode: String, CaseIterable, Identifiable {
-        case extend
-        case summarize
-        case explain
-
-        var id: String { rawValue }
-
-        var title: String {
-            switch self {
-            case .extend: "Expand"
-            case .summarize: "Summarize"
-            case .explain: "Explain"
-            }
-        }
-
-        var subtitle: String {
-            switch self {
-            case .extend:
-                "Generate related ideas"
-            case .summarize:
-                "Compress selected content"
-            case .explain:
-                "Explain concepts and links"
-            }
-        }
-
-        var icon: String {
-            switch self {
-            case .extend:
-                "sparkles"
-            case .summarize:
-                "text.redaction"
-            case .explain:
-                "text.bubble"
-            }
-        }
-
-        var actionTitle: String {
-            switch self {
-            case .extend:
-                "Generate Nodes"
-            case .summarize:
-                "Create Summary"
-            case .explain:
-                "Explain Canvas"
-            }
-        }
-
-        var loadingTitle: String {
-            switch self {
-            case .extend:
-                "Generating Nodes"
-            case .summarize:
-                "Creating Summary"
-            case .explain:
-                "Generating Explanation"
-            }
-        }
-
-        var promptTitle: String {
-            switch self {
-            case .extend:
-                "What should AI add?"
-            case .summarize:
-                "What should AI focus on?"
-            case .explain:
-                "What do you want explained?"
-            }
-        }
-
-        var placeholder: String {
-            switch self {
-            case .extend:
-                "Add onboarding flow and monetization ideas..."
-            case .summarize:
-                "Summarize into concise product requirements..."
-            case .explain:
-                "Explain how these systems interact..."
-            }
-        }
-    }
-
-    // MARK: - Scope
-
-    enum AIScope: String, CaseIterable, Identifiable {
-        case selection
-        case visible
-        case canvas
-
-        var id: String { rawValue }
-
-        var title: String {
-            switch self {
-            case .selection:
-                "Selection"
-            case .visible:
-                "Visible"
-            case .canvas:
-                "Entire Canvas"
-            }
-        }
-
-        var icon: String {
-            switch self {
-            case .selection:
-                "selection.pin.in.out"
-            case .visible:
-                "eye"
-            case .canvas:
-                "square.grid.3x3"
-            }
-        }
-    }
 
     // MARK: - State
 
@@ -155,9 +49,6 @@ struct AIEditCanvasView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-
-            header
-
             ScrollView(.vertical) {
                 VStack(alignment: .leading, spacing: 20) {
                     modeSection
@@ -171,12 +62,36 @@ struct AIEditCanvasView: View {
             footer
             
         }
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .title) {
+                HStack {
+                    Text("Edit Canvas with AI")
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                    Text("BETA")
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.white)
+                        .background(.black, in: Capsule())
+                }
+            }
+            
+            ToolbarItem(placement: .primaryAction) {
+                Button(role: .close) {
+                    withAnimation {
+                        showEditor = false
+                    }
+                }
+            }
+        }
         .padding(20)
         .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 26))
+//        .clipShape(RoundedRectangle(cornerRadius: 26))
         .overlay {
             if isGenerating {
-                AIOverlayView(title: .constant(selectedMode.loadingTitle))
+                AIOverlayView(title: $generationStage)
             }
         }
         .onAppear {
@@ -185,37 +100,6 @@ struct AIEditCanvasView: View {
             }
         }
 
-    }
-
-    // MARK: - Header
-
-    private var header: some View {
-        HStack {
-            
-            Text("Edit Canvas with AI")
-                .font(.title3)
-                .fontWeight(.semibold)
-            Text("BETA")
-                .padding(.horizontal, 8)
-                .padding(.vertical, 3)
-                .font(.system(size: 11, weight: .medium))
-                .foregroundStyle(.white)
-                .background(.black, in: Capsule())
-            
-            Spacer()
-            
-            Button {
-                withAnimation {
-                    showEditor = false
-                }
-            } label: {
-                Image(systemName: "xmark")
-                    .padding(4)
-            }
-            .clipShape(.circle)
-            .labelStyle(.iconOnly)
-            .buttonStyle(.glass)
-        }
     }
 
     // MARK: - Mode
@@ -231,7 +115,7 @@ struct AIEditCanvasView: View {
 
                     ForEach(AIMode.allCases) { mode in
 
-                        ModeCard(
+                        AIModeCard(
                             title: mode.title,
                             subtitle: mode.subtitle,
                             icon: mode.icon,
@@ -337,8 +221,14 @@ struct AIEditCanvasView: View {
             .foregroundStyle(.white)
             .clipShape(RoundedRectangle(cornerRadius: 16))
         }
-        .disabled(isGenerating)
-        .opacity(!isGenerating ? 1 : 0.5)
+        .disabled(isGenerating || scopeNodesCount == 0)
+        .opacity(!(isGenerating || scopeNodesCount == 0) ? 1 : 0.5)
+        .sheet(isPresented: $showAiResponse) {
+            NavigationStack {
+                AIResponseView(response: $aiResponse)
+            }
+            .interactiveDismissDisabled()
+        }
         
     }
 
@@ -365,15 +255,57 @@ struct AIEditCanvasView: View {
             explainCanvas()
         }
     }
+}
 
-    // MARK: - AI Stubs
+// MARK: - AI Action Handlers
 
+extension AIEditCanvasView {
+    
     private func generateNodes() {
         Task {
-            await fakeRequest()
+            isGenerating = true
+            isPromptFocused = false
+            generationStage = "Creating Canvas"
+            guard let canvas = appModel.currentCanvas else { return }
+            
+            var scope: [Node] = []
+            
+            switch selectedScope {
+            case .selection:
+                scope = appModel.selectedNodeIds.compactMap {
+                    appModel.node(forId: $0)
+                }
+            case .visible:
+                break
+            case .canvas:
+                scope = appModel.nodes
+            }
+            
+            do {
+                var nodes: [Node] = []
+                var connections: [NodeConnection] = []
+                for single in scope {
+                    for try await schema in AIGenerationService.shared.extendNodes(nodes: [single], in: canvas, userInput: prompt) {
+                        nodes += schema.0.0
+                            .map { Node(from: $0) }
+                        
+                        connections += schema.0.1
+                            .map { NodeConnection(from: $0) }
+                        
+                        generationStage = schema.1
+                    }
+                }
+                
+                appModel.addNodesFromAIAction(Array(nodes), connections: Array(connections))
+                showEditor = false
 
-            // TODO:
-            // generate nodes
+            } catch {
+                print("error while generating canvas: \(error.localizedDescription)")
+                errorMessage = error.localizedDescription
+            }
+            
+            isGenerating = false
+            generationStage = ""
         }
     }
 
@@ -388,10 +320,37 @@ struct AIEditCanvasView: View {
 
     private func explainCanvas() {
         Task {
-            await fakeRequest()
-
-            // TODO:
-            // explain canvas
+            isGenerating = true
+            isPromptFocused = false
+            generationStage = "Creating Canvas"
+            guard let canvas = appModel.currentCanvas else { return }
+            
+            var scope: [Node] = []
+            
+            switch selectedScope {
+            case .selection:
+                scope = appModel.selectedNodeIds.compactMap {
+                    appModel.node(forId: $0)
+                }
+            case .visible:
+                break
+            case .canvas:
+                scope = appModel.nodes
+            }
+            
+            do {
+                let stream = AIGenerationService.shared.askStereamed(prompt: prompt, nodes: scope, in: canvas)
+                showAiResponse = true
+                for try await chunk in stream {
+                    aiResponse = chunk.content
+                }
+            } catch {
+                print("error while generating canvas: \(error.localizedDescription)")
+                errorMessage = error.localizedDescription
+            }
+            
+            isGenerating = false
+            generationStage = ""
         }
     }
 
@@ -411,61 +370,5 @@ struct AIEditCanvasView: View {
         }
         
     }
-}
 
-// MARK: - Mode Card
-
-@available(iOS 26.0, macOS 26.0, visionOS 26.0, *)
-private struct ModeCard: View {
-
-    let title: String
-    let subtitle: String
-    let icon: String
-    let isSelected: Bool
-
-    let action: () -> Void
-
-    var body: some View {
-
-        Button(action: action) {
-
-            VStack(alignment: .leading, spacing: 10) {
-
-                Image(systemName: icon)
-                    .font(.title3)
-                    .symbolRenderingMode(.hierarchical)
-
-                VStack(alignment: .leading, spacing: 3) {
-
-                    Text(title)
-                        .font(.headline)
-                        .lineLimit(1)
-
-                    Text(subtitle)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(2)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                Spacer(minLength: 0)
-            }
-            .padding(16)
-            .frame(width: 190, height: 118, alignment: .topLeading)
-            .background {
-                RoundedRectangle(cornerRadius: 22)
-                    .fill(Color(.tertiarySystemBackground))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 22)
-                            .strokeBorder(
-                                isSelected
-                                ? Color.accentColor
-                                : Color.clear,
-                                lineWidth: 1.5
-                            )
-                    }
-            }
-        }
-        .buttonStyle(.plain)
-    }
 }

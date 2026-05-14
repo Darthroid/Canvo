@@ -327,8 +327,10 @@ struct NodeMapView: View {
             }
             .sheet(isPresented: $showAIEditCanvas) {
                 if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
-                    AIEditCanvasView(showEditor: $showAIEditCanvas, visibleScopeIds: [])
-                        .environment(appModel)
+                    NavigationStack {
+                        AIEditCanvasView(showEditor: $showAIEditCanvas, visibleScopeIds: [])
+                            .environment(appModel)
+                    }
                 }
             }
 //            .navigationTitle(appModel.currentCanvas?.name ?? "Canvo")
