@@ -41,7 +41,6 @@ struct AIEditCanvasView: View {
     @State private var selectedScope: AIScope = .selection
 
     @State private var prompt = ""
-    @State private var isGenerating = false
 
     @FocusState private var isPromptFocused: Bool
 
@@ -80,6 +79,7 @@ struct AIEditCanvasView: View {
             
             ToolbarItem(placement: .primaryAction) {
                 Button(role: .close) {
+                    AIGenerationService.shared.cancelCurrentTask()
                     withAnimation {
                         showEditor = false
                     }
@@ -90,10 +90,15 @@ struct AIEditCanvasView: View {
         .background(Color(.secondarySystemBackground))
 //        .clipShape(RoundedRectangle(cornerRadius: 26))
         .overlay {
-            if isGenerating {
+            if AIGenerationService.shared.isRunning && selectedMode != .explain {
                 AIOverlayView(title: $generationStage)
             }
         }
+        .onChange(of: selectedMode, { _, newValue in
+            if selectedMode == .summarize {
+                selectedScope = .selection
+            }
+        })
         .onAppear {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
                 isPromptFocused = true
@@ -164,6 +169,7 @@ struct AIEditCanvasView: View {
                                     )
                             }
                     }
+                    .disabled(selectedMode == .summarize && scope == .canvas)
                     .buttonStyle(.plain)
                     
                 }
@@ -221,8 +227,8 @@ struct AIEditCanvasView: View {
             .foregroundStyle(.white)
             .clipShape(RoundedRectangle(cornerRadius: 16))
         }
-        .disabled(isGenerating || scopeNodesCount == 0)
-        .opacity(!(isGenerating || scopeNodesCount == 0) ? 1 : 0.5)
+        .disabled(AIGenerationService.shared.isRunning || scopeNodesCount == 0)
+        .opacity(!(AIGenerationService.shared.isRunning || scopeNodesCount == 0) ? 1 : 0.5)
         .sheet(isPresented: $showAiResponse) {
             NavigationStack {
                 AIResponseView(response: $aiResponse)
@@ -263,7 +269,6 @@ extension AIEditCanvasView {
     
     private func generateNodes() {
         Task {
-            isGenerating = true
             isPromptFocused = false
             generationStage = "Creating Canvas"
             guard let canvas = appModel.currentCanvas else { return }
@@ -304,25 +309,22 @@ extension AIEditCanvasView {
                 errorMessage = error.localizedDescription
             }
             
-            isGenerating = false
             generationStage = ""
         }
     }
 
     private func summarizeNodes() {
-        Task {
-            await fakeRequest()
-
-            // TODO:
-            // summarize nodes
-        }
+//        Task {
+//            await fakeRequest()
+//
+//            // TODO:
+//            // summarize nodes
+//        }
     }
 
     private func explainCanvas() {
         Task {
-            isGenerating = true
             isPromptFocused = false
-            generationStage = "Creating Canvas"
             guard let canvas = appModel.currentCanvas else { return }
             
             var scope: [Node] = []
@@ -342,33 +344,15 @@ extension AIEditCanvasView {
                 let stream = AIGenerationService.shared.askStereamed(prompt: prompt, nodes: scope, in: canvas)
                 showAiResponse = true
                 for try await chunk in stream {
-                    aiResponse = chunk.content
+                    print(chunk)
+                    aiResponse = chunk
                 }
             } catch {
                 print("error while generating canvas: \(error.localizedDescription)")
                 errorMessage = error.localizedDescription
             }
             
-            isGenerating = false
-            generationStage = ""
         }
-    }
-
-    private func fakeRequest() async {
-
-        isGenerating = true
-        isPromptFocused = false
-
-        defer {
-            isGenerating = false
-        }
-
-        try? await Task.sleep(for: .seconds(1.2))
-
-        withAnimation {
-            showEditor = false
-        }
-        
     }
 
 }

@@ -50,6 +50,8 @@ struct AIResponseView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button(role: .close) {
+                    AIGenerationService.shared.cancelCurrentTask()
+                    response = ""
                     dismiss()
                 }
             }

@@ -30,7 +30,7 @@ enum AIMode: String, CaseIterable, Identifiable {
         case .summarize:
             "Compress selected content"
         case .explain:
-            "Explain concepts and links"
+            "Explains concepts and key points"
         }
     }
 

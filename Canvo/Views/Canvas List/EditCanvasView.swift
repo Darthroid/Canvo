@@ -150,7 +150,10 @@ struct EditCanvasView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(role: .cancel) { dismiss() }
+                    Button(role: .cancel) {
+                        AIGenerationService.shared.cancelCurrentTask()
+                        dismiss()
+                    }
                 }
             }
             .overlay {
