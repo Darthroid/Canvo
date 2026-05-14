@@ -153,6 +153,9 @@ struct CanvasCollectionView: View {
                 secondaryButton: .cancel()
             )
         }
+        .onDisappear {
+            AIGenerationService.shared.cancelCurrentTask()
+        }
         
     }
     

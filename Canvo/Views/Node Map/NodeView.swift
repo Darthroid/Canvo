@@ -102,7 +102,7 @@ struct NodeView: View {
                     }
                 )
         )
-        .frame(maxWidth: 400)
+        .frame(maxWidth: 400, maxHeight: 600)
         .transition(.scale.combined(with: .opacity))
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
         .sheet(isPresented: $showDetail) {

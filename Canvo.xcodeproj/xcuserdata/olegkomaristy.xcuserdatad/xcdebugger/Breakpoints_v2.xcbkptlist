@@ -30,8 +30,8 @@
             filePath = "Canvo/Services/AIGenerationService.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "361"
-            endingLineNumber = "361"
+            startingLineNumber = "375"
+            endingLineNumber = "375"
             landmarkName = "extendNodes(nodes:in:userInput:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -46,8 +46,8 @@
             filePath = "Canvo/Services/AIGenerationService.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "355"
-            endingLineNumber = "355"
+            startingLineNumber = "372"
+            endingLineNumber = "372"
             landmarkName = "extendNodes(nodes:in:userInput:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -62,8 +62,8 @@
             filePath = "Canvo/Services/AIGenerationService.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "365"
-            endingLineNumber = "365"
+            startingLineNumber = "379"
+            endingLineNumber = "379"
             landmarkName = "extendNodes(nodes:in:userInput:)"
             landmarkType = "7">
          </BreakpointContent>

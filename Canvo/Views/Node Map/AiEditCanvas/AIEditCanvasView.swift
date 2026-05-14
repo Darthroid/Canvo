@@ -14,10 +14,6 @@ struct AIEditCanvasView: View {
     @Environment(AppModel.self) private var appModel
     @Binding var showEditor: Bool
     
-    @State private var generationStage: String = ""
-    
-    @State private var errorMessage: String?
-    
     @State private var aiResponse: String = ""
     @State private var showAiResponse: Bool = false
     
@@ -79,7 +75,7 @@ struct AIEditCanvasView: View {
             
             ToolbarItem(placement: .primaryAction) {
                 Button(role: .close) {
-                    AIGenerationService.shared.cancelCurrentTask()
+//                    AIGenerationService.shared.cancelCurrentTask()
                     withAnimation {
                         showEditor = false
                     }
@@ -89,11 +85,6 @@ struct AIEditCanvasView: View {
         .padding(20)
         .background(Color(.secondarySystemBackground))
 //        .clipShape(RoundedRectangle(cornerRadius: 26))
-        .overlay {
-            if AIGenerationService.shared.isRunning && selectedMode != .explain {
-                AIOverlayView(title: $generationStage)
-            }
-        }
         .onChange(of: selectedMode, { _, newValue in
             if selectedMode == .summarize {
                 selectedScope = .selection
@@ -248,17 +239,17 @@ struct AIEditCanvasView: View {
     // MARK: - Actions
 
     private func runSelectedAction() {
-
+        isPromptFocused = false
         switch selectedMode {
-
         case .extend:
-            generateNodes()
-
+            appModel.generateNodes(selectedScope: selectedScope, userPrompt: prompt)
+            showEditor = false
         case .summarize:
-            summarizeNodes()
-
+            appModel.summarizeNodes()
+            showEditor = false
         case .explain:
             explainCanvas()
+            showAiResponse = true
         }
     }
 }
@@ -266,62 +257,6 @@ struct AIEditCanvasView: View {
 // MARK: - AI Action Handlers
 
 extension AIEditCanvasView {
-    
-    private func generateNodes() {
-        Task {
-            isPromptFocused = false
-            generationStage = "Creating Canvas"
-            guard let canvas = appModel.currentCanvas else { return }
-            
-            var scope: [Node] = []
-            
-            switch selectedScope {
-            case .selection:
-                scope = appModel.selectedNodeIds.compactMap {
-                    appModel.node(forId: $0)
-                }
-            case .visible:
-                break
-            case .canvas:
-                scope = appModel.nodes
-            }
-            
-            do {
-                var nodes: [Node] = []
-                var connections: [NodeConnection] = []
-                for single in scope {
-                    for try await schema in AIGenerationService.shared.extendNodes(nodes: [single], in: canvas, userInput: prompt) {
-                        nodes += schema.0.0
-                            .map { Node(from: $0) }
-                        
-                        connections += schema.0.1
-                            .map { NodeConnection(from: $0) }
-                        
-                        generationStage = schema.1
-                    }
-                }
-                
-                appModel.addNodesFromAIAction(Array(nodes), connections: Array(connections))
-                showEditor = false
-
-            } catch {
-                print("error while generating canvas: \(error.localizedDescription)")
-                errorMessage = error.localizedDescription
-            }
-            
-            generationStage = ""
-        }
-    }
-
-    private func summarizeNodes() {
-//        Task {
-//            await fakeRequest()
-//
-//            // TODO:
-//            // summarize nodes
-//        }
-    }
-
     private func explainCanvas() {
         Task {
             isPromptFocused = false
@@ -341,18 +276,19 @@ extension AIEditCanvasView {
             }
             
             do {
-                let stream = AIGenerationService.shared.askStereamed(prompt: prompt, nodes: scope, in: canvas)
-                showAiResponse = true
+                let stream = AIGenerationService.shared
+                    .askQuestions(scope: scope, userInput: prompt, in: canvas)
+                
                 for try await chunk in stream {
                     print(chunk)
                     aiResponse = chunk
                 }
             } catch {
                 print("error while generating canvas: \(error.localizedDescription)")
-                errorMessage = error.localizedDescription
             }
             
         }
     }
-
 }
+
+
