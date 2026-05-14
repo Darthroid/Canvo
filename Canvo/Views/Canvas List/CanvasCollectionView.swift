@@ -145,8 +145,9 @@ struct CanvasCollectionView: View {
                 title: Text("Delete Canvas"),
                 message: Text("Are you sure you want to delete \(canvas.name)? This cannot be undone."),
                 primaryButton: .destructive(Text("Delete")) {
-                    if let index = appModel.canvases.firstIndex(where: { $0.id == canvas.id }) {
-                        appModel.removeCanvas(at: IndexSet([index]))
+                    
+                    if let id = appModel.canvases.first(where: { $0.id == canvas.id })?.id {
+                        appModel.deleteCanvasIdAction(id)
                     }
                 },
                 secondaryButton: .cancel()
@@ -232,7 +233,7 @@ struct CanvasCollectionView: View {
         .buttonStyle(.plain)
         .contextMenu {
             Button {
-                appModel.setPin(!canvas.isPined, forCanvas: canvas)
+                appModel.toggleCanvasPinAction(canvas)
             } label: {
                 Label(canvas.isPined ? "Remove from Favorites" : "Favorite", systemImage: canvas.isPined ? "star.slash" : "star")
             }

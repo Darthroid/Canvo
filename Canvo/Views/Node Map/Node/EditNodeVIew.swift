@@ -63,13 +63,7 @@ struct EditNodeView: View {
 
                 ToolbarItem(placement: .confirmationAction) {
                     Button(role: .confirm) {
-                        appModel.updateNode(
-                            id: nodeId,
-                            name: name,
-                            detail: detail,
-                            color: color.toHex(includeAlpha: true),
-                            tagsRaw: tagsRaw
-                        )
+                        submit()
                         dismiss()
                     }
                     .disabled(
@@ -85,5 +79,33 @@ struct EditNodeView: View {
                 }
             }
         }
+    }
+    
+    private func submit() {
+        let snapshot = appModel.makeNodeSnapshotWithConnections(
+            appModel.node(forId: nodeId)!
+        )
+        let oldNode = snapshot.node
+        
+        let newNode = NodeSnapshot(
+            id: nodeId,
+            name: name,
+            detail: detail,
+            x: oldNode.x,
+            y: oldNode.y,
+            z: oldNode.z,
+            color: color.toHex(includeAlpha: true),
+            tagsRaw: tagsRaw
+        )
+        
+        let action = UpdateNodeContentAction(
+            nodeId: nodeId,
+            old: oldNode,
+            new: newNode
+        )
+        
+        appModel.actionService.perform(action)
+        
+        dismiss()
     }
 }

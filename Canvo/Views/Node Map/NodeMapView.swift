@@ -15,17 +15,22 @@ struct NodeMapView: View {
     @Environment(\.dismissImmersiveSpace) var dismissImmersiveSpace
 #endif
     
+    @State private var dragStartPositions: [String: SIMD3<Float>] = [:]
+    @State private var draggedNodeIds: Set<String> = []
+    
     @State private var scale: CGFloat = 1.0
     @State private var baseScale: CGFloat = 1.0
     @State private var offset: CGSize = .zero
     @State private var lastPanTranslation: CGSize = .zero
     @State private var lastDragTranslation: CGSize = .zero
     
-    @State var showAIEditCanvas = false
-    @State var showNodeForm = false
-    @State var showtagsFilter: Bool = false
-    @State var showNodeSpace = false
-    @State var pendingNodePosition: SIMD3<Float>? = nil
+    @State private var showGrid = true
+    
+    @State private var showAIEditCanvas = false
+    @State private var showNodeForm = false
+    @State private var showtagsFilter: Bool = false
+    @State private var showNodeSpace = false
+    @State private var pendingNodePosition: SIMD3<Float>? = nil
     @State private var containerSize: CGSize = .zero
     
     @State private var searchText = ""
@@ -67,6 +72,13 @@ struct NodeMapView: View {
         }
     }
     
+    // MARK: Notifications
+    private var zoomIn = NotificationCenter.default.publisher(for: .init("zoomin"))
+    private var zoomOut = NotificationCenter.default.publisher(for: .init("zoomout"))
+    private var resetZoom = NotificationCenter.default.publisher(for: .init("resetzoom"))
+    private var outline = NotificationCenter.default.publisher(for: .init("outline"))
+    private var toggleGrid = NotificationCenter.default.publisher(for: .init("togglegrid"))
+    
     private func applyZoom(multiplier: CGFloat) {
         let next = scale * multiplier
         let clamped = min(max(next, minScale), maxScale)
@@ -79,7 +91,7 @@ struct NodeMapView: View {
         }
     }
     
-    private func resetZoom() {
+    private func setDefaultZoom() {
         scale = 1.0
         baseScale = 1.0
         offset = .zero
@@ -119,7 +131,7 @@ struct NodeMapView: View {
         }
         
         // Выделяем ноду
-        appModel.selectedNodeId = node.id
+        appModel.selectedNodeIds = [node.id]
     }
     
     // Функция поиска нод
@@ -164,8 +176,12 @@ struct NodeMapView: View {
     
     var canvas: some View {
         ZStack {
+            
             ZStack {
-                GridLayer()
+                // Canvas grid
+                if showGrid {
+                    GridLayer()
+                }
                 
                 // Connections
                 ForEach(appModel.visibleConnections) { c in
@@ -184,13 +200,30 @@ struct NodeMapView: View {
                 ForEach(appModel.visibleNodes) { node in
                     NodeView(
                         node: node,
-                        isSelected: appModel.selectedNodeId == node.id,
+                        isSelected: appModel.selectedNodeIds.contains(node.id),
+                        isExpanded: appModel.expandedNodeIds.contains(node.id),
                         isMatchingSearch: searchResults.contains(where: { $0.id == node.id })
                     )
                     .position(node.position.position2D)
                     .gesture(nodeDrag(node))
-                    .onTapGesture {
-                        appModel.selectedNodeId = appModel.selectedNodeId == node.id ? nil : node.id
+                    .onTapGesture(count: 1) {
+                        withAnimation {
+                            if appModel.selectedNodeIds.contains(node.id) {
+                                appModel.selectedNodeIds.remove(node.id)
+                            } else {
+                                appModel.selectedNodeIds.insert(node.id)
+                            }
+                        }
+                        
+                    }
+                    .onTapGesture(count: 2) {
+                        withAnimation(.bouncy(duration: 0.2)) {
+                            if appModel.expandedNodeIds.contains(node.id) {
+                                appModel.expandedNodeIds.remove(node.id)
+                            } else {
+                                appModel.expandedNodeIds.insert(node.id)
+                            }
+                        }
                     }
                 }
                 
@@ -270,7 +303,7 @@ struct NodeMapView: View {
                 }
             }
             .onChange(of: appModel.centerOnNodeId, { _, _ in
-                guard let node = appModel.nodes.first(where: {
+                guard let node = appModel.visibleNodes.first(where: {
                     $0.id == appModel.centerOnNodeId
                 }) else { return }
                 centerOnNode(node, animated: true)
@@ -294,7 +327,10 @@ struct NodeMapView: View {
             }
             .sheet(isPresented: $showAIEditCanvas) {
                 if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
-                    AIEditCanvasView()
+                    NavigationStack {
+                        AIEditCanvasView(showEditor: $showAIEditCanvas, visibleScopeIds: [])
+                            .environment(appModel)
+                    }
                 }
             }
 //            .navigationTitle(appModel.currentCanvas?.name ?? "Canvo")
@@ -318,89 +354,60 @@ struct NodeMapView: View {
                 }
             }
             .toolbar {
-                ToolbarItem(placement: .title) {
-                    VStack {
-                        Text(appModel.currentCanvas?.name ?? "Canvo")
-                            .font(.headline)
-                        Text("Last Edit: \(updatedAt ?? "")")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                ToolbarItemGroup(placement: .topBarLeading) {
+                    Button {
+                        appModel.actionService.undo()
+                    } label: {
+                        Label("Undo", systemImage: "arrow.uturn.left")
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 8)
-                    .glassEffect()
+                    .disabled(!appModel.actionService.canUndo)
+
+                    Button {
+                        appModel.actionService.redo()
+                    } label: {
+                        Label("Redo", systemImage: "arrow.uturn.right")
+                    }
+                    .disabled(!appModel.actionService.canRedo)
+                    
                 }
+                
+//                ToolbarItem(placement: .title) {
+//                    VStack {
+//                        Text(appModel.currentCanvas?.name ?? "Canvo")
+//                            .font(.headline)
+//                        Text("Last Edit: \(updatedAt ?? "")")
+//                            .font(.caption)
+//                            .foregroundStyle(.secondary)
+//                    }
+//                    .padding(.horizontal, 20)
+//                    .padding(.vertical, 8)
+//                    .glassEffect()
+//                }
                 
                 DefaultToolbarItem(kind: .search, placement: .bottomBar)
                 
-                ToolbarItemGroup(placement: .bottomBar) {
-                    
-                    // outline
-                    Button {
-                        withAnimation {
-                            showOutline.toggle()
-                        }
-                    } label: {
-                        Image(systemName: "list.bullet.indent")
-                    }
-                    
-                    // tag filter
+                ToolbarItem(placement: .confirmationAction) {
                     Menu {
-                        ForEach(appModel.currentCanvas?.tags ?? [], id: \.name) { tag in
-                            Button {
-                                appModel.toggleTag(tag)
-                            } label: {
-                                Label(tag.name, systemImage: (appModel.selectedTags.contains(tag) ? "checkmark" : ""))
-                            }
-                        }
-                        
+                        Text(appModel.currentCanvas?.name ?? "Canvo")
+                            .font(.headline)
                         Divider()
-                        
-                        Button {
-                            appModel.showAllTags()
-                        } label: {
-                            Text("Show All")
-                        }
-                    } label: {
-                        Image(systemName: appModel.selectedTags.isEmpty ? "tag" : "tag.fill")
-                    }
-                    
-                    // ai edit
-                    if AIGenerationService.shared.isAvailable {
-                        Button {
-                            showAIEditCanvas = true
-                        } label: {
-                            Image(systemName: "sparkles")
-                        }
-                    }
-                }
-                
-                ToolbarSpacer(.flexible, placement: .bottomBar)
-                
-                ToolbarItem(placement: .bottomBar) {
-                    Button {
-                        pendingNodePosition = visibleCenterPosition()
-                        showNodeForm = true
-                    } label: {
-                        Image(systemName: "plus")
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
-                    .clipShape(Capsule())
-                    .tint(.accent)
-                }
-                
-//                ToolbarItem(placement: .topBarLeading) {
-//                    Button {
-//                        withAnimation {
-//                            showOutline.toggle()
+                        // undo/redo
+//                        Button {
+//                            appModel.actionService.undo()
+//                        } label: {
+//                            Label("Undo", systemImage: "arrow.uturn.left")
 //                        }
-//                    } label: {
-//                        Image(systemName: "list.bullet.indent")
-//                    }
-//                }
-                ToolbarItemGroup(placement: .topBarTrailing) {
-                    
+//                        .disabled(!appModel.actionService.canUndo)
+//
+//                        Button {
+//                            appModel.actionService.redo()
+//                        } label: {
+//                            Label("Redo", systemImage: "arrow.uturn.right")
+//                        }
+//                        .disabled(!appModel.actionService.canRedo)
+//                        
+//                        Divider()
+                        
 #if os(visionOS)
                     // visionOS immersive map
                     Button {
@@ -415,9 +422,79 @@ struct NodeMapView: View {
                             }
                         }
                     } label: {
-                        Image(systemName: "graph.3d")
+                        Label(showNodeSpace ? "Hide Immersive Map" : "Show Immersive Map", systemImage: "graph.3d")
                     }
+                        Divider()
 #endif
+                        
+                        // outline
+                        Button {
+                            withAnimation {
+                                showOutline.toggle()
+                            }
+                        } label: {
+                            Label(showOutline ? "Hide Outlie" : "Show Outline",
+                                  systemImage: "list.bullet.indent"
+                            )
+                        }
+                        
+                        Button {
+                            withAnimation {
+                                showGrid.toggle()
+                            }
+                        } label: {
+                            Label(showGrid ? "Hide Grid" : "Show Grid",
+                                  systemImage: "squareshape.split.2x2.dotted.inside.and.outside"
+                            )
+                        }
+                        
+                        // tag filter
+                        Menu {
+                            ForEach(appModel.currentCanvas?.tags ?? [], id: \.name) { tag in
+                                Button {
+                                    appModel.toggleTag(tag)
+                                } label: {
+                                    Label(tag.name, systemImage: (appModel.selectedTags.contains(tag) ? "checkmark" : ""))
+                                }
+                            }
+                            
+                            Divider()
+                            
+                            Button {
+                                appModel.showAllTags()
+                            } label: {
+                                Text("Show All")
+                            }
+                        } label: {
+                            Label("Tag Filter", systemImage: appModel.selectedTags.isEmpty ? "tag" : "tag.fill")
+                        }
+                        
+                        // ai edit
+                        if AIGenerationService.shared.isAvailable {
+                            
+                            Toggle(isOn: $showAIEditCanvas.animation()) {
+                                Label("AI Editor", systemImage: "sparkles")
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis")
+                    }
+                }
+                
+                ToolbarSpacer(.flexible, placement: .bottomBar)
+                
+                ToolbarItem(placement: .bottomBar) {
+                    Button {
+                        pendingNodePosition = visibleCenterPosition()
+                        showNodeForm = true
+                    } label: {
+                        Image(systemName: "plus")
+                    }
+                    .keyboardShortcut("n", modifiers: [.command])
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+                    .clipShape(Capsule())
+                    .tint(.accent)
                 }
             }
             .background(Color(uiColor: .systemBackground))
@@ -432,8 +509,29 @@ struct NodeMapView: View {
                 .opacity(0.5)
                 .allowsHitTesting(false)
         }
+        .onReceive(zoomIn, perform: { _ in
+            applyZoom(multiplier: 1.2)
+        })
+        .onReceive(zoomOut, perform: { _ in
+            applyZoom(multiplier: 0.8)
+        })
+        .onReceive(resetZoom, perform: { _ in
+            setDefaultZoom()
+        })
+        .onReceive(outline, perform: { _ in
+            withAnimation {
+                showOutline.toggle()
+            }
+            
+        })
+        .onReceive(toggleGrid, perform: { _ in
+            withAnimation {
+                showGrid.toggle()
+            }
+        })
         .onDisappear {
             generatePreview()
+            appModel.switchToCanvas(nil)
         }
     }
 }
@@ -459,6 +557,7 @@ extension NodeMapView {
                 NodeView(
                     node: node,
                     isSelected: false,
+                    isExpanded: false,
                     isMatchingSearch: false
                 )
                 .position(node.position.position2D)
@@ -540,18 +639,71 @@ extension NodeMapView {
     
     private func nodeDrag(_ node: Node) -> some Gesture {
         DragGesture(coordinateSpace: .named("canvas"))
-            .onChanged { v in
-                let dx = (v.translation.width - lastDragTranslation.width) / scale
-                let dy = (v.translation.height - lastDragTranslation.height) / scale
-                
-                node.x += Float(dx)
-                node.y += Float(dy)
-                
-                lastDragTranslation = v.translation
+            .onChanged { value in
+                // 1. Определяем, какие ноды будут перемещаться
+                let isDraggedNodeSelected = appModel.selectedNodeIds.contains(node.id)
+                let movingIds = isDraggedNodeSelected ? appModel.selectedNodeIds : [node.id]
+
+                // 2. Сбрасываем выделение, если тащим невыделенную ноду
+                if !isDraggedNodeSelected {
+                    appModel.selectedNodeIds = [node.id]
+                }
+
+                // 3. Запоминаем стартовые позиции (один раз за жест)
+                for id in movingIds {
+                    if dragStartPositions[id] == nil,
+                       let n = appModel.node(forId: id) {
+                        dragStartPositions[id] = n.position
+                    }
+                }
+
+                // 4. Добавляем все перемещаемые ноды в отслеживаемый набор
+                draggedNodeIds.formUnion(movingIds)
+
+                // 5. Вычисляем общее смещение (в координатах canvas)
+                let dx = Float(value.translation.width) / Float(scale)
+                let dy = Float(value.translation.height) / Float(scale)
+
+                // 6. Применяем смещение ко всем нодам (только визуально, без сохранения)
+                for id in movingIds {
+                    guard let start = dragStartPositions[id],
+                          let n = appModel.node(forId: id) else { continue }
+                    n.x = start.x + dx
+                    n.y = start.y + dy
+                }
             }
             .onEnded { _ in
-                lastDragTranslation = .zero
-                appModel.save()
+                // 1. Собираем данные для batch-действия
+                var nodeIds: [String] = []
+                var oldPositions: [SIMD3<Float>] = []
+                var newPositions: [SIMD3<Float>] = []
+
+                for id in draggedNodeIds {
+                    guard let start = dragStartPositions[id],
+                          let node = appModel.node(forId: id) else { continue }
+                    let end = node.position
+                    if start != end {
+                        nodeIds.append(id)
+                        oldPositions.append(start)
+                        newPositions.append(end)
+                    }
+                }
+
+                // 2. Выполняем batch-действие, если есть изменения
+                if !nodeIds.isEmpty {
+                    let action = MoveNodesBatchAction(
+                        nodeIds: nodeIds,
+                        oldPositions: oldPositions,
+                        newPositions: newPositions
+                    )
+                    appModel.actionService.perform(action)
+                }
+
+                // 3. Очищаем временные данные
+                for id in draggedNodeIds {
+                    dragStartPositions.removeValue(forKey: id)
+                }
+                draggedNodeIds.removeAll()
             }
     }
     
@@ -598,5 +750,32 @@ extension NodeMapView {
             image: image,
             for: canvas.id
         )
+    }
+}
+
+struct SelectedNodesBar: View {
+    let count: Int
+    let onClear: () -> Void
+    
+    var body: some View {
+        HStack {
+            Image(systemName: "checkmark.circle")
+                .foregroundStyle(.accent)
+            Text("Selected: \(count) node\(count == 1 ? "" : "s")")
+                .fontWeight(.medium)
+            Spacer()
+            Button("Clear") {
+                onClear()
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(.ultraThinMaterial)
+        .cornerRadius(20)
+        .padding(.horizontal, 16)
+        .padding(.bottom, 80)
+        .transition(.move(edge: .bottom).combined(with: .opacity))
     }
 }

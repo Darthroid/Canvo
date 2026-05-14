@@ -10,6 +10,7 @@ import SwiftUI
 struct NodeView: View {
     let node: Node
     let isSelected: Bool
+    let isExpanded: Bool
     let isMatchingSearch: Bool
 
     @Environment(\.colorScheme) private var colorScheme
@@ -40,7 +41,7 @@ struct NodeView: View {
                     .foregroundColor(titleColor)
                     .multilineTextAlignment(.center)
 
-                if isSelected {
+                if isExpanded {
                     Text(node.detail.isEmpty ? "No description" : node.detail)
                         .font(.system(size: 14))
                         .foregroundColor(secondaryColor)
@@ -48,7 +49,7 @@ struct NodeView: View {
                 }
             }
 
-            if isSelected {
+            if isExpanded {
                 Button {
                     showDetail.toggle()
                 } label: {
@@ -89,8 +90,14 @@ struct NodeView: View {
                                     dashPhase = 0
                                 }
                         } else {
-                            RoundedRectangle(cornerRadius: 25)
-                                .stroke(titleColor.opacity(0.2), lineWidth: 1)
+                            if isSelected {
+                                RoundedRectangle(cornerRadius: 25)
+                                    .stroke(.accent, lineWidth: 2)
+                            } else {
+                                RoundedRectangle(cornerRadius: 25)
+                                    .stroke(titleColor.opacity(0.2), lineWidth: 1)
+                            }
+                            
                         }
                     }
                 )
@@ -103,5 +110,6 @@ struct NodeView: View {
                 NodeDetailView(node: node)
             }
         }
+        .zIndex(isSelected || isExpanded ? 1 : 0)
     }
 }

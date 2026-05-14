@@ -61,17 +61,34 @@ struct LinkEditorView: View {
 
                 ToolbarItem(placement: .confirmationAction) {
                     Button(role: .confirm) {
-                        guard let toNodeId = selectedNodeId else { return }
-                        appModel.addConnection(
-                            from: fromNode.id,
-                            to: toNodeId
-                        )
+                        createLink()
                         dismiss()
                     }
                     .disabled(selectedNodeId == nil)
                 }
             }
         }
+    }
+    
+    private func createLink() {
+        guard let toNodeId = selectedNodeId else { return }
+//        guard let canvas = appModel.currentCanvas else { return }
+        
+        // prevent duplicates (same logic as before but now explicit)
+        guard !appModel.connections.contains(where: {
+            ($0.fromNodeId == fromNode.id && $0.toNodeId == toNodeId) ||
+            ($0.fromNodeId == toNodeId && $0.toNodeId == fromNode.id)
+        }) else { return }
+        
+        let snapshot = ConnectionSnapshot(
+            id: UUID().uuidString,
+            fromNodeId: fromNode.id,
+            toNodeId: toNodeId
+        )
+        
+        let action = AddConnectionAction(connection: snapshot)
+        
+        appModel.actionService.perform(action)
     }
 }
 

@@ -37,10 +37,10 @@ struct ImmersiveNodeMapView: View {
             guard let content = realityViewContent else { return }
             updateConnections(in: content)
         }
-        .onChange(of: appModel.selectedNodeId) { oldValue, newValue in
+        .onChange(of: appModel.selectedNodeIds) { oldValue, newValue in
             let ids = appModel.nodes.map(\.id)
             ids.forEach {
-                updateNodeAppearance(for: $0, isSelected: newValue == $0)
+                updateNodeAppearance(for: $0, isSelected: newValue.contains($0))
             }
         }
     }
@@ -115,15 +115,15 @@ struct ImmersiveNodeMapView: View {
                 
                 let tappedNodeId = nodeComponent.node.id
                 
-                if appModel.selectedNodeId == tappedNodeId {
-                    appModel.selectedNodeId = nil
+                if appModel.selectedNodeIds.contains(tappedNodeId) {
+                    appModel.selectedNodeIds.remove(tappedNodeId)
                     updateNodeAppearance(for: tappedNodeId, isSelected: false)
                 } else {
-                    if let previousSelectedId = appModel.selectedNodeId {
-                        updateNodeAppearance(for: previousSelectedId, isSelected: false)
-                    }
+//                    if let previousSelectedId = appModel.selectedNodeIds {
+//                        updateNodeAppearance(for: previousSelectedId, isSelected: false)
+//                    }
                     
-                    appModel.selectedNodeId = nodeComponent.node.id
+                    appModel.selectedNodeIds.insert(nodeComponent.node.id)
                     updateNodeAppearance(for: tappedNodeId, isSelected: true)
                 }
             }
@@ -293,7 +293,7 @@ struct ImmersiveNodeMapView: View {
     private func createCapsuleNode(for node: Node) -> Entity {
         let parentEntity = Entity()
 
-        let isSelected = appModel.selectedNodeId == node.id
+        let isSelected = appModel.selectedNodeIds.contains(node.id)
         let (capsuleWidth, capsuleHeight) = calculateDynamicSize(for: node, isSelected: isSelected)
         
         let capsule = createCapsule(width: capsuleWidth, height: capsuleHeight, for: node, isSelected: isSelected)

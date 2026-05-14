@@ -38,6 +38,7 @@ struct EditCanvasView: View {
     @State private var ideas: String = ""
     
     @State private var isGenerating: Bool = false
+    @State private var generationStage: String = ""
     @State private var showErrorAlert: Bool = false
     @State private var errorMessage: String = ""
     
@@ -149,12 +150,15 @@ struct EditCanvasView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(role: .cancel) { dismiss() }
+                    Button(role: .cancel) {
+                        AIGenerationService.shared.cancelCurrentTask()
+                        dismiss()
+                    }
                 }
             }
             .overlay {
                 if isGenerating {
-                    AIOverlayView(title: "Generating Canvas")
+                    AIOverlayView(title: $generationStage)
                 }
             }
             .alert("Generation Failed", isPresented: $showErrorAlert) {
@@ -233,37 +237,67 @@ private extension EditCanvasView {
     func submit() {
         switch mode {
         case .create:
-            appModel.createCanvas(name: name)
+            appModel.createCanvasAction(name: name)
             dismiss()
             
         case .aiCreate:
-            generateCanvas()
+//            generateCanvas()
+            generateCanvasStream()
             
         case .edit:
             guard let editCanvas else { return }
-            appModel.renameCanvas(id: editCanvas.id, name: name)
+            appModel.renameCanvasAction(id: editCanvas.id, newName: name)
             dismiss()
         }
     }
     
-    func generateCanvas() {
+    func generateCanvasStream() {
         Task {
             isGenerating = true
+            generationStage = "Creating Canvas"
             isIdeasFocused = false
             
             do {
-                let schema = try await AIGenerationService.shared
-                    .generaeteCanvas(prompt: ideas)
-
-                let canvas = Canvas(from: schema)
-                appModel.addCanvas(canvas)
-                dismiss()
+                var finalCanvas: Canvas?
+                for try await schema in AIGenerationService.shared.generateCanvasStream(prompt: ideas) {
+                    let canvas = Canvas(from: schema.0)
+                    generationStage = schema.1
+                    finalCanvas = canvas
+                }
+                
+                if let canvas = finalCanvas {
+                    appModel.addCanvasFromAIAction(canvas)
+                    dismiss()
+                }
             } catch {
+                print("error while generating canvas: \(error.localizedDescription)")
                 errorMessage = error.localizedDescription
                 showErrorAlert = true
             }
             
             isGenerating = false
+            generationStage = ""
         }
     }
+    
+//    func generateCanvas() {
+//        Task {
+//            isGenerating = true
+//            isIdeasFocused = false
+//            
+//            do {
+//                let schema = try await AIGenerationService.shared
+//                    .generaeteCanvas(prompt: ideas)
+//
+//                let canvas = Canvas(from: schema)
+//                appModel.addCanvas(canvas)
+//                dismiss()
+//            } catch {
+//                errorMessage = error.localizedDescription
+//                showErrorAlert = true
+//            }
+//            
+//            isGenerating = false
+//        }
+//    }
 }
