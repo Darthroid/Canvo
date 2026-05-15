@@ -118,28 +118,28 @@ struct EditCanvasView: View {
                 }
                 
                 // MARK: Bottom CTA
-                VStack {
-                    Spacer()
-                    
-                    Button(action: submit) {
-                        Text(mode == .aiCreate ? "Generate with AI" : mode.confirmActionTitle)
-                            .font(.system(size: 17, weight: .semibold))
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(
-                                LinearGradient(
-                                    colors: [Color.accentColor.opacity(0.9), Color.accentColor],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
-                            .foregroundStyle(.white)
-                            .clipShape(RoundedRectangle(cornerRadius: 16))
-                    }
-                    .disabled(!canSubmit)
-                    .opacity(canSubmit ? 1 : 0.5)
-                    .padding()
-                }
+//                VStack {
+//                    Spacer()
+//                    
+//                    Button(action: submit) {
+//                        Text(mode == .aiCreate ? "Generate with AI" : mode.confirmActionTitle)
+//                            .font(.system(size: 17, weight: .semibold))
+//                            .frame(maxWidth: .infinity)
+//                            .padding()
+//                            .background(
+//                                LinearGradient(
+//                                    colors: [Color.accentColor.opacity(0.9), Color.accentColor],
+//                                    startPoint: .leading,
+//                                    endPoint: .trailing
+//                                )
+//                            )
+//                            .foregroundStyle(.white)
+//                            .clipShape(RoundedRectangle(cornerRadius: 16))
+//                    }
+//                    .disabled(!canSubmit)
+//                    .opacity(canSubmit ? 1 : 0.5)
+//                    .padding()
+//                }
             }
             .navigationTitle(mode.navTitle)
             .navigationBarTitleDisplayMode(.inline)
@@ -149,6 +149,11 @@ struct EditCanvasView: View {
                         AIGenerationService.shared.cancelCurrentTask()
                         dismiss()
                     }
+                }
+                
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(role: .confirm, action: submit)
+                        .disabled(!canSubmit)
                 }
             }
             .onAppear {

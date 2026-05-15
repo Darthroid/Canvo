@@ -73,7 +73,7 @@ struct AIEditCanvasView: View {
                 }
             }
             
-            ToolbarItem(placement: .primaryAction) {
+            ToolbarItem(placement: .cancellationAction) {
                 Button(role: .close) {
 //                    AIGenerationService.shared.cancelCurrentTask()
                     withAnimation {

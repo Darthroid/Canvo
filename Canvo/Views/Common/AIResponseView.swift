@@ -33,27 +33,26 @@ struct AIResponseView: View {
                     }
                 }
             }
-            
-            HStack {
-                Spacer()
-                Button("Copy to Clipboard") {
-                    UIPasteboard.general.string = response
-                }
-                .buttonStyle(.glass)
-                Spacer()
-            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(20)
         .navigationTitle("AI Explanation")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
+            ToolbarItem(placement: .cancellationAction) {
                 Button(role: .close) {
                     AIGenerationService.shared.cancelCurrentTask()
                     response = ""
                     dismiss()
                 }
+            }
+            
+            ToolbarItem(placement: .primaryAction) {
+                Button("Copy to Clipboard", systemImage: "document.on.document") {
+                    UIPasteboard.general.string = response
+                }
+                .buttonStyle(.glass)
+                .labelsHidden()
             }
         }
     }
