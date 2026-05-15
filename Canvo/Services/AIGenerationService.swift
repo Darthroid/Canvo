@@ -54,8 +54,14 @@ class AIGenerationService: Sendable {
                 do {
                     try Task.checkCancellation()
                     runningStage = "Creating canvas"
+                    
+                    let session = LanguageModelSession(
+                        model: model,
+                        instructions: "You are an AI that designs a structured mind map."
+                    )
+                    
                     // Create canvas
-                    var canvas = try await generaeteEmptyCanvas(prompt: prompt)
+                    var canvas = try await generaeteEmptyCanvas(session: session, prompt: prompt)
                     continuation.yield(canvas)
                     
                     runningStage = "Creating main idea"
@@ -64,6 +70,7 @@ class AIGenerationService: Sendable {
                     
                     // Create main node
                     let mainIdea = try await generateMainNode(
+                        session: session,
                         prompt: prompt,
                         canvasTitle: canvas.name
                     )
@@ -77,6 +84,7 @@ class AIGenerationService: Sendable {
                     
                     // Create child nodes
                     let childNodes = try await generateChildNodes(
+                        session: session,
                         prompt: prompt,
                         canvasTitle: canvas.name,
                         mainNode: mainIdea
@@ -193,17 +201,15 @@ class AIGenerationService: Sendable {
 
 extension AIGenerationService {
     
-    private func generaeteEmptyCanvas(prompt: String) async throws -> CanvasSchema {
-        let session = LanguageModelSession(
-            model: model,
-            instructions: """
-            You are an AI that designs a structured mind map.
-            Title of canvas = summary of main idea.
-            Title should be short and descriptive.
-            """
-        )
+    private func generaeteEmptyCanvas(session: LanguageModelSession, prompt: String) async throws -> CanvasSchema {
         
-        let prompt = "Generate a canvas name based on the idea: \(prompt)"
+        let prompt = """
+        RULES:
+        Title of canvas = summary of main idea.
+        Title should be short and descriptive.
+        YOUR TASK:
+        Generate a canvas name based on the idea: \(prompt)
+        """
         
         let name = try await session.respond(
             to: prompt,
@@ -225,21 +231,18 @@ extension AIGenerationService {
     }
     
     private func generateMainNode(
+        session: LanguageModelSession,
         prompt: String,
         canvasTitle: String
     ) async throws -> NodeSchema {
         
-        let session = LanguageModelSession(
-            model: model,
-            instructions: """
-            You are an AI that designs a structured mind map.
+        let prompt = """
             NODE RULES:
             - Exactly 1 node should be main idea.
             - Main Idea node name should be short and descriptive.
+            YOUR TASK:
+            Create a main idea node for canvas '\(canvasTitle)' based on the ideas user described: \(prompt)
             """
-        )
-        
-        let prompt = "Create a main idea node for canvas '\(canvasTitle)' based on the ideas user described: \(prompt)"
         
         return try await session.respond(
             to: prompt,
@@ -252,22 +255,17 @@ extension AIGenerationService {
     }
     
     private func generateChildNodes(
+        session: LanguageModelSession,
         prompt: String,
         canvasTitle: String,
         mainNode: NodeSchema
     ) async throws -> [NodeSchema] {
-        
-        let session = LanguageModelSession(
-            model: model,
-            instructions: """
-            You are an AI that designs a structured mind map.
+
+        let prompt = """
             NODE RULES:
             - Exactly 10 nodes.
             - Each node should describe unique idea extending main idea.
-            """
-        )
-        
-        let prompt = """
+            YOUR TASK:
             Create nodes for canvas '\(canvasTitle)' based on the ideas user described: \(prompt). 
             The main idea node is: \(mainNode.name). 
             Detail of main node: \(mainNode.detail).
@@ -303,6 +301,16 @@ extension AIGenerationService {
                     continuation.yield(([], []))
                     runningStage = "Reading Canvas"
                     
+                    let session = LanguageModelSession(
+                        model: model,
+                        instructions: """
+                        You are an AI expert that operates a structured mind map.
+                        RULES:
+                        - Exactly 2-3 nodes as extension to current input.
+                        - Each node should describe unique idea extending current input.
+                        """
+                    )
+                    
                     try await Task.sleep(nanoseconds: 2000000000)
                     
                     for node in nodes {
@@ -311,16 +319,6 @@ extension AIGenerationService {
                         runningStage = "Extending '\(node.name)'"
                         
                         let schema = node.toSchema()
-                        
-                        let session = LanguageModelSession(
-                            model: model,
-                            instructions: """
-                            You are an AI expert that operates a structured mind map.
-                            RULES:
-                            - Exactly 2-3 nodes as extension to current input.
-                            - Each node should describe unique idea extending current input.
-                            """
-                        )
 
                         let prompt = """
                         Take a look at this node in canvas '\(canvas.name)':

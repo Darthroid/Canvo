@@ -17,7 +17,7 @@ struct NodeSchema: Codable, Sendable, Identifiable {
     @Guide(description: "A short and meaningful name of node")
     var name: String
     
-    @Guide(description: "A brief description of the idea")
+    @Guide(description: "A brief 2-3 sentence description of the node. includes short definition and key points")
     var detail: String
     
     /// HEX color (e.g. "#FFAA00")
