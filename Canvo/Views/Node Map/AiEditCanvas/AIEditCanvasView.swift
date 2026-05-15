@@ -245,7 +245,7 @@ struct AIEditCanvasView: View {
             appModel.generateNodes(selectedScope: selectedScope, userPrompt: prompt)
             showEditor = false
         case .summarize:
-            appModel.summarizeNodes()
+            appModel.summarizeNodes(userPrompt: prompt)
             showEditor = false
         case .explain:
             explainCanvas()
