@@ -39,6 +39,10 @@ struct NodeMapView: View {
     @State private var selectedSearchResultIndex = 0
     @FocusState private var isSearchFieldFocused: Bool
     
+    @State private var showDetailNode: Node?
+    @State private var showLinkToNode: Node?
+    @State private var showDeleteNode: Node?
+    
     @State private var showZoomLevel = false
     private let minScale: CGFloat = 0.1
     private let maxScale: CGFloat = 4.0
@@ -202,7 +206,10 @@ struct NodeMapView: View {
                         node: node,
                         isSelected: appModel.selectedNodeIds.contains(node.id),
                         isExpanded: appModel.expandedNodeIds.contains(node.id),
-                        isMatchingSearch: searchResults.contains(where: { $0.id == node.id })
+                        isMatchingSearch: searchResults.contains(where: { $0.id == node.id }),
+                        onDetail: { showDetailNode = node },
+                        onLink: { showLinkToNode = node },
+                        onDelete: { showDeleteNode = node }
                     )
                     .position(node.position.position2D)
                     .gesture(nodeDrag(node))
@@ -325,6 +332,16 @@ struct NodeMapView: View {
                 CreateNodeView(position: pendingNodePosition)
                     .environment(appModel)
             }
+            .sheet(item: $showDetailNode) { node in
+                NavigationStack {
+                    NodeDetailView(node: node)
+                }
+            }
+            .sheet(item: $showLinkToNode) { node in
+                NavigationStack {
+                    LinkEditorView(fromNode: node)
+                }
+            }
             .sheet(isPresented: $showAIEditCanvas) {
                 if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
                     NavigationStack {
@@ -332,6 +349,34 @@ struct NodeMapView: View {
                             .environment(appModel)
                     }
                 }
+            }
+            .alert(
+                "Delete Node",
+                isPresented: Binding(
+                    get: {
+                        showDeleteNode != nil
+                    },
+                    set: { newValue in
+                        if !newValue {
+                            showDeleteNode = nil
+                        }
+                    }
+                ),
+                presenting: showDeleteNode
+            ) { node in
+                Button("Delete", role: .destructive) {
+                    let snapshot = appModel.makeNodeSnapshotWithConnections(node)
+                    
+                    let action = RemoveNodeAction(
+                        node: snapshot.node,
+                        connections: snapshot.connections
+                    )
+                    
+                    appModel.actionService.perform(action)
+                }
+                Button(role: .cancel) {}
+            } message: { _ in
+                Text("Are you sure you want to delete this node?")
             }
 //            .navigationTitle(appModel.currentCanvas?.name ?? "Canvo")
 //            .navigationSubtitle("Last Edit: \(updatedAt ?? "")")

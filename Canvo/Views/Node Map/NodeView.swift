@@ -14,7 +14,11 @@ struct NodeView: View {
     let isMatchingSearch: Bool
 
     @Environment(\.colorScheme) private var colorScheme
-    @State private var showDetail: Bool = false
+    
+    var onDetail: (() -> Void)?
+    var onLink: (() -> Void)?
+    var onDelete: (() -> Void)?
+    
     @State private var dashPhase: CGFloat = 0
 
     private var backgroundUIColor: UIColor {
@@ -34,7 +38,7 @@ struct NodeView: View {
     }
 
     var body: some View {
-        HStack(spacing: 8) {
+        VStack(spacing: 0) {
             VStack(spacing: 8) {
                 Text(node.name)
                     .font(.system(size: 16, weight: .semibold))
@@ -45,21 +49,13 @@ struct NodeView: View {
                     Text(node.detail.isEmpty ? "No description" : node.detail)
                         .font(.system(size: 14))
                         .foregroundColor(secondaryColor)
-                        .multilineTextAlignment(.center)
+                        .multilineTextAlignment(.leading)
                 }
             }
-
-            if isExpanded {
-                Button {
-                    showDetail.toggle()
-                } label: {
-                    Image(systemName: "info.circle")
-                        .foregroundColor(titleColor.opacity(0.7))
-                }
-            }
+            .padding(.horizontal, 16)
+            .padding(.top, 12)
+            .padding(.bottom, isExpanded ? 64 : 12)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
         .background(
             RoundedRectangle(cornerRadius: 25)
                 .fill(Color(uiColor: backgroundUIColor))
@@ -79,6 +75,7 @@ struct NodeView: View {
                                 )
                                 .onAppear {
                                     dashPhase = 0
+
                                     withAnimation(
                                         .linear(duration: 1.2)
                                         .repeatForever(autoreverses: false)
@@ -97,19 +94,84 @@ struct NodeView: View {
                                 RoundedRectangle(cornerRadius: 25)
                                     .stroke(titleColor.opacity(0.2), lineWidth: 1)
                             }
-                            
                         }
                     }
                 )
         )
+        .overlay(alignment: .bottom) {
+            if isExpanded {
+                floatingToolbar
+                    .padding(.horizontal, 20)
+                    .offset(y: 22)
+            }
+        }
         .frame(maxWidth: 400, maxHeight: 600)
         .transition(.scale.combined(with: .opacity))
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
-        .sheet(isPresented: $showDetail) {
-            NavigationStack {
-                NodeDetailView(node: node)
-            }
-        }
         .zIndex(isSelected || isExpanded ? 1 : 0)
     }
+
+    private var floatingToolbar: some View {
+        HStack(spacing: 10) {
+            toolbarButton(
+                icon: "info.circle",
+                action: {
+                    onDetail?()
+                }
+            )
+
+            toolbarButton(
+                icon: "link",
+                action: {
+                    onLink?()
+                }
+            )
+
+            toolbarButton(
+                icon: "trash",
+                isDestructive: true,
+                action: {
+                    onDelete?()
+                }
+            )
+        }
+        .padding(8)
+        .background(.ultraThinMaterial)
+        .clipShape(Capsule())
+//        .shadow(radius: 8, y: 4)
+    }
+
+    @ViewBuilder
+    private func toolbarButton(
+        icon: String,
+        isDestructive: Bool = false,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Image(systemName: icon)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundColor(isDestructive ? .red : .primary)
+                .frame(width: 36, height: 36)
+                .background(titleColor.opacity(0.08))
+                .clipShape(Circle())
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+
+#Preview {
+    NodeView(
+        node: .init(
+            name: "Title",
+            detail: "Detail information about the title node goes here. it can be a long text that should wrap and continue to the next line if needed. this is just an example. you can add as much detail as you need. and it will automatically wrap. also you can add images and other nodes here.",
+            x: 0,
+            y: 0,
+            z: 0,
+            color: "#a94fed"
+        ),
+        isSelected: false,
+        isExpanded: true,
+        isMatchingSearch: false
+    )
 }

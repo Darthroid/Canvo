@@ -17,6 +17,68 @@ struct NodeDetailView: View {
 
     let node: Node
 
+    private var connectionlist: some View {
+        ForEach(appModel.nodesConnectedWith(node: node)) { connectedNode in
+            HStack(spacing: 16) {
+                VStack(alignment: .leading) {
+                    Text(connectedNode.name)
+                        .font(.body)
+                    Text(connectedNode.positionDescription)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+                
+                Button {
+                    let nodeId = connectedNode.id
+                    
+                    dismiss()
+                    
+                    DispatchQueue.main.async {
+                        appModel.centerOnNodeId = nodeId
+                        appModel.selectedNodeIds = [nodeId]
+                    }
+                } label: {
+                    Image(systemName: "arrow.right")
+                }
+                .buttonStyle(.borderless)
+                .foregroundColor(.primary)
+                .padding(12)
+                .background(.primary.opacity(0.04))
+                .clipShape(Circle())
+                
+
+                Button {
+                    
+                    guard let connection = appModel.connections.first(where: {
+                        ($0.fromNodeId == connectedNode.id && $0.toNodeId == node.id) ||
+                        ($0.fromNodeId == node.id && $0.toNodeId == connectedNode.id)
+                    }) else { return }
+                    
+                    let snapshot = ConnectionSnapshot(
+                        id: connection.id,
+                        fromNodeId: connection.fromNodeId,
+                        toNodeId: connection.toNodeId
+                    )
+                    
+                    let action = RemoveConnectionAction(connection: snapshot)
+                    appModel.actionService.perform(action)
+                    
+                } label: {
+                    Image(systemName: "xmark")
+                }
+                .buttonStyle(.borderless)
+                .foregroundColor(.red)
+                .padding(12)
+                .background(.primary.opacity(0.04))
+                .clipShape(Circle())
+                
+            }
+            .contentShape(Rectangle())
+        }
+    }
+    
     var body: some View {
         NavigationStack {
             Form {
@@ -51,45 +113,7 @@ struct NodeDetailView: View {
 
                 if appModel.hasConnection(nodeId: node.id) {
                     Section {
-                        ForEach(appModel.nodesConnectedWith(node: node)) { connectedNode in
-                            HStack {
-                                VStack(alignment: .leading) {
-                                    Text(connectedNode.name)
-                                        .font(.body)
-                                    Text(connectedNode.positionDescription)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-
-                                Spacer()
-
-                                Button(role: .destructive) {
-                                    
-                                    guard let connection = appModel.connections.first(where: {
-                                        ($0.fromNodeId == connectedNode.id && $0.toNodeId == node.id) ||
-                                        ($0.fromNodeId == node.id && $0.toNodeId == connectedNode.id)
-                                    }) else { return }
-                                    
-                                    let snapshot = ConnectionSnapshot(
-                                        id: connection.id,
-                                        fromNodeId: connection.fromNodeId,
-                                        toNodeId: connection.toNodeId
-                                    )
-                                    
-                                    let action = RemoveConnectionAction(connection: snapshot)
-                                    appModel.actionService.perform(action)
-                                    
-                                } label: {
-                                    Image(systemName: "xmark")
-                                }
-                                .buttonStyle(.borderless)
-                            }
-                            .contentShape(Rectangle())
-                            .onTapGesture {
-                                dismiss()
-                                appModel.selectedNodeIds = [connectedNode.id]
-                            }
-                        }
+                        connectionlist
                     } header: {
                         Text("Connected Nodes")
                     }
@@ -115,7 +139,7 @@ struct NodeDetailView: View {
                         Button {
                             showLinkEditor = true
                         } label: {
-                            Label("Link", systemImage: "point.topleft.down.to.point.bottomright.curvepath")
+                            Label("Link", systemImage: "link")
                         }
 
                         Divider()

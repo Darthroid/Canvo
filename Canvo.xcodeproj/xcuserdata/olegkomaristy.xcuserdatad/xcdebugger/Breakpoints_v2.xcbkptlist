@@ -8,7 +8,7 @@
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
             uuid = "02ED860E-3A15-4620-B051-4C7B36120AB9"
-            shouldBeEnabled = "Yes"
+            shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "Canvo/Views/Node Map/AIEditCanvasView.swift"
@@ -24,7 +24,7 @@
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
             uuid = "CB1B1D3D-21B9-4C73-A9C4-3D2ACD042EFF"
-            shouldBeEnabled = "Yes"
+            shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "Canvo/Services/AIGenerationService.swift"
@@ -40,7 +40,7 @@
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
             uuid = "225B6EAC-4EC5-45D6-A3BC-1BE53880D915"
-            shouldBeEnabled = "Yes"
+            shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "Canvo/Services/AIGenerationService.swift"
@@ -56,7 +56,7 @@
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
             uuid = "EAF0AF59-ACF9-4DC8-A0FA-F7E2CE7BCD13"
-            shouldBeEnabled = "Yes"
+            shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "Canvo/Services/AIGenerationService.swift"
@@ -71,38 +71,6 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "CDE31407-A8DB-4BF3-8362-52451BE49CD6"
-            shouldBeEnabled = "Yes"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "Canvo/Models/AppModel+AI.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "91"
-            endingLineNumber = "91"
-            landmarkName = "summarizeNodes(userPrompt:)"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            uuid = "AD479500-56F5-47EA-89CD-9443F712B408"
-            shouldBeEnabled = "Yes"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "Canvo/Models/AppModel+AI.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "96"
-            endingLineNumber = "96"
-            landmarkName = "summarizeNodes(userPrompt:)"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
             uuid = "E0827069-0FB3-47B6-95A1-2DA974156C0E"
             shouldBeEnabled = "No"
             ignoreCount = "0"
@@ -110,9 +78,101 @@
             filePath = "Canvo/Models/AppModel.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "126"
-            endingLineNumber = "126"
-            landmarkName = "nodesConnectedWith(node:)"
+            startingLineNumber = "132"
+            endingLineNumber = "132"
+            landmarkName = "resolveTags(from:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "492D6433-7480-483F-8C4E-EE6113E03BBC"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "Canvo/Services/AIGenerationService.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "572"
+            endingLineNumber = "572">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "8594F9C5-3230-4984-971D-F28B7C96C378"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "Canvo/Services/AIGenerationService.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "434"
+            endingLineNumber = "434"
+            landmarkName = "summarize(scope:userInput:in:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "A56A43C3-BE5C-4F86-8921-A952D9840AC2"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "Canvo/Services/AIGenerationService.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "336"
+            endingLineNumber = "336"
+            landmarkName = "extendNodes(nodes:in:userInput:)"
+            landmarkType = "7">
+            <Locations>
+               <Location
+                  uuid = "A56A43C3-BE5C-4F86-8921-A952D9840AC2 - f445ed302c933f2a"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "(3) suspend resume partial function for closure #1 () async -&gt; () in closure #1 (Swift.AsyncThrowingStream&lt;(Swift.Array&lt;Canvo.NodeSchema&gt;, Swift.Array&lt;Canvo.NodeConnectionSchema&gt;), Swift.Error&gt;.Continuation) -&gt; () in Canvo.AIGenerationService.extendNodes(nodes: Swift.Array&lt;Canvo.Node&gt;, in: Canvo.Canvas, userInput: Swift.String) -&gt; Swift.AsyncThrowingStream&lt;(Swift.Array&lt;Canvo.NodeSchema&gt;, Swift.Array&lt;Canvo.NodeConnectionSchema&gt;), Swift.Error&gt;"
+                  moduleName = "Canvo.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/olegkomaristy/Work/nodes-demo/Canvo/Services/AIGenerationService.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "336"
+                  endingLineNumber = "336">
+               </Location>
+               <Location
+                  uuid = "A56A43C3-BE5C-4F86-8921-A952D9840AC2 - 2e85010e5d2d6662"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "(4) await resume partial function for closure #1 () async -&gt; () in closure #1 (Swift.AsyncThrowingStream&lt;(Swift.Array&lt;Canvo.NodeSchema&gt;, Swift.Array&lt;Canvo.NodeConnectionSchema&gt;), Swift.Error&gt;.Continuation) -&gt; () in Canvo.AIGenerationService.extendNodes(nodes: Swift.Array&lt;Canvo.Node&gt;, in: Canvo.Canvas, userInput: Swift.String) -&gt; Swift.AsyncThrowingStream&lt;(Swift.Array&lt;Canvo.NodeSchema&gt;, Swift.Array&lt;Canvo.NodeConnectionSchema&gt;), Swift.Error&gt;"
+                  moduleName = "Canvo.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/olegkomaristy/Work/nodes-demo/Canvo/Services/AIGenerationService.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "336"
+                  endingLineNumber = "336">
+               </Location>
+            </Locations>
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "702F9B77-8292-4937-8FC5-EF9AE3C9E5B8"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "Canvo/Services/ActionService.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "50"
+            endingLineNumber = "50"
+            landmarkName = "perform(_:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
