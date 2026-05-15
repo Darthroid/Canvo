@@ -13,7 +13,7 @@ struct LinkEditorView: View {
 
     let fromNode: Node
 
-    @State private var selectedNodeId: String?
+    @State private var selectedNodeIds: Set<String> = []
     @State private var searchText: String = ""
 
     var filteredNodes: [Node] {
@@ -39,14 +39,19 @@ struct LinkEditorView: View {
 
                     Spacer()
 
-                    if selectedNodeId == node.id {
+                    if selectedNodeIds.contains(node.id) {
                         Image(systemName: "checkmark")
                             .foregroundStyle(.tint)
                     }
                 }
                 .contentShape(Rectangle())
                 .onTapGesture {
-                    selectedNodeId = node.id
+//                    selectedNodeId = node.id
+                    if selectedNodeIds.contains(node.id) {
+                        selectedNodeIds.remove(node.id)
+                    } else {
+                        selectedNodeIds.insert(node.id)
+                    }
                 }
             }
             .searchable(text: $searchText)
@@ -64,31 +69,35 @@ struct LinkEditorView: View {
                         createLink()
                         dismiss()
                     }
-                    .disabled(selectedNodeId == nil)
+                    .disabled(selectedNodeIds.isEmpty)
                 }
+            }
+            .onAppear {
+                selectedNodeIds = Set(appModel.nodesConnectedWith(node: fromNode).map { $0.id })
             }
         }
     }
     
     private func createLink() {
-        guard let toNodeId = selectedNodeId else { return }
-//        guard let canvas = appModel.currentCanvas else { return }
+        guard !selectedNodeIds.isEmpty else { return }
         
-        // prevent duplicates (same logic as before but now explicit)
-        guard !appModel.connections.contains(where: {
-            ($0.fromNodeId == fromNode.id && $0.toNodeId == toNodeId) ||
-            ($0.fromNodeId == toNodeId && $0.toNodeId == fromNode.id)
-        }) else { return }
-        
-        let snapshot = ConnectionSnapshot(
-            id: UUID().uuidString,
-            fromNodeId: fromNode.id,
-            toNodeId: toNodeId
-        )
-        
-        let action = AddConnectionAction(connection: snapshot)
-        
-        appModel.actionService.perform(action)
+        appModel.actionService.beginBatch()
+        selectedNodeIds.forEach { toNodeId in
+            guard !appModel.connections.contains(where: {
+                ($0.fromNodeId == fromNode.id && $0.toNodeId == toNodeId) ||
+                ($0.fromNodeId == toNodeId && $0.toNodeId == fromNode.id)
+            }) else { return }
+            
+            let snapshot = ConnectionSnapshot(
+                id: UUID().uuidString,
+                fromNodeId: fromNode.id,
+                toNodeId: toNodeId
+            )
+            
+            let action = AddConnectionAction(connection: snapshot)
+            appModel.actionService.perform(action)
+        }
+        appModel.actionService.endBatch()
     }
 }
 
