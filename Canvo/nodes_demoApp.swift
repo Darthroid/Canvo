@@ -18,6 +18,44 @@ struct nodes_demoApp: App {
             if hasSeenOnboarding {
                 CanvasCollectionView()
                     .environment(appModel)
+                    .alert(
+                        "Generation failed",
+                        isPresented: Binding(
+                            get: {
+                                AIGenerationService.shared.error != nil
+                            },
+                            set: { newValue in
+                                if !newValue {
+                                    AIGenerationService.shared.clearErrors()
+                                }
+                            }
+                        ),
+                        presenting: AIGenerationService.shared.error
+                    ) { detail in
+                        Button("OK", role: .cancel) {
+                            AIGenerationService.shared.clearErrors()
+                        }
+                    } message: { detail in
+                        Text(detail)
+                    }
+                    .overlay(alignment: .bottom) {
+                        if AIGenerationService.shared.isRunning {
+                            AIGenerationSnackbar(
+                                title: AIGenerationService.shared.runningStage ?? "Generating",
+                                onCancel: {
+                                    withAnimation(.spring(response: 0.45, dampingFraction: 0.9)) {
+                                        AIGenerationService.shared.cancelCurrentTask()
+                                    }
+                                }
+                            )
+                            .padding(.horizontal, 16)
+                            .padding(.bottom, 24)
+                            .transition(
+                                .move(edge: .bottom)
+                                .combined(with: .opacity)
+                            )
+                        }
+                    }
             } else {
                 OnboardingView(onFinish: {
                     hasSeenOnboarding = true

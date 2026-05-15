@@ -22,6 +22,9 @@ class AIGenerationService: Sendable {
         return model.isAvailable
     }
     
+    public var runningStage: String?
+    private(set) public var error: String?
+    
     public var isRunning: Bool {
         return currentTask?.isCancelled == false
     }
@@ -32,10 +35,16 @@ class AIGenerationService: Sendable {
     func cancelCurrentTask() {
         currentTask?.cancel()
         currentTask = nil
+        runningStage = nil
+        
+        clearErrors()
     }
     
+    func clearErrors() {
+        error = nil
+    }
     
-    func generateCanvasStream(prompt: String) -> AsyncThrowingStream<(CanvasSchema, String), Error> {
+    func generateCanvasStream(prompt: String) -> AsyncThrowingStream<CanvasSchema, Error> {
         AsyncThrowingStream { continuation in
             
             // Cancel previous generation if still active
@@ -44,10 +53,12 @@ class AIGenerationService: Sendable {
             self.currentTask = Task {
                 do {
                     try Task.checkCancellation()
-                    
+                    runningStage = "Creating canvas"
                     // Create canvas
                     var canvas = try await generaeteEmptyCanvas(prompt: prompt)
-                    continuation.yield((canvas, "Creating main idea"))
+                    continuation.yield(canvas)
+                    
+                    runningStage = "Creating main idea"
                     
                     try Task.checkCancellation()
                     
@@ -58,7 +69,9 @@ class AIGenerationService: Sendable {
                     )
                     
                     canvas.nodes = [mainIdea]
-                    continuation.yield((canvas, "Extending main idea"))
+                    continuation.yield(canvas)
+                    
+                    runningStage = "Extending main idea"
                     
                     try Task.checkCancellation()
                     
@@ -88,13 +101,17 @@ class AIGenerationService: Sendable {
                         centerNodeId: mainIdea.id
                     )
                     
-                    continuation.yield((canvas, "Finalizing"))
+                    runningStage = "Finalizing"
+                    
+                    continuation.yield(canvas)
                     
                     continuation.finish()
                     self.currentTask = nil
                     
                 } catch {
-                    continuation.finish(throwing: error)
+                    if !(error is CancellationError) {
+                        self.error = error.localizedDescription
+                    }
                     self.currentTask = nil
                 }
             }
@@ -272,7 +289,7 @@ extension AIGenerationService {
         nodes: [Node],
         in canvas: Canvas,
         userInput: String
-    ) -> AsyncThrowingStream<(([NodeSchema], [NodeConnectionSchema]), String), Error> {
+    ) -> AsyncThrowingStream<([NodeSchema], [NodeConnectionSchema]), Error> {
         
         AsyncThrowingStream { continuation in
             
@@ -283,10 +300,15 @@ extension AIGenerationService {
                 do {
                     var newConnections = [NodeConnectionSchema]()
                     
-                    continuation.yield((([], []), "Reading Canvas"))
+                    continuation.yield(([], []))
+                    runningStage = "Reading Canvas"
+                    
+                    try await Task.sleep(nanoseconds: 2000000000)
                     
                     for node in nodes {
                         try Task.checkCancellation()
+                        
+                        runningStage = "Extending '\(node.name)'"
                         
                         let schema = node.toSchema()
                         
@@ -299,12 +321,7 @@ extension AIGenerationService {
                             - Each node should describe unique idea extending current input.
                             """
                         )
-                        
-//                        let prompt = """
-//                            extend nodes in canvas '\(canvas.name)' by suggesting sub-topics for the following node: \(schema.name). it's description: \(schema.detail).
-//                            """
-//
-                        
+
                         let prompt = """
                         Take a look at this node in canvas '\(canvas.name)':
                         ___
@@ -315,7 +332,7 @@ extension AIGenerationService {
                         ___
                         \(userInput.isEmpty
                             ? "Using the node provided above make new nodes that extends its topic or related to its topic."
-                            : "Using the node provided above generate new nodes that extends its topuc or related to its topic. When generating, also take in mind user provided input: \(userInput)")
+                            : "Using the node provided above generate new nodes that extends its topic or related to its topic. When generating, also take in mind user provided input: \(userInput)")
                         """
                         
                         var extendedNodes = try await session.respond(
@@ -352,10 +369,7 @@ extension AIGenerationService {
                             )
                         }
                         
-                        continuation.yield((
-                            (extendedNodes, newConnections),
-                            "Extending '\(node.name)'"
-                        ))
+                        continuation.yield((extendedNodes, newConnections))
                     }
                     
                     continuation.finish()
@@ -363,6 +377,9 @@ extension AIGenerationService {
                     
                 }  catch {
                     continuation.finish(throwing: error)
+                    if !(error is CancellationError) {
+                        self.error = error.localizedDescription
+                    }
                     self.currentTask = nil
                 }
             }
@@ -373,26 +390,85 @@ extension AIGenerationService {
         scope: [Node],
         userInput: String,
         in canvas: Canvas
-    ) async throws -> ([NodeSchema], [NodeConnectionSchema]) {
+    ) async throws -> AsyncThrowingStream<(NodeSchema), Error> {
         
-        return ([], [])
+        AsyncThrowingStream { continuation in
+            
+            // Cancel previous generation if still active
+            self.cancelCurrentTask()
+            
+            self.currentTask = Task {
+                do {
+                    runningStage = "Creating Summary"
+                    
+                    try Task.checkCancellation()
+                    
+                    let session = LanguageModelSession(
+                        model: model,
+                        instructions: """
+                        You are an AI expert that operates a structured mind map and generates a concise summary of nodes describing their shared theme, category, meaning, or relationship.
+                        RULES:
+                        - Exactly 1 node as summary to current input.
+                        Rules for "name":
+                        - Must represent the common theme or relationship between the objects
+                        - Must be concise and human-readable
+                        - Prefer a higher-level abstraction when possible
+                        Rules for "description":
+                        - Briefly explain the detected shared theme
+                        - Describe what connects the objects
+                        - Include important contextual details from the input descriptions
+                        - Keep it concise but informative
+                        - Do not repeat the input text verbatim
+                        - Write it as a unified summary
+                        - Include brief description of all summarized objects
+                        Analysis behavior:
+                        - First try to find a single theme shared by all objects
+                        - If no clear common theme exists, choose the strongest or most probable connection
+                        - If the objects are unrelated, infer a summary based on the dominant context or recurring patterns
+                        """
+                    )
+                    
+                    let list = scope.map {
+                        "- \($0.name): \($0.detail)"
+                    }
+                    .joined(separator: "\n")
+                    
+                    let question = """
+                    Take a look at this list of nodes in canvas '\(canvas.name)':
+                    \(list)
+                    ___
+                    \(userInput.isEmpty
+                        ? "Analyze all objects and identify the most likely common theme, category, context, purpose, or shared characteristics between them. Generate a summary node"
+                        : "Analyze all objects and identify the most likely common theme, category, context, purpose, or shared characteristics between them. Generate a summary node. When analyzing, also take in mind user provided input: \(userInput)")
+                    """
+                    
+                    let summary = try await session.respond(
+                        to: question,
+                        generating: NodeSchema.self
+                    ).content
+                    
+                    
+                    try Task.checkCancellation()
+                    
+                    continuation.yield(summary)
+                    
+                    continuation.finish()
+                    self.currentTask = nil
+                    
+                }  catch {
+                    continuation.finish(throwing: error)
+                    if !(error is CancellationError) {
+                        self.error = error.localizedDescription
+                    }
+                    self.currentTask = nil
+                }
+            }
+        }
     }
     
     func askQuestions(
         scope: [Node],
         userInput: String,
-        in canvas: Canvas
-    ) async throws -> AsyncThrowingStream<String, Error> {
-        return askStereamed(
-            prompt: userInput,
-            nodes: scope,
-            in: canvas
-        )
-    }
-    
-    func askStereamed(
-        prompt: String,
-        nodes: [Node],
         in canvas: Canvas
     ) -> AsyncThrowingStream<String, Error> {
         
@@ -403,6 +479,8 @@ extension AIGenerationService {
             
             self.currentTask = Task {
                 do {
+                    runningStage = "Explainig"
+                    
                     try Task.checkCancellation()
                     
                     let instructions = """
@@ -420,7 +498,7 @@ extension AIGenerationService {
                         instructions: instructions
                     )
                     
-                    let list = nodes.map {
+                    let list = scope.map {
                         "- \($0.name): \($0.detail)"
                     }
                     .joined(separator: "\n")
@@ -429,9 +507,9 @@ extension AIGenerationService {
                     Take a look at this list of nodes in canvas '\(canvas.name)':
                     \(list)
                     ___
-                    \(prompt.isEmpty
+                    \(userInput.isEmpty
                         ? "Using the context provided above make key points of it"
-                        : "Using the context provided above make key points that also answering user provided question: \(prompt)")
+                        : "Using the context provided above make key points that also answering user provided question: \(userInput)")
                     """
                     
                     let stream = session.streamResponse(to: question)
@@ -446,6 +524,9 @@ extension AIGenerationService {
                     
                 } catch {
                     continuation.finish(throwing: error)
+                    if !(error is CancellationError) {
+                        self.error = error.localizedDescription
+                    }
                     self.currentTask = nil
                 }
             }

@@ -531,6 +531,7 @@ struct NodeMapView: View {
         })
         .onDisappear {
             generatePreview()
+            AIGenerationService.shared.cancelCurrentTask()
             appModel.switchToCanvas(nil)
         }
     }
