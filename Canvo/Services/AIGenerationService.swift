@@ -69,11 +69,15 @@ class AIGenerationService: Sendable {
                     try Task.checkCancellation()
                     
                     // Create main node
-                    let mainIdea = try await generateMainNode(
+                    var mainIdea = try await generateMainNode(
                         session: session,
                         prompt: prompt,
                         canvasTitle: canvas.name
                     )
+                    
+                    // dirty fix just in case
+                    // sometimes ai halucinates and inserts name of node in id field
+                    mainIdea.id = UUID().uuidString
                     
                     canvas.nodes = [mainIdea]
                     continuation.yield(canvas)
@@ -271,10 +275,22 @@ extension AIGenerationService {
             Detail of main node: \(mainNode.detail).
             """
         
-        return try await session.respond(
+        let nodes = try await session.respond(
             to: prompt,
             generating: [NodeSchema].self
         ).content
+        
+        // dirty fix just in case
+        // sometimes ai halucinates and inserts name of node
+        return nodes.map {
+            NodeSchema(
+                id: UUID().uuidString,
+                name: $0.name,
+                detail: $0.detail,
+                color: $0.color,
+                position: $0.position
+            )
+        }
     }
 }
 
@@ -340,8 +356,8 @@ extension AIGenerationService {
                         
                         try Task.checkCancellation()
                         
-                        // Dirty fix:
-                        // recreate generated result to ensure IDs are unique
+                        // dirty fix just in case
+                        // sometimes ai halucinates and inserts name of node in id field
                         extendedNodes = extendedNodes.map {
                             NodeSchema(
                                 id: UUID().uuidString,
@@ -440,11 +456,14 @@ extension AIGenerationService {
                         : "Analyze all objects and identify the most likely common theme, category, context, purpose, or shared characteristics between them. Generate a summary node. When analyzing, also take in mind user provided input: \(userInput)")
                     """
                     
-                    let summary = try await session.respond(
+                    var summary = try await session.respond(
                         to: question,
                         generating: NodeSchema.self
                     ).content
                     
+                    // dirty fix just in case
+                    // sometimes ai halucinates and inserts name of node in id field
+                    summary.id = UUID().uuidString
                     
                     try Task.checkCancellation()
                     
