@@ -117,62 +117,48 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "A56A43C3-BE5C-4F86-8921-A952D9840AC2"
-            shouldBeEnabled = "Yes"
+            uuid = "867C3BF7-B949-4445-908B-477A3CE28750"
+            shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "Canvo/Services/AIGenerationService.swift"
+            filePath = "Canvo/Views/Node Map/NodeMapView.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "336"
-            endingLineNumber = "336"
-            landmarkName = "extendNodes(nodes:in:userInput:)"
-            landmarkType = "7">
-            <Locations>
-               <Location
-                  uuid = "A56A43C3-BE5C-4F86-8921-A952D9840AC2 - f445ed302c933f2a"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "(3) suspend resume partial function for closure #1 () async -&gt; () in closure #1 (Swift.AsyncThrowingStream&lt;(Swift.Array&lt;Canvo.NodeSchema&gt;, Swift.Array&lt;Canvo.NodeConnectionSchema&gt;), Swift.Error&gt;.Continuation) -&gt; () in Canvo.AIGenerationService.extendNodes(nodes: Swift.Array&lt;Canvo.Node&gt;, in: Canvo.Canvas, userInput: Swift.String) -&gt; Swift.AsyncThrowingStream&lt;(Swift.Array&lt;Canvo.NodeSchema&gt;, Swift.Array&lt;Canvo.NodeConnectionSchema&gt;), Swift.Error&gt;"
-                  moduleName = "Canvo.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/olegkomaristy/Work/nodes-demo/Canvo/Services/AIGenerationService.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "336"
-                  endingLineNumber = "336">
-               </Location>
-               <Location
-                  uuid = "A56A43C3-BE5C-4F86-8921-A952D9840AC2 - 2e85010e5d2d6662"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "(4) await resume partial function for closure #1 () async -&gt; () in closure #1 (Swift.AsyncThrowingStream&lt;(Swift.Array&lt;Canvo.NodeSchema&gt;, Swift.Array&lt;Canvo.NodeConnectionSchema&gt;), Swift.Error&gt;.Continuation) -&gt; () in Canvo.AIGenerationService.extendNodes(nodes: Swift.Array&lt;Canvo.Node&gt;, in: Canvo.Canvas, userInput: Swift.String) -&gt; Swift.AsyncThrowingStream&lt;(Swift.Array&lt;Canvo.NodeSchema&gt;, Swift.Array&lt;Canvo.NodeConnectionSchema&gt;), Swift.Error&gt;"
-                  moduleName = "Canvo.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/olegkomaristy/Work/nodes-demo/Canvo/Services/AIGenerationService.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "336"
-                  endingLineNumber = "336">
-               </Location>
-            </Locations>
+            startingLineNumber = "273"
+            endingLineNumber = "273"
+            landmarkName = "canvas"
+            landmarkType = "24">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "702F9B77-8292-4937-8FC5-EF9AE3C9E5B8"
+            uuid = "C8EDED91-FA2A-40C7-B672-D1B702D9EA19"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "Canvo/Services/ActionService.swift"
+            filePath = "Canvo/Views/Node Map/NodeMapView.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "50"
-            endingLineNumber = "50"
-            landmarkName = "perform(_:)"
+            startingLineNumber = "617"
+            endingLineNumber = "617"
+            landmarkName = "deleteSelectedNodes()"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "60D9CF33-91BB-4398-95F4-7C1036D15DCB"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "Canvo/Views/Node Map/NodeMapView.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "615"
+            endingLineNumber = "615"
+            landmarkName = "deleteSelectedNodes()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>

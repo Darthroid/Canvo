@@ -137,9 +137,7 @@ extension AppModel {
                 }
                 
                 actionService.endBatch()
-                
-                
-//                addNodesFromAIAction(Array(nodes), connections: Array(connections))
+                selectedNodeIds.removeAll()
 
             } catch {
                 print("error while generating canvas: \(error.localizedDescription)")

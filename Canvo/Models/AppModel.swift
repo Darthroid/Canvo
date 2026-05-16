@@ -293,6 +293,16 @@ extension AppModel {
 
 extension AppModel {
     
+    func undoAction() {
+        selectedNodeIds.removeAll()
+        actionService.undo()
+    }
+    
+    func redoAction() {
+        selectedNodeIds.removeAll()
+        actionService.redo()
+    }
+    
     // MARK: Canvas actions
     
     func createCanvasAction(name: String) {

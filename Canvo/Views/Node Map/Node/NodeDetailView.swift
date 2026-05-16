@@ -82,6 +82,14 @@ struct NodeDetailView: View {
     var body: some View {
         NavigationStack {
             Form {
+                #if DEBUG
+                Section {
+                    Text(node.id)
+                } header: {
+                    Text("ID")
+                }
+                #endif
+                
                 Section {
                     if node.detail.isEmpty {
                         Text("No description")

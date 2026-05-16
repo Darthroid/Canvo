@@ -178,6 +178,62 @@ struct NodeMapView: View {
         }
     }
     
+    var selectedNodesFloatingPanel: some View {
+        HStack(spacing: 24) {
+            Text(String(format: appModel.selectedNodeIds.count > 1 ? "%d items" : "%d item", appModel.selectedNodeIds.count))
+            
+            Button {
+                deleteSelectedNodes()
+            } label: {
+                Image(systemName: "trash")
+            }
+            .buttonStyle(.plain)
+            .labelsHidden()
+            
+            Button {
+                showAIEditCanvas.toggle()
+            } label: {
+                Image(systemName: "sparkles")
+            }
+            .buttonStyle(.plain)
+            .labelsHidden()
+            
+            Menu {
+                Button {
+                    appModel.nodes
+                        .map(\.id)
+                        .forEach { appModel.selectedNodeIds.insert($0) }
+                } label: {
+                    Text("Select All")
+                }
+                
+                Button {
+                    duplicateSelectedNodes()
+                } label: {
+                    Text("Duplicate")
+                }
+            } label: {
+                Image(systemName: "ellipsis")
+            }
+            .buttonStyle(.plain)
+            .labelsHidden()
+            
+            Button {
+                withAnimation {
+                    appModel.selectedNodeIds.removeAll()
+                }
+            } label: {
+                Image(systemName: "xmark")
+            }
+            .buttonStyle(.plain)
+            .labelsHidden()
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical)
+        .glassEffect()
+        
+    }
+    
     var canvas: some View {
         ZStack {
             
@@ -292,9 +348,11 @@ struct NodeMapView: View {
                     }
                     
                     Spacer()
+                    
+                    if appModel.selectedNodeIds.count > 0 {
+                        selectedNodesFloatingPanel
+                    }
                 }
-                
-                
             }
             .onAppear {
                 containerSize = geo.size
@@ -401,34 +459,21 @@ struct NodeMapView: View {
             .toolbar {
                 ToolbarItemGroup(placement: .topBarLeading) {
                     Button {
-                        appModel.actionService.undo()
+                        appModel.undoAction()
                     } label: {
                         Label("Undo", systemImage: "arrow.uturn.left")
                     }
                     .disabled(!appModel.actionService.canUndo)
 
                     Button {
-                        appModel.actionService.redo()
+                        appModel.redoAction()
                     } label: {
                         Label("Redo", systemImage: "arrow.uturn.right")
                     }
                     .disabled(!appModel.actionService.canRedo)
                     
                 }
-                
-//                ToolbarItem(placement: .title) {
-//                    VStack {
-//                        Text(appModel.currentCanvas?.name ?? "Canvo")
-//                            .font(.headline)
-//                        Text("Last Edit: \(updatedAt ?? "")")
-//                            .font(.caption)
-//                            .foregroundStyle(.secondary)
-//                    }
-//                    .padding(.horizontal, 20)
-//                    .padding(.vertical, 8)
-//                    .glassEffect()
-//                }
-                
+
                 DefaultToolbarItem(kind: .search, placement: .bottomBar)
                 
                 ToolbarItem(placement: .confirmationAction) {
@@ -436,22 +481,7 @@ struct NodeMapView: View {
                         Text(appModel.currentCanvas?.name ?? "Canvo")
                             .font(.headline)
                         Divider()
-                        // undo/redo
-//                        Button {
-//                            appModel.actionService.undo()
-//                        } label: {
-//                            Label("Undo", systemImage: "arrow.uturn.left")
-//                        }
-//                        .disabled(!appModel.actionService.canUndo)
-//
-//                        Button {
-//                            appModel.actionService.redo()
-//                        } label: {
-//                            Label("Redo", systemImage: "arrow.uturn.right")
-//                        }
-//                        .disabled(!appModel.actionService.canRedo)
-//                        
-//                        Divider()
+
                         
 #if os(visionOS)
                     // visionOS immersive map
@@ -579,6 +609,53 @@ struct NodeMapView: View {
             AIGenerationService.shared.cancelCurrentTask()
             appModel.switchToCanvas(nil)
         }
+    }
+    
+    private func deleteSelectedNodes() {
+        guard !appModel.selectedNodeIds.isEmpty else { return }
+        
+        let snapshots = appModel.selectedNodeIds
+            .compactMap { appModel.node(forId: $0) }
+            .map { appModel.makeNodeSnapshotWithConnections($0) }
+        
+        appModel.actionService.beginBatch()
+        snapshots.forEach {
+            let action = RemoveNodeAction(node: $0.node, connections: $0.connections)
+            appModel.actionService.perform(action)
+        }
+        appModel.actionService.endBatch()
+        
+        withAnimation {
+            appModel.selectedNodeIds.removeAll()
+        }
+    }
+    
+    private func duplicateSelectedNodes() {
+        guard !appModel.selectedNodeIds.isEmpty else { return }
+        
+        let snapshots = appModel.selectedNodeIds
+            .compactMap { appModel.node(forId: $0) }
+            .map {
+                NodeSnapshot(
+                    id: UUID().uuidString,
+                    name: $0.name,
+                    detail: $0.detail,
+                    x: $0.x,
+                    y: $0.y + 100,
+                    z: $0.z, color: $0.colorRaw,
+                    tagsRaw: $0.tagsRaw
+                )
+            }
+        
+        appModel.actionService.beginBatch()
+        snapshots.forEach {
+            let action = AddNodeAction(node: $0)
+            appModel.actionService.perform(action)
+        }
+        appModel.actionService.endBatch()
+        
+        appModel.selectedNodeIds.removeAll()
+        snapshots.forEach { appModel.selectedNodeIds.insert($0.id) }
     }
 }
 
@@ -796,32 +873,5 @@ extension NodeMapView {
             image: image,
             for: canvas.id
         )
-    }
-}
-
-struct SelectedNodesBar: View {
-    let count: Int
-    let onClear: () -> Void
-    
-    var body: some View {
-        HStack {
-            Image(systemName: "checkmark.circle")
-                .foregroundStyle(.accent)
-            Text("Selected: \(count) node\(count == 1 ? "" : "s")")
-                .fontWeight(.medium)
-            Spacer()
-            Button("Clear") {
-                onClear()
-            }
-            .buttonStyle(.bordered)
-            .controlSize(.small)
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .background(.ultraThinMaterial)
-        .cornerRadius(20)
-        .padding(.horizontal, 16)
-        .padding(.bottom, 80)
-        .transition(.move(edge: .bottom).combined(with: .opacity))
     }
 }
