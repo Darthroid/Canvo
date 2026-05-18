@@ -1,58 +1,42 @@
+Canvo is a fast and intuitive mind mapping app designed for organizing ideas, planning projects, researching topics, and building connected knowledge visually.
 
-## Overview
+Create flexible canvases with nodes, descriptions, tags, and connections that help you structure information the way you think.
 
-A visionOS demo application showcasing mind mapping in both 2D and immersive XR environments. This app demonstrates spatial computing capabilities, SwiftUI integration with RealityKit, and seamless transitions between traditional and extended reality interfaces.
-
-## Features
-- Create, edit, and connect nodes using visionOS gestures
-- 2D Canvas: Traditional mind mapping interface with touch and pointer interactions
-- XR Immersion: Fully spatial 3D environment where mind maps extend into your physical space
-- Real-time Transitions: Smooth switching between 2D and XR modes
+Whether you are brainstorming, studying, planning workflows, or building personal knowledge systems, Canvo helps you stay focused and organized.
 
 ## Screenshots
 
-![2d map](/Screenshots/map_2d.png)
-![2d node detail](/Screenshots/node_detail_2d.png)
-
-![xr map](/Screenshots/map_xr.png)
-![xr node detail](/Screenshots/node_detail_xr.png)
+<img src="https://github.com/Darthroid/Canvo/blob/main/Screenshots/1.png" width="250"><img src="https://github.com/Darthroid/Canvo/blob/main/Screenshots/2.png" width="250"><img src="https://github.com/Darthroid/Canvo/blob/main/Screenshots/3.png" width="250"><img src="https://github.com/Darthroid/Canvo/blob/main/Screenshots/4.png" width="250">
 
 
-## Key Technical Features
+## Key Features
 
-- Seamless transitions between 2D and XR using SwiftUI's scene management
-- Custom RealityKit entities for 3D node visualization
-- Gesture recognition for both touch and spatial interactions
-- State synchronization between 2D and XR environments
+• **Fast and responsive canvas**
+Smooth interactions designed for large and complex mind maps.
 
-## Setup & Installation
+• **Flexible node system**
+Create nodes with descriptions, tags, and visual connections between ideas.
 
-### Requirements
+• **Powerful navigation**
+Quickly find information with canvas search and tag-based filtering.
 
-- visionOS 2.0 or later
-- Xcode 26.0+
-- Apple Vision Pro (simulator or device)
+• **AI Canvas Generation**
+Start with a few ideas and instantly generate an initial mind map structure with connected topics and elements.
 
-### Building the Project
+• **AI Editing Tools**
+Expand topics with new ideas, summarize selected sections, compress large structures, and get explanations for key concepts across the entire canvas or selected areas.
 
-- Clone the repository
-- Open SpatialMindMap.xcodeproj in Xcode
-- Build and run on visionOS Simulator or Apple Vision Pro
+• **Built for productivity**
+Designed to help you think clearly, organize knowledge, and turn ideas into actionable structures.
 
-### Running the App
+USE CANVO FOR:
 
-- Launch the app from the Home View
-- Start with the 2D canvas for initial mind map creation
-- Tap the grid button (in the top right corner) to transition to immersive mode
-- Use pinch gestures to interact with nodes in both modes
+Brainstorming
+Knowledge management
+Study notes
+Project planning
+Research organization
+Creative workflows
+Personal idea systems
 
-## Future Enhancements
-
-### Potential areas for expansion:
-
-- ~~Multiple canvas support~~
-- Collaborative multi-user XR sessions
-- AI-powered node suggestions and auto-organization
-- Additional export formats and integrations
-- Custom node templates and visualization styles
-- Advanced spatial layout algorithms
+Visualize your thoughts and build smarter connections with Canvo.
