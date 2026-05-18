@@ -1,3 +1,9 @@
+<a href="https://apps.apple.com/us/app/canvo/id6761765531">
+  <img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" height="40">
+</a>
+
+# Canvo
+
 Canvo is a fast and intuitive mind mapping app designed for organizing ideas, planning projects, researching topics, and building connected knowledge visually.
 
 Create flexible canvases with nodes, descriptions, tags, and connections that help you structure information the way you think.
