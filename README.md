@@ -17,7 +17,7 @@ Whether you are brainstorming, studying, planning workflows, or building persona
 
 ## Screenshots
 
-<img src="https://github.com/Darthroid/Canvo-documentation/blob/main/Screenshots/1.png" width="200"><img src="https://github.com/Darthroid/Canvo-documentation/blob/main/Screenshots/2.png" width="200"><img src="https://github.com/Darthroid/Canvo-documentation/blob/main/Screenshots/3.png" width="200"><img src="https://github.com/Darthroid/Canvo-documentation/blob/main/Screenshots/4.png" width="200">
+<img src="https://raw.githubusercontent.com/Darthroid/Canvo-documentation/refs/heads/main/Screenshots/1.png" width="200"><img src="https://raw.githubusercontent.com/Darthroid/Canvo-documentation/refs/heads/main/Screenshots/2.png" width="200"><img src="https://raw.githubusercontent.com/Darthroid/Canvo-documentation/refs/heads/main/Screenshots/3.png" width="200"><img src="https://raw.githubusercontent.com/Darthroid/Canvo-documentation/refs/heads/main/Screenshots/4.png" width="200">
 
 
 ## Key Features
