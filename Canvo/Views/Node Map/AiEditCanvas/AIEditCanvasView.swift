@@ -64,12 +64,6 @@ struct AIEditCanvasView: View {
                     Text("Edit Canvas with AI")
                         .font(.title3)
                         .fontWeight(.semibold)
-                    Text("BETA")
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(.white)
-                        .background(.black, in: Capsule())
                 }
             }
             
