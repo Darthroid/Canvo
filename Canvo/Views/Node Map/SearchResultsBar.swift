@@ -21,13 +21,17 @@ struct SearchResultsBar: View {
             .foregroundStyle(Color.primary)
             .frame(width: 25, height: 25)
             .padding(8)
+            #if !os(visionOS)
             .glassEffect()
+            #endif
             
             Text("\(index + 1) of \(total)")
                 .font(.body)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
+                #if !os(visionOS)
                 .glassEffect()
+                #endif
             
             Button(action: onNext) {
                 Image(systemName: "chevron.right")
@@ -35,7 +39,9 @@ struct SearchResultsBar: View {
             .foregroundStyle(Color.primary)
             .frame(width: 25, height: 25)
             .padding(8)
+            #if !os(visionOS)
             .glassEffect()
+            #endif
             
             Spacer()
         }

@@ -60,8 +60,10 @@ struct OutlineView: View {
             y: isSheet ? 0 : 4
         )
         .padding(.horizontal, isSheet ? 0 : 20)
+        #if !os(visionOS)
         .glassEffect(isSheet ? .identity : .regular, in: isSheet
                      ? AnyShape(Rectangle())
                      : AnyShape(RoundedRectangle(cornerRadius: 20)))
+        #endif
     }
 }

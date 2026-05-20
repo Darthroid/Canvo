@@ -51,7 +51,9 @@ struct AIResponseView: View {
                 Button("Copy to Clipboard", systemImage: "document.on.document") {
                     UIPasteboard.general.string = response
                 }
+                #if !os(visionOS)
                 .buttonStyle(.glass)
+                #endif
                 .labelsHidden()
             }
         }

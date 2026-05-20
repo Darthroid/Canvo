@@ -104,6 +104,7 @@ struct OnboardingView: View {
             .padding(.horizontal, horizontalPadding)
 
         }
+        .safeAreaPadding(.bottom)
         .onAppear {
             runAnimationSequence()
         }
@@ -138,18 +139,35 @@ struct OnboardingView: View {
     // MARK: - Layout tuning
 
     private var featureSpacing: CGFloat {
+    #if os(visionOS)
+        14
+    #else
         UIScreen.main.bounds.width < 380 ? 10 : 14
+    #endif
     }
 
     private var adaptiveSpacing: CGFloat {
+    #if os(visionOS)
+        44
+    #else
         UIScreen.main.bounds.width < 380 ? 24 : 44
+    #endif
+        
     }
 
     private var horizontalPadding: CGFloat {
+    #if os(visionOS)
+        44
+    #else
         UIScreen.main.bounds.width < 380 ? 20 : 44
+    #endif
     }
 
     private var contentMaxWidth: CGFloat {
+    #if os(visionOS)
+        520
+    #else
         UIScreen.main.bounds.width < 600 ? .infinity : 520
+    #endif
     }
 }

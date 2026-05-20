@@ -230,7 +230,9 @@ struct NodeMapView: View {
         }
         .padding(.horizontal, 20)
         .padding(.vertical)
+        #if !os(visionOS)
         .glassEffect()
+        #endif
         
     }
     
@@ -321,7 +323,9 @@ struct NodeMapView: View {
                             .frame(width: 60)
                             .padding(.horizontal)
                             .padding(.vertical, 8)
+                            #if !os(visionOS)
                             .glassEffect()
+                            #endif
                     }
                     
                     // This spacer pushes content below nav bar
@@ -556,7 +560,9 @@ struct NodeMapView: View {
                     }
                 }
                 
+                #if !os(visionOS)
                 ToolbarSpacer(.flexible, placement: .bottomBar)
+                #endif
                 
                 ToolbarItem(placement: .bottomBar) {
                     Button {

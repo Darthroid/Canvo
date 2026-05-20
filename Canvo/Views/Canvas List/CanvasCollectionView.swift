@@ -118,7 +118,9 @@ struct CanvasCollectionView: View {
                 .searchToolbarBehavior(.minimize)
                 .toolbar {
                     DefaultToolbarItem(kind: .search, placement: .bottomBar)
+                    #if !os(visionOS)
                     ToolbarSpacer(.flexible, placement: .bottomBar)
+                    #endif
                     ToolbarItem(placement: .bottomBar) {
                         Button {
                             showCreateCanvas = true

@@ -58,15 +58,8 @@ struct AIEditCanvasView: View {
             
         }
         .navigationBarTitleDisplayMode(.inline)
+        .navigationBarTitle("Edit Canvas with AI")
         .toolbar {
-            ToolbarItem(placement: .title) {
-                HStack {
-                    Text("Edit Canvas with AI")
-                        .font(.title3)
-                        .fontWeight(.semibold)
-                }
-            }
-            
             ToolbarItem(placement: .cancellationAction) {
                 Button(role: .close) {
 //                    AIGenerationService.shared.cancelCurrentTask()

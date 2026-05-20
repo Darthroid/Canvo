@@ -18,6 +18,10 @@ struct ImmersiveNodeMapView: View {
     @State private var connectionMap: [String: ModelEntity] = [:]
     @State private var realityViewContent: RealityViewContent?
     
+    @State private var dragStartPositions: [String: SIMD3<Float>] = [:]
+    @State private var draggedNodeIds: Set<String> = []
+    @State private var dragStartTranslation: SIMD3<Float> = .zero
+    
     @State private var initialNodeCanvasPosition: SIMD3<Float> = .zero
     
     var body: some View {
@@ -51,20 +55,48 @@ struct ImmersiveNodeMapView: View {
         DragGesture(coordinateSpace: .global)
             .targetedToAnyEntity()
             .onChanged { value in
-                guard
-                    let nodeComponent = value.entity.components[NodeDataComponent.self]
+                guard let nodeComponent = value.entity.components[NodeDataComponent.self]
                 else { return }
 
-                // Begin drag
-                if draggedEntity == nil {
-                    draggedEntity = value.entity
-                    animateEntityScale(value.entity, to: 1.1)
+                let draggedNodeId = nodeComponent.node.id
 
-                    // CANVAS position (2D source of truth)
-                    initialNodeCanvasPosition = nodeComponent.node.position
+                // Какие ноды двигаем
+                let isDraggedNodeSelected =
+                    appModel.selectedNodeIds.contains(draggedNodeId)
+
+                let movingIds: Set<String> =
+                    isDraggedNodeSelected
+                    ? appModel.selectedNodeIds
+                    : [draggedNodeId]
+
+                // Если тащим невыделенную ноду — выделяем только её
+                if !isDraggedNodeSelected {
+                    appModel.selectedNodeIds = [draggedNodeId]
                 }
 
-                // Movement in RealityKit scene (meters)
+                // Начало drag
+                if draggedEntity == nil {
+                    draggedEntity = value.entity
+
+                    // scale animation для всех
+                    movingIds.forEach { id in
+                        if let entity = entityMap[id] {
+                            animateEntityScale(entity, to: 1.1)
+                        }
+                    }
+
+                    // Запоминаем стартовые позиции
+                    for id in movingIds {
+                        if dragStartPositions[id] == nil,
+                           let node = appModel.node(forId: id) {
+                            dragStartPositions[id] = node.position
+                        }
+                    }
+
+                    draggedNodeIds.formUnion(movingIds)
+                }
+
+                // translation RealityKit -> canvas
                 let movementScene = value.convert(
                     value.gestureValue.translation3D,
                     from: .local,
@@ -73,35 +105,77 @@ struct ImmersiveNodeMapView: View {
 
                 let scaleFactor: Float = 0.001
 
-                // Convert to canvas delta
-                let deltaX = movementScene.x / scaleFactor
-                let deltaY = -movementScene.y / scaleFactor
+                let dx = movementScene.x / scaleFactor
+                let dy = -movementScene.y / scaleFactor
 
-                let newCanvasPosition = SIMD3<Float>(
-                    initialNodeCanvasPosition.x + deltaX,
-                    initialNodeCanvasPosition.y + deltaY,
-                    initialNodeCanvasPosition.z
-                )
+                // Двигаем все выбранные ноды
+                for id in movingIds {
+                    guard let start = dragStartPositions[id],
+                          let node = appModel.node(forId: id)
+                    else { continue }
 
-                appModel.updatePosition(
-                    for: nodeComponent.node.id,
-                    newPosition: newCanvasPosition
-                )
+                    let newPosition = SIMD3<Float>(
+                        start.x + dx,
+                        start.y + dy,
+                        start.z
+                    )
 
-                value.entity.position =
-                    convertToVisionOSPosition(node: nodeComponent.node)
+                    // Только визуальный update
+                    node.x = newPosition.x
+                    node.y = newPosition.y
+                    node.z = newPosition.z
 
-                updateConnectionsForNode(nodeId: nodeComponent.node.id)
+                    // Обновляем entity
+                    if let entity = entityMap[id] {
+                        entity.position =
+                            convertToVisionOSPosition(node: node)
+                    }
+
+                    updateConnectionsForNode(nodeId: id)
+                }
             }
-            .onEnded { value in
-                guard
-                    let nodeComponent = value.entity.components[NodeDataComponent.self]
-                else { return }
+            .onEnded { _ in
 
-                animateEntityScale(value.entity, to: 1.0)
+                // Возвращаем scale
+                draggedNodeIds.forEach { id in
+                    if let entity = entityMap[id] {
+                        animateEntityScale(entity, to: 1.0)
+                    }
+                }
+
+                // Batch action как в NodeMapView
+                var nodeIds: [String] = []
+                var oldPositions: [SIMD3<Float>] = []
+                var newPositions: [SIMD3<Float>] = []
+
+                for id in draggedNodeIds {
+                    guard let start = dragStartPositions[id],
+                          let node = appModel.node(forId: id)
+                    else { continue }
+
+                    let end = node.position
+
+                    if start != end {
+                        nodeIds.append(id)
+                        oldPositions.append(start)
+                        newPositions.append(end)
+                    }
+                }
+
+                if !nodeIds.isEmpty {
+                    let action = MoveNodesBatchAction(
+                        nodeIds: nodeIds,
+                        oldPositions: oldPositions,
+                        newPositions: newPositions
+                    )
+
+                    appModel.actionService.perform(action)
+                }
+
+                // cleanup
+                dragStartPositions.removeAll()
+                draggedNodeIds.removeAll()
                 draggedEntity = nil
-
-                updateConnectionsForNode(nodeId: nodeComponent.node.id)
             }
     }
 

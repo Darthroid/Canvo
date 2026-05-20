@@ -47,7 +47,9 @@ struct AIGenerationSnackbar: View {
                 Button(role: .cancel) {
                     onCancel()
                 }
+                #if !os(visionOS)
                 .buttonStyle(.glass)
+                #endif
             }
             .padding(.horizontal, 18)
             .padding(.vertical, 16)
