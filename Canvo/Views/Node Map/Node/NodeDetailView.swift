@@ -19,7 +19,9 @@ struct NodeDetailView: View {
 
     private var connectionlist: some View {
         ForEach(appModel.nodesConnectedWith(node: node)) { connectedNode in
+            let isOutgoing = appModel.connections.first(where: { $0.fromNodeId == connectedNode.id || $0.toNodeId == connectedNode.id })?.fromNodeId == connectedNode.id
             HStack(spacing: 16) {
+                Image(systemName: isOutgoing ?  "arrow.left" : "arrow.right")
                 VStack(alignment: .leading) {
                     Text(connectedNode.name)
                         .font(.body)
@@ -40,7 +42,7 @@ struct NodeDetailView: View {
                         appModel.selectedNodeIds = [nodeId]
                     }
                 } label: {
-                    Image(systemName: "arrow.right")
+                    Image(systemName: "chevron.right")
                 }
                 .buttonStyle(.borderless)
                 .foregroundColor(.primary)
