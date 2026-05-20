@@ -9,12 +9,12 @@ import SwiftUI
 
 struct CanvasCardView: View {
     let canvas: Canvas
-    
-    @State private var previewURL: URL
-    @State private var lastUpdateId = UUID()
-    
+
+    @State private var previewImage: UIImage?
+
     var updatedAt: String {
         let date = canvas.updatedAt
+
         if Calendar.current.isDateInToday(date) {
             return "Today, " + date.formatted(
                 .dateTime
@@ -38,31 +38,30 @@ struct CanvasCardView: View {
             )
         }
     }
-    
+
     init(canvas: Canvas) {
         self.canvas = canvas
-        self._previewURL = State(initialValue: CanvasPreviewService.shared.getPreviewURL(for: canvas))
+        self._previewImage = State(
+            initialValue: Self.loadPreview(for: canvas)
+        )
     }
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            // Card header with gradient background
             ZStack {
-                if CanvasPreviewService.shared.hasPreview(for: canvas) {
+                if let previewImage {
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
                         .fill(.background)
                         .frame(height: 160)
-                    
-                    Image(contentsOfFile: previewURL.path())
+
+                    Image(uiImage: previewImage)
                         .resizable()
                         .scaledToFit()
                         .frame(maxWidth: .infinity, maxHeight: 160)
                         .clipShape(
                             RoundedRectangle(cornerRadius: 16, style: .continuous)
                         )
-                        .id(lastUpdateId)
                 } else {
-                    // Background shape with fixed size
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
                         .fill(
                             LinearGradient(
@@ -72,7 +71,7 @@ struct CanvasCardView: View {
                             )
                         )
                         .frame(height: 160)
-                    
+
                     Image("canvas_placeholder")
                         .resizable()
                         .frame(maxWidth: 80, maxHeight: 80)
@@ -93,16 +92,15 @@ struct CanvasCardView: View {
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .stroke(.white.opacity(0.2), lineWidth: 1)
             )
-            
-            // Card content
+
             VStack(alignment: .leading, spacing: 12) {
-                // Canvas name
                 HStack {
                     if canvas.isPined {
                         Image(systemName: "star.fill")
                             .font(.callout)
                             .foregroundStyle(.blue)
                     }
+
                     Text(canvas.name)
                         .font(.title3)
                         .fontWeight(.semibold)
@@ -110,17 +108,14 @@ struct CanvasCardView: View {
                         .lineLimit(2)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                
-                
-                // Metadata footer
+
                 HStack {
                     Label(updatedAt, systemImage: "calendar")
                         .font(.caption)
                         .foregroundColor(.secondary)
-                    
+
                     Spacer()
-                    
-                    // Node count badge
+
                     Text("\(canvas.nodes?.count ?? 0) nodes")
                         .font(.caption)
                         .foregroundColor(.secondary)
@@ -139,13 +134,19 @@ struct CanvasCardView: View {
                 .stroke(Color(uiColor: .lightGray).opacity(0.1), lineWidth: 1)
         )
         .onReceive(NotificationCenter.default.publisher(for: .canvasPreviewUpdated)) { notification in
-            if let canvasId = notification.userInfo?["canvasId"] as? String,
-               canvasId == canvas.id {
-                // Force update by changing the URL (append timestamp)
-                let newURL = CanvasPreviewService.shared.getPreviewURL(for: canvas)
-                self.previewURL = newURL
-                self.lastUpdateId = UUID()
+            guard
+                let canvasId = notification.userInfo?["canvasId"] as? String,
+                canvasId == canvas.id
+            else { return }
+
+            DispatchQueue.main.async {
+                self.previewImage = Self.loadPreview(for: canvas)
             }
         }
+    }
+
+    private static func loadPreview(for canvas: Canvas) -> UIImage? {
+        let url = CanvasPreviewService.shared.getPreviewURL(for: canvas)
+        return UIImage(contentsOfFile: url.path)
     }
 }
