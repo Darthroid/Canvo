@@ -401,6 +401,7 @@ extension AIGenerationService {
     }
     
     func summarize(
+        exclude: [Node] = [],
         scope: [Node],
         userInput: String,
         in canvas: Canvas
@@ -417,9 +418,7 @@ extension AIGenerationService {
                     
                     try Task.checkCancellation()
                     
-                    let session = LanguageModelSession(
-                        model: model,
-                        instructions: """
+                    var instructions = """
                         You are an AI expert that operates a structured mind map and generates a concise summary of nodes describing their shared theme, category, meaning, or relationship.
                         RULES:
                         - Exactly 1 node as summary to current input.
@@ -440,6 +439,25 @@ extension AIGenerationService {
                         - If no clear common theme exists, choose the strongest or most probable connection
                         - If the objects are unrelated, infer a summary based on the dominant context or recurring patterns
                         """
+                    
+                    let excludeTopics = exclude.enumerated().map { (index, node) in
+                        """
+                        \(index + 1). NAME:
+                        \(node.name)
+                        DETAIL:
+                        \(node.detail)
+                        """
+                    }.joined(separator: "\n")
+                    let excludePrompt = """
+                    ___
+                      Do not include these related topics to avoid duplication: 
+                    \(excludeTopics)
+                    ___
+                    """
+                    
+                    let session = LanguageModelSession(
+                        model: model,
+                        instructions: instructions
                     )
                     
                     let list = scope.map {
@@ -450,6 +468,7 @@ extension AIGenerationService {
                     let question = """
                     Take a look at this list of nodes in canvas '\(canvas.name)':
                     \(list)
+                    \(!exclude.isEmpty ? excludePrompt : "")
                     ___
                     \(userInput.isEmpty
                         ? "Analyze all objects and identify the most likely common theme, category, context, purpose, or shared characteristics between them. Generate a summary node"

@@ -81,8 +81,8 @@ extension AppModel {
             
             do {
                 var summary: NodeSchema?
-                
-                let stream = try await AIGenerationService.shared.summarize(scope: scope, userInput: userPrompt, in: canvas)
+                let exclude = Array(Set(scope.flatMap { nodesConnectedWith(node: $0) }))
+                let stream = try await AIGenerationService.shared.summarize(exclude: exclude, scope: scope, userInput: userPrompt, in: canvas)
                 
                 for try await chunk in stream {
                     summary = chunk
