@@ -49,6 +49,10 @@ struct NodeMapView: View {
     private let zoomSensitivity: CGFloat = 0.35
     private let searchAnimationDuration: Double = 0.5
     
+    @State private var generatedPreview: UIImage?
+    @State private var showShareSheet = false
+    @State private var selectedFormat: ShareImageItem.ImageFormat = .png
+    
     private var updatedAt: String? {
         guard let date = appModel.currentCanvas?.updatedAt else { return nil }
         
@@ -378,6 +382,25 @@ struct NodeMapView: View {
                 centerOnNode(node, animated: true)
             })
             .sheet(isPresented: Binding(
+                get: { showShareSheet && generatedPreview != nil },
+                set: { newValue in
+                    if !newValue {
+                        showShareSheet = false
+                        generatedPreview = nil
+                    }
+                }
+            )) {
+                if let generatedPreview {
+                    ShareSheet(
+                        item: ShareImageItem(
+                            image: generatedPreview,
+                            title: appModel.currentCanvas?.name ?? "Map Export",
+                            format: selectedFormat
+                        )
+                    )
+                }
+            }
+            .sheet(isPresented: Binding(
                 get: { showOutline && isCompact },
                 set: { newValue in
                     if !newValue {
@@ -486,6 +509,24 @@ struct NodeMapView: View {
                             .font(.headline)
                         Divider()
 
+                        Menu {
+                            Button {
+                                exportAsImage(format: .jpeg)
+                            } label: {
+                                Text("JPEG image")
+                            }
+                            
+                            Button {
+                                exportAsImage(format: .png)
+                            } label: {
+                                Text("PNG image")
+                            }
+                            
+                        } label: {
+                            Label("Export As", systemImage: "square.and.arrow.up")
+                        }
+                        
+                        Divider()
                         
 #if os(visionOS)
                     // visionOS immersive map
@@ -837,10 +878,15 @@ extension NodeMapView {
     }
     
     @MainActor
-    private func generatePreview() {
-        guard let canvas = appModel.currentCanvas else { return }
+    private func exportAsImage(format: ShareImageItem.ImageFormat) {
+        let image = previewImage(targetSize: .init(width: 2048, height: 1024), removeBackground: false)
+        self.generatedPreview = image
+        self.selectedFormat = format
         
-        let targetSize = CGSize(width: 220, height: 160)
+        showShareSheet.toggle()
+    }
+    
+    private func previewImage(targetSize: CGSize = CGSize(width: 220, height: 160), removeBackground: Bool = true) -> UIImage {
 #if os(visionOS)
         let scaleFactor: CGFloat = 1.0
 #else
@@ -871,10 +917,16 @@ extension NodeMapView {
             )
         }
         
-        let image = view
-            .asImage(removeBackground: true)
+        return view
+            .asImage(removeBackground: removeBackground)
             .resizedWithAspect(targetSize: targetSize)
-        
+    }
+    
+    @MainActor
+    private func generatePreview(targetSize: CGSize = CGSize(width: 220, height: 160)) {
+        guard let canvas = appModel.currentCanvas else { return }
+        let image = previewImage(targetSize: targetSize)
+
         CanvasPreviewService.shared.generatePreview(
             image: image,
             for: canvas.id

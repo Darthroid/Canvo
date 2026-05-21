@@ -105,7 +105,7 @@ struct CanvasCardView: View {
                         .font(.title3)
                         .fontWeight(.semibold)
                         .foregroundColor(.primary)
-                        .lineLimit(2)
+                        .lineLimit(1)
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
