@@ -44,6 +44,8 @@ class Canvas: Identifiable, Codable {
         createdAt = try container.decode(Date.self, forKey: .createdAt)
         updatedAt = try container.decode(Date.self, forKey: .updatedAt)
         isPined = try container.decode(Bool.self, forKey: .isPined)
+        nodes = try container.decode([Node].self, forKey: .nodes)
+        connections = try container.decode([NodeConnection].self, forKey: .connections)
     }
     
     func encode(to encoder: any Encoder) throws {
@@ -53,10 +55,12 @@ class Canvas: Identifiable, Codable {
         try container.encode(createdAt, forKey: .createdAt)
         try container.encode(updatedAt, forKey: .updatedAt)
         try container.encode(isPined, forKey: .isPined)
+        try container.encode(nodes, forKey: .nodes)
+        try container.encode(connections, forKey: .connections)
     }
     
     private enum CodingKeys: String, CodingKey {
-        case id, name, createdAt, updatedAt, isPined
+        case id, name, createdAt, updatedAt, isPined, connections, nodes
     }
 }
 

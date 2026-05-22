@@ -9,17 +9,17 @@
 import SwiftUI
 import LinkPresentation
 
-final class ShareImageItem: NSObject, UIActivityItemSource {
+enum ExportFormat: String {
+    case jpeg, png, json
+}
 
-    enum ImageFormat: String {
-        case jpeg, png
-    }
+final class ShareImageItem: NSObject, UIActivityItemSource {
     
     let image: UIImage
     let title: String
-    let format: ImageFormat
+    let format: ExportFormat
 
-    init(image: UIImage, title: String, format: ImageFormat) {
+    init(image: UIImage, title: String, format: ExportFormat) {
         self.image = image
         self.title = title
         self.format = format
@@ -48,6 +48,7 @@ final class ShareImageItem: NSObject, UIActivityItemSource {
             if let data = image.pngData() {
                 try? data.write(to: url)
             }
+        default: return nil
         }
 
         return url

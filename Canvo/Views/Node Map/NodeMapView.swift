@@ -50,8 +50,9 @@ struct NodeMapView: View {
     private let searchAnimationDuration: Double = 0.5
     
     @State private var generatedPreview: UIImage?
+    @State private var generatedJSON: Data?
     @State private var showShareSheet = false
-    @State private var selectedFormat: ShareImageItem.ImageFormat = .png
+    @State private var selectedFormat: ExportFormat = .png
     
     private var updatedAt: String? {
         guard let date = appModel.currentCanvas?.updatedAt else { return nil }
@@ -382,11 +383,12 @@ struct NodeMapView: View {
                 centerOnNode(node, animated: true)
             })
             .sheet(isPresented: Binding(
-                get: { showShareSheet && generatedPreview != nil },
+                get: { showShareSheet && (generatedPreview != nil || generatedJSON != nil) },
                 set: { newValue in
                     if !newValue {
                         showShareSheet = false
                         generatedPreview = nil
+                        generatedJSON = nil
                     }
                 }
             )) {
@@ -396,6 +398,13 @@ struct NodeMapView: View {
                             image: generatedPreview,
                             title: appModel.currentCanvas?.name ?? "Map Export",
                             format: selectedFormat
+                        )
+                    )
+                } else if let generatedJSON {
+                    ShareSheet(
+                        item: ShareJSONItem(
+                            jsonData: generatedJSON,
+                            filename: appModel.currentCanvas?.name ?? "Map Export"
                         )
                     )
                 }
@@ -521,6 +530,13 @@ struct NodeMapView: View {
                             } label: {
                                 Text("PNG image")
                             }
+                            
+                            Button {
+                                exportJSON()
+                            } label: {
+                                Text("JSON")
+                            }
+                            
                             
                         } label: {
                             Label("Export As", systemImage: "square.and.arrow.up")
@@ -878,12 +894,30 @@ extension NodeMapView {
     }
     
     @MainActor
-    private func exportAsImage(format: ShareImageItem.ImageFormat) {
+    private func exportAsImage(format: ExportFormat) {
         let image = previewImage(targetSize: .init(width: 2048, height: 1024), removeBackground: false)
         self.generatedPreview = image
         self.selectedFormat = format
         
         showShareSheet.toggle()
+    }
+    
+    @MainActor func exportJSON() {
+        guard let canvas = appModel.currentCanvas else { return }
+        
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .prettyPrinted
+        
+        do {
+            let data = try encoder.encode(canvas)
+//            let json = String(data: data, encoding: .utf8)
+            self.generatedJSON = data
+            self.selectedFormat = .json
+            
+            showShareSheet.toggle()
+        } catch {
+            print("error encoding json on export: \(error)")
+        }
     }
     
     private func previewImage(targetSize: CGSize = CGSize(width: 220, height: 160), removeBackground: Bool = true) -> UIImage {

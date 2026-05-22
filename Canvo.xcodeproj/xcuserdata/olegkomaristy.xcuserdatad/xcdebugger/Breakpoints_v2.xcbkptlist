@@ -124,8 +124,8 @@
             filePath = "Canvo/Views/Node Map/NodeMapView.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "279"
-            endingLineNumber = "279"
+            startingLineNumber = "280"
+            endingLineNumber = "280"
             landmarkName = "canvas"
             landmarkType = "24">
          </BreakpointContent>
@@ -140,8 +140,8 @@
             filePath = "Canvo/Views/Node Map/NodeMapView.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "664"
-            endingLineNumber = "664"
+            startingLineNumber = "680"
+            endingLineNumber = "680"
             landmarkName = "deleteSelectedNodes()"
             landmarkType = "7">
          </BreakpointContent>
@@ -156,8 +156,8 @@
             filePath = "Canvo/Views/Node Map/NodeMapView.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "662"
-            endingLineNumber = "662"
+            startingLineNumber = "678"
+            endingLineNumber = "678"
             landmarkName = "deleteSelectedNodes()"
             landmarkType = "7">
          </BreakpointContent>
@@ -174,8 +174,8 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "68"
             endingLineNumber = "68"
-            landmarkName = "CanvasPreviewService"
-            landmarkType = "3">
+            landmarkName = "generatePreview(image:for:)"
+            landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
    </Breakpoints>
