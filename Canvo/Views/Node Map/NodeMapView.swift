@@ -278,6 +278,7 @@ struct NodeMapView: View {
                         isSelected: appModel.selectedNodeIds.contains(node.id),
                         isExpanded: appModel.expandedNodeIds.contains(node.id),
                         isMatchingSearch: searchResults.contains(where: { $0.id == node.id }),
+                        toolbarEnabled: true,
                         onDetail: { showDetailNode = node },
                         onLink: { showLinkToNode = node },
                         onDelete: { showDeleteNode = node }
@@ -763,7 +764,8 @@ extension NodeMapView {
                     node: node,
                     isSelected: false,
                     isExpanded: false,
-                    isMatchingSearch: false
+                    isMatchingSearch: false,
+                    toolbarEnabled: true
                 )
                 .position(node.position.position2D)
             }

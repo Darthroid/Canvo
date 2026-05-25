@@ -15,6 +15,10 @@ struct ImmersiveNodeMapView: View {
         var cylinder: ModelEntity
     }
     
+    final class NodeLayoutCache {
+        var sizes: [String: CGSize] = [:]
+    }
+    
     final class SceneCache {
 
         var nodeEntities: [String: ViewAttachmentEntity] = [:]
@@ -25,6 +29,7 @@ struct ImmersiveNodeMapView: View {
     @Environment(AppModel.self) var appModel
     @State private var draggedEntity: Entity?
     @State private var sceneCache = SceneCache()
+    @State private var layoutCache = NodeLayoutCache()
     @State private var realityViewContent: RealityViewContent?
     
     @State private var dragStartPositions: [String: SIMD3<Float>] = [:]
@@ -33,6 +38,8 @@ struct ImmersiveNodeMapView: View {
     @State private var showDetailNode: Node?
     @State private var showLinkToNode: Node?
     @State private var showDeleteNode: Node?
+    
+    private let uiToWorldScale: Float = 0.0012
     
     var body: some View {
         RealityView { content, attachments in
@@ -62,10 +69,14 @@ struct ImmersiveNodeMapView: View {
                         node: node,
                         isSelected: appModel.selectedNodeIds.contains(node.id),
                         isExpanded: appModel.expandedNodeIds.contains(node.id),
-                        isMatchingSearch: false
-//                        onDetail: { showDetailNode = node },
-//                        onLink: { showLinkToNode = node },
-//                        onDelete: { showDeleteNode = node }
+                        isMatchingSearch: false,
+                        toolbarEnabled: false,
+                        onSizeChange: { size in
+                            layoutCache.sizes[node.id] = size
+                            DispatchQueue.main.async {
+                                updateCollision(for: node.id, size: size)
+                            }
+                        }
                     )
                     .frame(maxWidth: 400)
                 }
@@ -311,18 +322,6 @@ struct ImmersiveNodeMapView: View {
                 attachment.position = position
 
                 attachment.components.set(
-                    CollisionComponent(
-                        shapes: [
-                            .generateBox(
-                                width: 0.4,
-                                height: 0.3,
-                                depth: 0.03
-                            )
-                        ]
-                    )
-                )
-
-                attachment.components.set(
                     InputTargetComponent()
                 )
 
@@ -541,5 +540,21 @@ struct ImmersiveNodeMapView: View {
             y + yOffset,
             z  // No additional zOffset needed since we handled it above
         )
+    }
+    
+    private func updateCollision(for id: String, size: CGSize) {
+
+        guard let entity = sceneCache.nodeEntities[id] else { return }
+
+        let width = Float(size.width) * uiToWorldScale
+        let height = Float(size.height) * uiToWorldScale
+
+        let shape = ShapeResource.generateBox(
+            width: width,
+            height: height,
+            depth: 0.02
+        )
+
+        entity.components.set(CollisionComponent(shapes: [shape]))
     }
 }

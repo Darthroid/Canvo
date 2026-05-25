@@ -12,6 +12,8 @@ struct NodeView: View {
     let isSelected: Bool
     let isExpanded: Bool
     let isMatchingSearch: Bool
+    let toolbarEnabled: Bool
+    var onSizeChange: ((CGSize) -> Void)?
 
     @Environment(\.colorScheme) private var colorScheme
     
@@ -98,8 +100,19 @@ struct NodeView: View {
                     }
                 )
         )
+        .background(
+            GeometryReader { proxy in
+                Color.clear
+                    .onAppear {
+                        onSizeChange?(proxy.size)
+                    }
+                    .onChange(of: proxy.size) { _, newSize in
+                        onSizeChange?(newSize)
+                    }
+            }
+        )
         .overlay(alignment: .bottom) {
-            if isExpanded {
+            if isExpanded, toolbarEnabled {
                 floatingToolbar
                     .padding(.horizontal, 20)
                     .offset(y: 22)
@@ -175,6 +188,7 @@ struct NodeView: View {
         ),
         isSelected: false,
         isExpanded: true,
-        isMatchingSearch: false
+        isMatchingSearch: false,
+        toolbarEnabled: true
     )
 }
