@@ -105,7 +105,11 @@ struct CompactCanvasCardView: View {
         ZStack {
             if let previewImage {
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    #if os(visionOS)
+                    .fill(Color("MapBackground").opacity(0.8))
+                    #else
                     .fill(.background)
+                    #endif
 
                 Image(uiImage: previewImage)
                     .resizable()

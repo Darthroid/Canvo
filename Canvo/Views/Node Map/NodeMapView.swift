@@ -939,40 +939,37 @@ extension NodeMapView {
         }
     }
     
-    private func previewImage(targetSize: CGSize = CGSize(width: 220, height: 160), removeBackground: Bool = true) -> UIImage {
-#if os(visionOS)
-        let scaleFactor: CGFloat = 1.0
-#else
-        let scaleFactor: CGFloat = UIScreen.main.scale
-#endif
-        
-        let renderSize = CGSize(
-            width: targetSize.width * scaleFactor,
-            height: targetSize.height * scaleFactor
-        )
-        
+    @MainActor
+    private func previewImage(
+        targetSize: CGSize = CGSize(width: 220, height: 160),
+        removeBackground: Bool = true
+    ) -> UIImage {
+
         let view: AnyView
-        
+
         if let layout = previewLayout(targetSize: targetSize) {
-            let scaledLayout = PreviewLayout(
-                scale: layout.scale * scaleFactor,
-                offset: layout.offset * scaleFactor
-            )
-            
             view = AnyView(
-                previewCanvas(layout: scaledLayout)
-                    .frame(width: renderSize.width, height: renderSize.height)
+                previewCanvas(layout: layout)
+                    .frame(
+                        width: targetSize.width,
+                        height: targetSize.height
+                    )
             )
         } else {
             view = AnyView(
                 GridLayer()
-                    .frame(width: renderSize.width, height: renderSize.height)
+                    .frame(
+                        width: targetSize.width,
+                        height: targetSize.height
+                    )
             )
         }
-        
-        return view
-            .asImage(removeBackground: removeBackground)
-            .resizedWithAspect(targetSize: targetSize)
+
+        return view.asImage(
+            size: targetSize,
+            scale: 2,
+            removeBackground: removeBackground
+        )
     }
     
     @MainActor

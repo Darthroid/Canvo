@@ -9,62 +9,31 @@ import UIKit
 import SwiftUI
 
 extension View {
-    func asImage(removeBackground: Bool) -> UIImage {
-        let controller = UIHostingController(rootView: self)
+    @MainActor
+    func asImage(
+        size: CGSize,
+        scale: CGFloat = 2,
+        removeBackground: Bool = true
+    ) -> UIImage {
 
-        #if os(visionOS)
-
-        let targetSize = controller.sizeThatFits(
-            in: CGSize(
-                width: CGFloat.greatestFiniteMagnitude,
-                height: CGFloat.greatestFiniteMagnitude
-            )
-        )
-
-        controller.view.bounds = CGRect(origin: .zero, size: targetSize)
-
-        #else
-
-        controller.view.frame = CGRect(
-            x: 0,
-            y: CGFloat(Int.max),
-            width: 1,
-            height: 1
-        )
-
-        guard
-            let window = UIApplication.shared
-                .connectedScenes
-                .compactMap({ $0 as? UIWindowScene })
-                .flatMap({ $0.windows })
-                .first
-        else {
-            return UIImage()
-        }
-
-        window.rootViewController?.view.addSubview(controller.view)
-
-        let size = controller.sizeThatFits(
-            in: UIScreen.main.bounds.size
-        )
-
-        controller.view.bounds = CGRect(origin: .zero, size: size)
-
-        #endif
-
-        controller.view.sizeToFit()
+        let content: AnyView
 
         if removeBackground {
-            controller.view.backgroundColor = .clear
+            content = AnyView(
+                self
+                    .frame(width: size.width, height: size.height)
+                    .background(.clear)
+            )
+        } else {
+            content = AnyView(
+                self.frame(width: size.width, height: size.height)
+            )
         }
 
-        let image = controller.view.asImage()
+        let renderer = ImageRenderer(content: content)
+        renderer.proposedSize = .init(size)
+        renderer.scale = scale
 
-        #if !os(visionOS)
-        controller.view.removeFromSuperview()
-        #endif
-
-        return image
+        return renderer.uiImage ?? UIImage()
     }
 }
-
