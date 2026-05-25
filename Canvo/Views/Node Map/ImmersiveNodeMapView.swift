@@ -10,42 +10,111 @@ import RealityKit
 import RealityKitContent
 import SwiftData
 
-
 struct ImmersiveNodeMapView: View {
+    struct ConnectionVisualComponent: Component {
+        var cylinder: ModelEntity
+    }
+    
+    final class SceneCache {
+
+        var nodeEntities: [String: ViewAttachmentEntity] = [:]
+
+        var connectionEntities: [String: ModelEntity] = [:]
+    }
+    
     @Environment(AppModel.self) var appModel
     @State private var draggedEntity: Entity?
-    @State private var entityMap: [String: Entity] = [:]
-    @State private var connectionMap: [String: ModelEntity] = [:]
+    @State private var sceneCache = SceneCache()
     @State private var realityViewContent: RealityViewContent?
     
     @State private var dragStartPositions: [String: SIMD3<Float>] = [:]
     @State private var draggedNodeIds: Set<String> = []
-    @State private var dragStartTranslation: SIMD3<Float> = .zero
     
-    @State private var initialNodeCanvasPosition: SIMD3<Float> = .zero
+    @State private var showDetailNode: Node?
+    @State private var showLinkToNode: Node?
+    @State private var showDeleteNode: Node?
     
     var body: some View {
-        RealityView { content in
+        RealityView { content, attachments in
             realityViewContent = content
-            updateEntities(in: content)
+
+            updateEntities(
+                in: content,
+                attachments: attachments
+            )
+
             updateConnections(in: content)
+        } update: { content, attachments in
+
+            updateEntities(
+                in: content,
+                attachments: attachments
+            )
+
+            updateConnections(in: content)
+
+        } attachments: {
+
+            ForEach(appModel.visibleNodes) { node in
+                Attachment(id: node.id) {
+                    EmptyView()
+                    NodeView(
+                        node: node,
+                        isSelected: appModel.selectedNodeIds.contains(node.id),
+                        isExpanded: appModel.expandedNodeIds.contains(node.id),
+                        isMatchingSearch: false
+//                        onDetail: { showDetailNode = node },
+//                        onLink: { showLinkToNode = node },
+//                        onDelete: { showDeleteNode = node }
+                    )
+                    .frame(maxWidth: 400)
+                }
+            }
         }
         .gesture(selectiveDragGesture)
         .gesture(tapGesture)
-        .onChange(of: appModel.nodes) { oldValue, newValue in
-            guard let content = realityViewContent else { return }
-            updateEntities(in: content)
-            updateConnections(in: content)
-        }
+        .gesture(doubleTapGesture)
         .onChange(of: appModel.connections) { oldValue, newValue in
             guard let content = realityViewContent else { return }
             updateConnections(in: content)
         }
-        .onChange(of: appModel.selectedNodeIds) { oldValue, newValue in
-            let ids = appModel.nodes.map(\.id)
-            ids.forEach {
-                updateNodeAppearance(for: $0, isSelected: newValue.contains($0))
+        .sheet(item: $showDetailNode) { node in
+            NavigationStack {
+                NodeDetailView(node: node)
             }
+        }
+        .sheet(item: $showLinkToNode) { node in
+            NavigationStack {
+                LinkEditorView(fromNode: node)
+            }
+        }
+        .alert(
+            "Delete Node",
+            isPresented: Binding(
+                get: {
+                    showDeleteNode != nil
+                },
+                set: { newValue in
+                    if !newValue {
+                        showDeleteNode = nil
+                    }
+                }
+            ),
+            presenting: showDeleteNode
+        ) { node in
+            Button("Delete", role: .destructive) {
+                let snapshot = appModel.makeNodeSnapshotWithConnections(node)
+                
+                let action = RemoveNodeAction(
+                    node: snapshot.node,
+                    connections: snapshot.connections
+                )
+                
+                appModel.actionService.perform(action)
+            }
+            Button(role: .cancel) {}
+        } message: { _ in
+            Text("Are you sure you want to delete this node?")
         }
     }
     
@@ -77,13 +146,6 @@ struct ImmersiveNodeMapView: View {
                 // Начало drag
                 if draggedEntity == nil {
                     draggedEntity = value.entity
-
-                    // scale animation для всех
-                    movingIds.forEach { id in
-                        if let entity = entityMap[id] {
-                            animateEntityScale(entity, to: 1.1)
-                        }
-                    }
 
                     // Запоминаем стартовые позиции
                     for id in movingIds {
@@ -126,7 +188,7 @@ struct ImmersiveNodeMapView: View {
                     node.z = newPosition.z
 
                     // Обновляем entity
-                    if let entity = entityMap[id] {
+                    if let entity = sceneCache.nodeEntities[id] {
                         entity.position =
                             convertToVisionOSPosition(node: node)
                     }
@@ -136,12 +198,6 @@ struct ImmersiveNodeMapView: View {
             }
             .onEnded { _ in
 
-                // Возвращаем scale
-                draggedNodeIds.forEach { id in
-                    if let entity = entityMap[id] {
-                        animateEntityScale(entity, to: 1.0)
-                    }
-                }
 
                 // Batch action как в NodeMapView
                 var nodeIds: [String] = []
@@ -182,67 +238,119 @@ struct ImmersiveNodeMapView: View {
 
     
     private var tapGesture: some Gesture {
-        SpatialTapGesture()
+        SpatialTapGesture(count: 1)
             .targetedToAnyEntity()
             .onEnded { value in
-                guard let nodeComponent = value.entity.components[NodeDataComponent.self] else { return }
                 
-                let tappedNodeId = nodeComponent.node.id
+                guard let nodeComponent =
+                        value.entity.components[NodeDataComponent.self]
+                else { return }
                 
-                if appModel.selectedNodeIds.contains(tappedNodeId) {
-                    appModel.selectedNodeIds.remove(tappedNodeId)
-                    updateNodeAppearance(for: tappedNodeId, isSelected: false)
+                let nodeId = nodeComponent.node.id
+                
+                if appModel.selectedNodeIds.contains(nodeId) {
+                    appModel.selectedNodeIds.remove(nodeId)
                 } else {
-//                    if let previousSelectedId = appModel.selectedNodeIds {
-//                        updateNodeAppearance(for: previousSelectedId, isSelected: false)
-//                    }
-                    
-                    appModel.selectedNodeIds.insert(nodeComponent.node.id)
-                    updateNodeAppearance(for: tappedNodeId, isSelected: true)
+                    appModel.selectedNodeIds.insert(nodeId)
+                }
+            }
+    }
+    
+    private var doubleTapGesture: some Gesture {
+        SpatialTapGesture(count: 2)
+            .targetedToAnyEntity()
+            .onEnded { value in
+                
+                guard let nodeComponent =
+                        value.entity.components[NodeDataComponent.self]
+                else { return }
+                
+                let nodeId = nodeComponent.node.id
+                
+                if appModel.expandedNodeIds.contains(nodeId) {
+                    appModel.expandedNodeIds.remove(nodeId)
+                } else {
+                    appModel.expandedNodeIds.insert(nodeId)
                 }
             }
     }
     
 // MARK: - Drawing connections
 
-    private func updateEntities(in content: RealityViewContent) {
-        let currentNodeIds = Set(appModel.nodes.map { $0.id })
-        let existingEntityIds = Set(entityMap.keys)
-        
-        let removedIds = existingEntityIds.subtracting(currentNodeIds)
+    private func updateEntities(
+        in content: RealityViewContent,
+        attachments: RealityViewAttachments
+    ) {
+
+        let currentNodeIds = Set(appModel.nodes.map(\.id))
+        let existingNodeIds = Set(sceneCache.nodeEntities.keys)
+
+        let removedIds = existingNodeIds.subtracting(currentNodeIds)
+
         for id in removedIds {
-            if let entity = entityMap[id] {
+            if let entity = sceneCache.nodeEntities[id] {
                 entity.removeFromParent()
-                entityMap.removeValue(forKey: id)
+                sceneCache.nodeEntities.removeValue(forKey: id)
             }
         }
-        
+
         for node in appModel.nodes {
-            if let existingEntity = entityMap[node.id] {
-                // Update position of existing entity if it changed
-                let position = convertToVisionOSPosition(node: node)
-                if existingEntity.position != position {
-                    existingEntity.position = position
-                    // Connection updates will be handled by the drag gesture
-                }
+
+            let position = convertToVisionOSPosition(node: node)
+
+            if let entity = sceneCache.nodeEntities[node.id] {
+
+                entity.position = position
+
             } else {
-                let capsuleEntity = createCapsuleNode(for: node)
-                entityMap[node.id] = capsuleEntity
-                content.add(capsuleEntity)
+
+                guard let attachment =
+                        attachments.entity(for: node.id)
+                else { continue }
+                
+                attachment.position = position
+
+                attachment.components.set(
+                    CollisionComponent(
+                        shapes: [
+                            .generateBox(
+                                width: 0.4,
+                                height: 0.3,
+                                depth: 0.03
+                            )
+                        ]
+                    )
+                )
+
+                attachment.components.set(
+                    InputTargetComponent()
+                )
+
+                attachment.components.set(
+                    BillboardComponent()
+                )
+
+                attachment.components.set(
+                    NodeDataComponent(node: node)
+                )
+
+                sceneCache.nodeEntities[node.id] = attachment
+
+                content.add(attachment)
             }
         }
     }
     
     private func updateConnections(in content: RealityViewContent) {
         let currentConnectionIds = Set(appModel.connections.map { $0.id })
-        let existingConnectionIds = Set(connectionMap.keys)
+        let existingConnectionIds = Set(sceneCache.connectionEntities.keys)
         
         // Remove old connections
         let removedConnectionIds = existingConnectionIds.subtracting(currentConnectionIds)
         for id in removedConnectionIds {
-            if let entity = connectionMap[id] {
+            if let entity = sceneCache.connectionEntities[id] {
                 entity.removeFromParent()
-                connectionMap.removeValue(forKey: id)
+                sceneCache.connectionEntities.removeValue(forKey: id)
             }
         }
         
@@ -250,93 +358,164 @@ struct ImmersiveNodeMapView: View {
             guard let fromNode = appModel.nodes.first(where: { $0.id == connection.fromNodeId }),
                   let toNode = appModel.nodes.first(where: { $0.id == connection.toNodeId }) else { continue }
             
-            if let existingConnection = connectionMap[connection.id] {
-                // Update existing connection position and orientation
-                updateConnectionEntity(existingConnection, from: fromNode, to: toNode)
+            if let existingConnection = sceneCache.connectionEntities[connection.id] {
+
+                guard
+                    let fromEntity = sceneCache.nodeEntities[connection.fromNodeId],
+                    let toEntity = sceneCache.nodeEntities[connection.toNodeId]
+                else { continue }
+
+                updateConnectionEntity(
+                    existingConnection,
+                    startPosition: fromEntity.position(relativeTo: nil),
+                    endPosition: toEntity.position(relativeTo: nil)
+                )
             } else {
                 // Create new connection
                 let connectionEntity = createConnectionEntity(from: fromNode, to: toNode, for: connection)
-                connectionMap[connection.id] = connectionEntity
+                sceneCache.connectionEntities[connection.id] = connectionEntity
                 content.add(connectionEntity)
+                print("ADD CONNECTION", connection.id)
             }
         }
     }
     
-    private func createConnectionEntity(from fromNode: Node, to toNode: Node, for connection: NodeConnection) -> ModelEntity {
+    private func createConnectionEntity(
+        from fromNode: Node,
+        to toNode: Node,
+        for connection: NodeConnection
+    ) -> ModelEntity {
+
+        print("CREATE CONNECTION", connection.id)
+        
         let connectionEntity = ModelEntity()
-        
-        updateConnectionEntity(connectionEntity, from: fromNode, to: toNode)
-        
-        // Add connection data component
-        connectionEntity.components.set(ConnectionDataComponent(connection: connection))
-        
-        return connectionEntity
-    }
-    
-    private func updateConnectionEntity(_ connectionEntity: ModelEntity, from fromNode: Node, to toNode: Node) {
-        connectionEntity.children.forEach { $0.removeFromParent() }
-        
-        let startPos = convertToVisionOSPosition(node: fromNode)
-        let endPos = convertToVisionOSPosition(node: toNode)
-        
-        // Calculate the vector between nodes
-        let vector = endPos - startPos
-        let distance = length(vector)
-        
-        // Skip if nodes are too close
-        guard distance > 0.01 else { return }
-        
-        let direction = vector / distance
-        
-        // Create cylinder for the connection line
-        let cylinderRadius: Float = 0.002
+
         let cylinderMesh = MeshResource.generateCylinder(
-            height: distance,
-            radius: cylinderRadius
+            height: 1.0,
+            radius: 0.001
         )
-        
+
         let material = SimpleMaterial(
             color: .darkGray.withAlphaComponent(0.5),
             roughness: .float(0.8),
             isMetallic: false
         )
-        
-        let cylinder = ModelEntity(mesh: cylinderMesh, materials: [material])
-        
-        // Position at midpoint between nodes
-        cylinder.position = (startPos + endPos) / 2
-        
-        // Calculate rotation to align cylinder with direction
-        // Default cylinder orientation is along Y-axis
-        let yAxis: SIMD3<Float> = [0, 1, 0]
-        
-        // Handle the case where direction is parallel to Y-axis
-        if abs(dot(direction, yAxis)) > 0.999 {
-            // Use a different approach for parallel vectors
-            cylinder.orientation = simd_quatf(angle: 0, axis: [1, 0, 0])
-        } else {
-            // Calculate rotation using cross product
-            let rotationAxis = cross(yAxis, direction)
-            let rotationAngle = acos(dot(yAxis, direction))
-            cylinder.orientation = simd_quatf(angle: rotationAngle, axis: normalize(rotationAxis))
-        }
-        
+
+        let cylinder = ModelEntity(
+            mesh: cylinderMesh,
+            materials: [material]
+        )
+
         connectionEntity.addChild(cylinder)
+
+        connectionEntity.components.set(
+            ConnectionDataComponent(connection: connection)
+        )
+
+        connectionEntity.components.set(
+            ConnectionVisualComponent(cylinder: cylinder)
+        )
+
+        updateConnectionEntity(
+            connectionEntity,
+            startPosition: convertToVisionOSPosition(node: fromNode),
+            endPosition: convertToVisionOSPosition(node: toNode)
+        )
+
+        return connectionEntity
+    }
+    
+    private func updateConnectionEntity(
+        _ connectionEntity: ModelEntity,
+        startPosition: SIMD3<Float>,
+        endPosition: SIMD3<Float>
+    ) {
+
+        guard let visual =
+            connectionEntity.components[
+                ConnectionVisualComponent.self
+            ]
+        else {
+            return
+        }
+
+        let cylinder = visual.cylinder
+
+        let vector = endPosition - startPosition
+        let distance = length(vector)
+
+        guard distance > 0.001 else {
+            cylinder.isEnabled = false
+            return
+        }
+
+        cylinder.isEnabled = true
+
+        let direction = normalize(vector)
+
+        connectionEntity.position =
+            (startPosition + endPosition) / 2
+
+        let yAxis = SIMD3<Float>(0, 1, 0)
+
+        let dotValue = dot(yAxis, direction)
+
+        if abs(dotValue) > 0.999 {
+
+            connectionEntity.orientation =
+                simd_quatf(
+                    angle: dotValue > 0 ? 0 : .pi,
+                    axis: [1, 0, 0]
+                )
+
+        } else {
+
+            let axis = normalize(
+                cross(yAxis, direction)
+            )
+
+            let angle = acos(dotValue)
+
+            connectionEntity.orientation =
+                simd_quatf(
+                    angle: angle,
+                    axis: axis
+                )
+        }
+
+        cylinder.scale =
+            SIMD3<Float>(
+                1,
+                distance,
+                1
+            )
     }
     
     private func updateConnectionsForNode(nodeId: String) {
-        // Find all connections involving this node
+
         let relevantConnections = appModel.connections.filter {
-            $0.fromNodeId == nodeId || $0.toNodeId == nodeId
+            $0.fromNodeId == nodeId ||
+            $0.toNodeId == nodeId
         }
-        
-        // Update each relevant connection entity
+
         for connection in relevantConnections {
-            guard let connectionEntity = connectionMap[connection.id],
-                  let fromNode = appModel.nodes.first(where: { $0.id == connection.fromNodeId }),
-                  let toNode = appModel.nodes.first(where: { $0.id == connection.toNodeId }) else { continue }
-            
-            updateConnectionEntity(connectionEntity, from: fromNode, to: toNode)
+
+            guard
+                let connectionEntity = sceneCache.connectionEntities[connection.id],
+                let fromEntity = sceneCache.nodeEntities[connection.fromNodeId],
+                let toEntity = sceneCache.nodeEntities[connection.toNodeId]
+            else {
+                continue
+            }
+
+            let startPosition = fromEntity.position(relativeTo: nil)
+            let endPosition = toEntity.position(relativeTo: nil)
+
+            updateConnectionEntity(
+                connectionEntity,
+                startPosition: startPosition,
+                endPosition: endPosition
+            )
         }
     }
     
@@ -362,237 +541,5 @@ struct ImmersiveNodeMapView: View {
             y + yOffset,
             z  // No additional zOffset needed since we handled it above
         )
-    }
-    
-    private func createCapsuleNode(for node: Node) -> Entity {
-        let parentEntity = Entity()
-
-        let isSelected = appModel.selectedNodeIds.contains(node.id)
-        let (capsuleWidth, capsuleHeight) = calculateDynamicSize(for: node, isSelected: isSelected)
-        
-        let capsule = createCapsule(width: capsuleWidth, height: capsuleHeight, for: node, isSelected: isSelected)
-
-        let textContent = isSelected ?
-            "\(node.name)\n \n\(node.detail.isEmpty ? "No description" : node.detail)" :
-            node.name
-        
-        let text = createTextLabel(
-            for: textContent,
-            containerWidth: capsuleWidth,
-            containerHeight: capsuleHeight,
-            isSelected: isSelected
-        )
-
-        let wrapperEntity = Entity()
-        wrapperEntity.addChild(capsule)
-        wrapperEntity.addChild(text)
-
-        parentEntity.addChild(wrapperEntity)
-        parentEntity.position = convertToVisionOSPosition(node: node)
-        
-        let collisionShape = ShapeResource.generateBox(width: capsuleWidth, height: capsuleHeight, depth: 0.02)
-        parentEntity.components.set(CollisionComponent(
-            shapes: [collisionShape],
-            mode: .default
-        ))
-        
-        parentEntity.components.set(PhysicsBodyComponent(
-            massProperties: .default,
-            material: .generate(friction: 0.5, restitution: 0.3),
-            mode: .kinematic
-        ))
-        
-        parentEntity.components.set(BillboardComponent())
-        
-        parentEntity.components.set(InputTargetComponent())
-        parentEntity.components.set(NodeDataComponent(node: node))
-        
-        return parentEntity
-    }
-    
-    private func calculateDynamicSize(for node: Node, isSelected: Bool) -> (width: Float, height: Float) {
-        let staticFontSize: Float = isSelected ? Constant.fontSize * 0.8 : Constant.fontSize
-        
-        if !isSelected {
-            let maxWidth: Float = 0.4
-            let minWidth: Float = 0.06
-            let baseHeight: Float = 0.04
-            let padding: Float = 0.02
-            
-            let textToMeasure = node.name
-            
-            let attributedString = NSAttributedString(
-                string: textToMeasure,
-                attributes: [.font: UIFont.boldSystemFont(ofSize: CGFloat(staticFontSize))]
-            )
-            
-            let textContainer = CGRect(
-                x: 0,
-                y: 0,
-                width: CGFloat(maxWidth - padding * 2),
-                height: .greatestFiniteMagnitude
-            )
-            
-            let boundingRect = attributedString.boundingRect(
-                with: textContainer.size,
-                options: [.usesLineFragmentOrigin, .usesFontLeading],
-                context: nil
-            )
-            
-            let requiredWidth = Float(boundingRect.width) + padding * 2
-            let finalWidth = min(max(requiredWidth, minWidth), maxWidth)
-            let calculatedHeight = Float(boundingRect.height) + padding * 2
-            
-            return (
-                finalWidth,
-                max(calculatedHeight, baseHeight)
-            )
-        }
-        
-        // For selected nodes: use your existing fixed-width logic
-        let maxWidth: Float = 0.5 // Maximum width for capsules with long text
-        let minWidth: Float = 0.06 // Minimum width for very short text
-        let expandedHeight: Float = 0.06
-        let padding: Float = 0.02
-
-        let textToMeasure =
-        "\(node.name)\n \n\(node.detail.isEmpty ? "No description" : node.detail)"
-
-        // Calculate proper dimensions with text wrapping
-        let textContainer = CGRect(
-            x: 0,
-            y: 0,
-            width: CGFloat(maxWidth - padding * 2), // Use maxWidth for container
-            height: .greatestFiniteMagnitude
-        )
-
-        // Create an attributed string with appropriate font
-        let attributedString = NSAttributedString(
-            string: textToMeasure,
-            attributes: [.font: UIFont.systemFont(ofSize: CGFloat(staticFontSize))]
-        )
-
-        // Calculate bounding rect with word wrapping
-        let boundingRect = attributedString.boundingRect(
-            with: textContainer.size,
-            options: [.usesLineFragmentOrigin, .usesFontLeading],
-            context: nil
-        )
-
-        // Calculate required width (but don't exceed maxWidth)
-        let requiredWidth = Float(boundingRect.width) + padding * 2
-        let finalWidth = min(max(requiredWidth, minWidth), maxWidth)
-        let calculatedHeight = Float(boundingRect.height) + padding * 2
-
-        return (
-            finalWidth,
-            max(calculatedHeight, expandedHeight)
-        )
-    }
-
-    private func createCapsule(width: Float, height: Float, for node: Node, isSelected: Bool) -> ModelEntity {
-        let cornerRadius: Float = 0.02
-
-        let capsuleMesh = MeshResource.generatePlane(
-            width: width,
-            height: height,
-            cornerRadius: cornerRadius
-        )
-
-        let material = SimpleMaterial(
-            color: .init(Color(uiColor: node.color ?? .white)),
-            isMetallic: false
-        )
-
-        let capsuleEntity = ModelEntity(mesh: capsuleMesh, materials: [material])
-        capsuleEntity.components.set(BillboardComponent())
-        
-        return capsuleEntity
-    }
-
-    private func createTextLabel(
-        for text: String,
-        containerWidth: Float,
-        containerHeight: Float,
-        isSelected: Bool
-    ) -> ModelEntity {
-        let staticFontSize: Float = isSelected ? Constant.fontSize * 0.8 : Constant.fontSize
-        let textContainerWidth = containerWidth * 0.9
-        let textContainerHeight = containerHeight * (isSelected ? 0.8 : 0.6)
-        
-        let textMesh = MeshResource.generateText(
-            text,
-            extrusionDepth: 0.003,
-            font: isSelected ?
-                .systemFont(ofSize: CGFloat(staticFontSize)) :
-                .boldSystemFont(ofSize: CGFloat(staticFontSize)),
-            containerFrame: CGRect(
-                x: -CGFloat(textContainerWidth) / 2,
-                y: -CGFloat(textContainerHeight) / (isSelected ? 1.8 : 1.6),
-                width: CGFloat(textContainerWidth),
-                height: CGFloat(textContainerHeight)
-            ),
-            alignment: .center,
-            lineBreakMode: .byWordWrapping
-        )
-
-        let textMaterial = SimpleMaterial(
-            color: .darkGray,
-            isMetallic: false
-        )
-        
-        let textEntity = ModelEntity(mesh: textMesh, materials: [textMaterial])
-        textEntity.position.z = 0.002
-        
-        textEntity.components.set(BillboardComponent())
-
-        return textEntity
-    }
-    
-    private func updateNodeAppearance(for nodeId: String, isSelected: Bool) {
-        guard let entity = entityMap[nodeId],
-              let nodeComponent = entity.components[NodeDataComponent.self] else { return }
-        
-        // Remove all children (capsule and text)
-        entity.children.forEach { $0.removeFromParent() }
-        
-        let node = nodeComponent.node
-        let (capsuleWidth, capsuleHeight) = calculateDynamicSize(for: node, isSelected: isSelected)
-        
-        // Update collision shape
-        let collisionShape = ShapeResource.generateBox(width: capsuleWidth, height: capsuleHeight, depth: 0.02)
-        entity.components.set(CollisionComponent(
-            shapes: [collisionShape],
-            mode: .default
-        ))
-        
-        // Create new capsule and text
-        let capsule = createCapsule(width: capsuleWidth, height: capsuleHeight, for: node, isSelected: isSelected)
-        
-        let textContent = isSelected ?
-            "\(node.name)\n \n\(node.detail.isEmpty ? "No description" : node.detail)" :
-            node.name
-        
-        let text = createTextLabel(
-            for: textContent,
-            containerWidth: capsuleWidth,
-            containerHeight: capsuleHeight,
-            isSelected: isSelected
-        )
-        
-        let wrapperEntity = Entity()
-        wrapperEntity.addChild(capsule)
-        wrapperEntity.addChild(text)
-        
-        entity.addChild(wrapperEntity)
-        
-        // Animate scale change
-        animateEntityScale(entity, to: isSelected ? 1.2 : 1.0)
-    }
-    
-    private func animateEntityScale(_ entity: Entity, to scale: Float) {
-        var transform = entity.transform
-        transform.scale = SIMD3<Float>(repeating: scale)
-        entity.move(to: transform, relativeTo: entity.parent, duration: 0.15)
     }
 }
