@@ -68,6 +68,8 @@ enum CanvasFilter: String, CaseIterable, Identifiable {
 }
 
 struct CanvasCollectionView: View {
+    @AppStorage("isCompactPresentation") var isCompactPresentation: Bool = false
+    
     @Environment(AppModel.self) var appModel
     @State var showCreateCanvas: Bool = false
     @State var renameCanvas: Canvas?
@@ -78,6 +80,7 @@ struct CanvasCollectionView: View {
     @State var searchQuery = ""
     
     private let minCardWidth: CGFloat = 320
+    private let listSpacing: CGFloat = 18
     private let gridSpacing: CGFloat = 24
     private let horizontalPadding: CGFloat = 24
     
@@ -131,6 +134,25 @@ struct CanvasCollectionView: View {
                         .controlSize(.large)
                         .clipShape(Capsule())
                         .tint(.accent)
+                    }
+                    
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Menu {
+                            Button {
+                                isCompactPresentation = false
+                            } label: {
+                                Label("Grid", systemImage: (!isCompactPresentation ? "checkmark" : ""))
+                            }
+                            
+                            Button {
+                                isCompactPresentation = true
+                            } label: {
+                                Label("List", systemImage: (isCompactPresentation ? "checkmark" : ""))
+                            }
+                            
+                        } label: {
+                            Image(systemName: "ellipsis")
+                        }
                     }
                 }
         }
@@ -204,21 +226,32 @@ struct CanvasCollectionView: View {
                 let availableWidth = geo.size.width - horizontalPadding * 2
                 let columnCount = max(Int(availableWidth / minCardWidth), 1)
                 let cardWidth = (availableWidth - CGFloat(columnCount - 1) * gridSpacing) / CGFloat(columnCount)
+                
                 ScrollView {
                     CanvasTabsView(selectedFilter: $selectedFilter)
-                    LazyVGrid(
-                        columns: Array(
-                            repeating: GridItem(.fixed(cardWidth), spacing: gridSpacing),
-                            count: columnCount
-                        ),
-                        spacing: gridSpacing
-                    ) {
-                        ForEach(displayedCanvases) { canvas in
-                            canvasCard(for: canvas)
-                                .frame(width: cardWidth)
+                    
+                    if isCompactPresentation {
+                        LazyVStack(spacing: listSpacing) {
+                            ForEach(displayedCanvases) { canvas in
+                                canvasCard(for: canvas)
+                            }
                         }
+                        .padding(.horizontal, horizontalPadding)
+                    } else {
+                        LazyVGrid(
+                            columns: Array(
+                                repeating: GridItem(.fixed(cardWidth), spacing: gridSpacing),
+                                count: columnCount
+                            ),
+                            spacing: gridSpacing
+                        ) {
+                            ForEach(displayedCanvases) { canvas in
+                                canvasCard(for: canvas)
+                                    .frame(width: cardWidth)
+                            }
+                        }
+                        .padding(horizontalPadding)
                     }
-                    .padding(horizontalPadding)
                 }
             }
         }
@@ -232,8 +265,13 @@ struct CanvasCollectionView: View {
                     appModel.switchToCanvas(canvas)
                 }
         } label: {
-            CanvasCardView(canvas: canvas)
-                .hoverEffect(.highlight)
+            if isCompactPresentation {
+                CompactCanvasCardView(canvas: canvas)
+                    .hoverEffect(.highlight)
+            } else {
+                CanvasCardView(canvas: canvas)
+                    .hoverEffect(.highlight)
+            }
         }
         .buttonStyle(.plain)
         .contextMenu {
