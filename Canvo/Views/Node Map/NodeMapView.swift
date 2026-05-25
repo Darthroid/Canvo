@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import StoreKit
 
 struct NodeMapView: View {
     @Environment(AppModel.self) private var appModel
@@ -53,6 +54,11 @@ struct NodeMapView: View {
     @State private var generatedJSON: Data?
     @State private var showShareSheet = false
     @State private var selectedFormat: ExportFormat = .png
+    
+    @Environment(\.requestReview) private var requestReview
+
+    @AppStorage("screenDismissCount")
+    private var screenDismissCount = 0
     
     private var updatedAt: String? {
         guard let date = appModel.currentCanvas?.updatedAt else { return nil }
@@ -660,7 +666,6 @@ struct NodeMapView: View {
             withAnimation {
                 showOutline.toggle()
             }
-            
         })
         .onReceive(toggleGrid, perform: { _ in
             withAnimation {
@@ -668,9 +673,18 @@ struct NodeMapView: View {
             }
         })
         .onDisappear {
+            handleReviewRequest()
             generatePreview()
             AIGenerationService.shared.cancelCurrentTask()
             appModel.switchToCanvas(nil)
+        }
+    }
+    
+    private func handleReviewRequest() {
+        screenDismissCount += 1
+
+        if screenDismissCount.isMultiple(of: 5) {
+            requestReview()
         }
     }
     
