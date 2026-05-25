@@ -213,6 +213,11 @@ struct CanvasCollectionView: View {
         if displayedCanvases.isEmpty {
             VStack {
                 CanvasTabsView(selectedFilter: $selectedFilter)
+                
+                #if os(visionOS)
+                Spacer()
+                #endif
+                
                 ContentUnavailableView {
                     Label(emptyStateConfig.title, systemImage: emptyStateConfig.systemImage)
                 } description: {
@@ -220,6 +225,10 @@ struct CanvasCollectionView: View {
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.top, 40)
+                
+                #if os(visionOS)
+                Spacer()
+                #endif
             }
         } else {
             GeometryReader { geo in

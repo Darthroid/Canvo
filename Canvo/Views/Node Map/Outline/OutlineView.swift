@@ -28,7 +28,11 @@ struct OutlineView: View {
             Text("Outline")
                 .font(.headline)
                 .padding(.top, 20)
+                #if os(visionOS)
+                .padding(.horizontal, 16)
+                #else
                 .padding(.horizontal, isSheet ? 16 : 0)
+                #endif
             
             List {
                 ForEach(outline) { tree in
@@ -64,6 +68,8 @@ struct OutlineView: View {
         .glassEffect(isSheet ? .identity : .regular, in: isSheet
                      ? AnyShape(Rectangle())
                      : AnyShape(RoundedRectangle(cornerRadius: 20)))
+        #else
+        .glassBackgroundEffect()
         #endif
     }
 }

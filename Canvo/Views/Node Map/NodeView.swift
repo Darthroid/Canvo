@@ -103,6 +103,9 @@ struct NodeView: View {
                 floatingToolbar
                     .padding(.horizontal, 20)
                     .offset(y: 22)
+                    #if os(visionOS)
+                    .frame(minWidth: 400)
+                    #endif
             }
         }
         .frame(maxWidth: 400, maxHeight: 600)

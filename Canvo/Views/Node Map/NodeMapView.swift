@@ -243,6 +243,8 @@ struct NodeMapView: View {
         .padding(.vertical)
         #if !os(visionOS)
         .glassEffect()
+        #else
+        .glassBackgroundEffect()
         #endif
         
     }
@@ -317,6 +319,7 @@ struct NodeMapView: View {
             .offset(offset)
             .coordinateSpace(name: "canvas")
         }
+        .background(Color(uiColor: .secondarySystemFill))
     }
     
     var body: some View {
@@ -336,6 +339,8 @@ struct NodeMapView: View {
                             .padding(.vertical, 8)
                             #if !os(visionOS)
                             .glassEffect()
+                            #else
+                            .glassBackgroundEffect()
                             #endif
                     }
                     
@@ -641,7 +646,7 @@ struct NodeMapView: View {
                     .tint(.accent)
                 }
             }
-            .background(Color(uiColor: .systemBackground))
+            .background(Color("MapBackground"))
             .gesture(panGesture)
             .gesture(zoomGesture)
             

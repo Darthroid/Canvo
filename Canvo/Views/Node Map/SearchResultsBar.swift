@@ -23,6 +23,8 @@ struct SearchResultsBar: View {
             .padding(8)
             #if !os(visionOS)
             .glassEffect()
+            #else
+            .glassBackgroundEffect()
             #endif
             
             Text("\(index + 1) of \(total)")
@@ -31,6 +33,8 @@ struct SearchResultsBar: View {
                 .padding(.vertical, 8)
                 #if !os(visionOS)
                 .glassEffect()
+                #else
+                .glassBackgroundEffect()
                 #endif
             
             Button(action: onNext) {
@@ -41,6 +45,8 @@ struct SearchResultsBar: View {
             .padding(8)
             #if !os(visionOS)
             .glassEffect()
+            #else
+            .glassBackgroundEffect()
             #endif
             
             Spacer()
