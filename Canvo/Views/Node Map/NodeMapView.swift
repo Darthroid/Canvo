@@ -602,7 +602,12 @@ struct NodeMapView: View {
                                 Button {
                                     appModel.toggleTag(tag)
                                 } label: {
-                                    Label(tag.name, systemImage: (appModel.selectedTags.contains(tag) ? "checkmark" : ""))
+                                    let isSelected = appModel.selectedTags.contains(tag)
+                                    if isSelected {
+                                        Label(tag.name, systemImage: "checkmark")
+                                    } else {
+                                        Text(tag.name)
+                                    }
                                 }
                             }
                             

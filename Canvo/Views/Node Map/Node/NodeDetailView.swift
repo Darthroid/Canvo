@@ -104,11 +104,7 @@ struct NodeDetailView: View {
                 }
 
                 Section {
-                    #if os(visionOS)
-                    Text(node.positionDescriptionMeters)
-                    #else
                     Text(node.positionDescription)
-                    #endif
                 } header: {
                     Text("Position")
                 }

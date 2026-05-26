@@ -185,7 +185,12 @@ private extension EditCanvasView {
                     .font(.system(size: 20, weight: .medium))
                     .frame(width: 36, height: 36)
                     .background(Color.accentColor.opacity(0.15))
+                    #if os(visionOS)
+                    .foregroundStyle(.primary)
+                    .background(.thinMaterial)
+                    #else
                     .foregroundStyle(.blue)
+                    #endif
                     .clipShape(RoundedRectangle(cornerRadius: 10))
                 
                 VStack(alignment: .leading, spacing: 4) {
@@ -204,7 +209,11 @@ private extension EditCanvasView {
                 
                 if mode == current {
                     Image(systemName: "checkmark.circle.fill")
+                        #if os(visionOS)
+                        .foregroundStyle(.primary)
+                        #else
                         .foregroundStyle(.blue)
+                        #endif
                 }
             }
             .padding()
@@ -214,6 +223,7 @@ private extension EditCanvasView {
             )
         }
         .buttonStyle(.plain)
+        .contentShape(RoundedRectangle(cornerRadius: 20))
     }
     
     func submit() {

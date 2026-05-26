@@ -36,7 +36,6 @@ class Node: Identifiable, Codable {
     
     var position: SIMD3<Float> { .init(x, y, z) }
     var positionDescription: String { "(\(x), \(y), \(z))" }
-    var positionDescriptionMeters: String { "(\(x)m, \(y)m, \(z)m)" }
     
     var tagsRaw: String? = ""
     

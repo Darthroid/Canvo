@@ -120,10 +120,10 @@ struct CanvasCollectionView: View {
                 )
                 .searchToolbarBehavior(.minimize)
                 .toolbar {
-                    DefaultToolbarItem(kind: .search, placement: .bottomBar)
                     #if !os(visionOS)
+                    DefaultToolbarItem(kind: .search, placement: .bottomBar)
+                    
                     ToolbarSpacer(.flexible, placement: .bottomBar)
-                    #endif
                     ToolbarItem(placement: .bottomBar) {
                         Button {
                             showCreateCanvas = true
@@ -135,19 +135,31 @@ struct CanvasCollectionView: View {
                         .clipShape(Capsule())
                         .tint(.accent)
                     }
+                    #else
+                    DefaultToolbarItem(kind: .search, placement: .topBarTrailing)
+                    #endif
+
                     
                     ToolbarItem(placement: .topBarTrailing) {
                         Menu {
                             Button {
                                 isCompactPresentation = false
                             } label: {
-                                Label("Grid", systemImage: (!isCompactPresentation ? "checkmark" : ""))
+                                if !isCompactPresentation {
+                                    Label("Grid", systemImage: "checkmark")
+                                } else {
+                                    Text("Grid")
+                                }
                             }
                             
                             Button {
                                 isCompactPresentation = true
                             } label: {
-                                Label("List", systemImage: (isCompactPresentation ? "checkmark" : ""))
+                                if isCompactPresentation {
+                                    Label("List", systemImage: "checkmark")
+                                } else {
+                                    Text("List")
+                                }
                             }
                             
                         } label: {
@@ -210,60 +222,77 @@ struct CanvasCollectionView: View {
     
     @ViewBuilder
     var canvasesGrid: some View {
-        if displayedCanvases.isEmpty {
-            VStack {
-                CanvasTabsView(selectedFilter: $selectedFilter)
-                
-                #if os(visionOS)
-                Spacer()
-                #endif
-                
-                ContentUnavailableView {
-                    Label(emptyStateConfig.title, systemImage: emptyStateConfig.systemImage)
-                } description: {
-                    Text(emptyStateConfig.description)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.top, 40)
-                
-                #if os(visionOS)
-                Spacer()
-                #endif
-            }
-        } else {
-            GeometryReader { geo in
-                let availableWidth = geo.size.width - horizontalPadding * 2
-                let columnCount = max(Int(availableWidth / minCardWidth), 1)
-                let cardWidth = (availableWidth - CGFloat(columnCount - 1) * gridSpacing) / CGFloat(columnCount)
-                
-                ScrollView {
+        VStack {
+            if displayedCanvases.isEmpty {
+                VStack {
                     CanvasTabsView(selectedFilter: $selectedFilter)
                     
-                    if isCompactPresentation {
-                        LazyVStack(spacing: listSpacing) {
-                            ForEach(displayedCanvases) { canvas in
-                                canvasCard(for: canvas)
+                    #if os(visionOS)
+                    Spacer()
+                    #endif
+                    
+                    ContentUnavailableView {
+                        Label(emptyStateConfig.title, systemImage: emptyStateConfig.systemImage)
+                    } description: {
+                        Text(emptyStateConfig.description)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 40)
+                    
+                    #if os(visionOS)
+                    Spacer()
+                    #endif
+                }
+            } else {
+                GeometryReader { geo in
+                    let availableWidth = geo.size.width - horizontalPadding * 2
+                    let columnCount = max(Int(availableWidth / minCardWidth), 1)
+                    let cardWidth = (availableWidth - CGFloat(columnCount - 1) * gridSpacing) / CGFloat(columnCount)
+                    
+                    ScrollView {
+                        CanvasTabsView(selectedFilter: $selectedFilter)
+                        
+                        if isCompactPresentation {
+                            LazyVStack(spacing: listSpacing) {
+                                ForEach(displayedCanvases) { canvas in
+                                    canvasCard(for: canvas)
+                                }
                             }
-                        }
-                        .padding(.horizontal, horizontalPadding)
-                    } else {
-                        LazyVGrid(
-                            columns: Array(
-                                repeating: GridItem(.fixed(cardWidth), spacing: gridSpacing),
-                                count: columnCount
-                            ),
-                            spacing: gridSpacing
-                        ) {
-                            ForEach(displayedCanvases) { canvas in
-                                canvasCard(for: canvas)
-                                    .frame(width: cardWidth)
+                            .padding(.horizontal, horizontalPadding)
+                        } else {
+                            LazyVGrid(
+                                columns: Array(
+                                    repeating: GridItem(.fixed(cardWidth), spacing: gridSpacing),
+                                    count: columnCount
+                                ),
+                                spacing: gridSpacing
+                            ) {
+                                ForEach(displayedCanvases) { canvas in
+                                    canvasCard(for: canvas)
+                                        .frame(width: cardWidth)
+                                }
                             }
+                            .padding(horizontalPadding)
                         }
-                        .padding(horizontalPadding)
                     }
                 }
             }
+            
+            #if os(visionOS)
+            HStack {
+                Spacer()
+                Button {
+                    showCreateCanvas = true
+                } label: {
+                    Image(systemName: "plus")
+                }
+                .tint(.accent)
+                .clipShape(Circle())
+            }
+            .safeAreaPadding()
+            #endif
         }
+        
     }
     
     @ViewBuilder func canvasCard(for canvas: Canvas) -> some View {
@@ -276,10 +305,10 @@ struct CanvasCollectionView: View {
         } label: {
             if isCompactPresentation {
                 CompactCanvasCardView(canvas: canvas)
-                    .hoverEffect(.highlight)
+                    .hoverEffect(.lift)
             } else {
                 CanvasCardView(canvas: canvas)
-                    .hoverEffect(.highlight)
+                    .hoverEffect(.lift)
             }
         }
         .buttonStyle(.plain)

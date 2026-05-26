@@ -180,7 +180,7 @@ struct ImmersiveNodeMapView: View {
 
                 let dx = movementScene.x / scaleFactor
                 let dy = -movementScene.y / scaleFactor
-
+                let dz = movementScene.z / scaleFactor
                 // Двигаем все выбранные ноды
                 for id in movingIds {
                     guard let start = dragStartPositions[id],
@@ -190,7 +190,7 @@ struct ImmersiveNodeMapView: View {
                     let newPosition = SIMD3<Float>(
                         start.x + dx,
                         start.y + dy,
-                        start.z
+                        start.z + dz
                     )
 
                     // Только визуальный update
@@ -522,23 +522,16 @@ struct ImmersiveNodeMapView: View {
     
     private func convertToVisionOSPosition(node: Node) -> SIMD3<Float> {
         let scaleFactor: Float = 0.001
+
         let x = Float(node.position.x) * scaleFactor
         let y = -Float(node.position.y) * scaleFactor
 
-        // Handle z value - if zConstant is nil, use 0 as the base
-        let baseZ = Float(node.position.z)
-
-        // Apply z-offset: if original z was 0, place at -1.5 (comfortable viewing distance)
-        // Otherwise, use the original z value directly
-        let z = baseZ == 0.0 ? -1.5 : baseZ
-
-        let xOffset: Float = 0.0
-        let yOffset: Float = 1.5
+        let z = -1.5 + Float(node.position.z) * scaleFactor
 
         return SIMD3<Float>(
-            x + xOffset,
-            y + yOffset,
-            z  // No additional zOffset needed since we handled it above
+            x,
+            y + 1.5,
+            z
         )
     }
     
