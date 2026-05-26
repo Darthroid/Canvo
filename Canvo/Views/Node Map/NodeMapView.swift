@@ -6,6 +6,7 @@ struct NodeMapView: View {
     @Environment(AppModel.self) private var appModel
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     @Environment(\.verticalSizeClass) var verticalSizeClass
+    @Environment(\.openWindow) private var openWindow
     
     var isCompact: Bool {
         return horizontalSizeClass == .compact || verticalSizeClass == .compact
@@ -373,6 +374,24 @@ struct NodeMapView: View {
                     if appModel.selectedNodeIds.count > 0 {
                         selectedNodesFloatingPanel
                     }
+                    
+                    #if os(visionOS)
+                    HStack {
+                        Spacer()
+                        Button {
+                            pendingNodePosition = visibleCenterPosition()
+                            showNodeForm = true
+                        } label: {
+                            Image(systemName: "plus")
+                        }
+                        .keyboardShortcut("n", modifiers: [.command])
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.large)
+                        .clipShape(Circle())
+                        .tint(.accent)
+                    }
+                    .safeAreaPadding()
+                    #endif
                 }
             }
             .onAppear {
@@ -578,7 +597,11 @@ struct NodeMapView: View {
                         // outline
                         Button {
                             withAnimation {
+                                #if os(visionOS)
+                                openWindow(id: "outline")
+                                #else
                                 showOutline.toggle()
+                                #endif
                             }
                         } label: {
                             Label(showOutline ? "Hide Outlie" : "Show Outline",
@@ -636,7 +659,7 @@ struct NodeMapView: View {
                 
                 #if !os(visionOS)
                 ToolbarSpacer(.flexible, placement: .bottomBar)
-                #endif
+                
                 
                 ToolbarItem(placement: .bottomBar) {
                     Button {
@@ -651,6 +674,7 @@ struct NodeMapView: View {
                     .clipShape(Capsule())
                     .tint(.accent)
                 }
+                #endif
             }
             .background(Color("MapBackground"))
             .gesture(panGesture)

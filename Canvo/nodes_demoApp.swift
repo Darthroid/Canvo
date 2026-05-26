@@ -133,6 +133,11 @@ struct nodes_demoApp: App {
             ImmersiveNodeMapView()
                 .environment(appModel)
         }
+        Window("Outlien", id: "outline") {
+            OutlineView(preferredWidth: nil, style: .sheet)
+                .environment(appModel)
+        }
+        .defaultSize(width: 400, height: 800)
         #endif
     }
 }
