@@ -472,6 +472,7 @@ struct NodeMapView: View {
                     NavigationStack {
                         AIEditCanvasView(showEditor: $showAIEditCanvas, visibleScopeIds: [])
                             .environment(appModel)
+                            .presentationBackground(Color(.secondarySystemBackground))
                     }
                 }
             }

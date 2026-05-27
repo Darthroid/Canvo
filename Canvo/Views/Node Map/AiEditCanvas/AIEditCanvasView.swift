@@ -13,23 +13,22 @@ struct AIEditCanvasView: View {
 
     @Environment(AppModel.self) private var appModel
     @Binding var showEditor: Bool
-    
+
     @State private var aiResponse: String = ""
     @State private var showAiResponse: Bool = false
-    
+
     var visibleScopeIds: Set<String>
-    
+
     private var scopeNodesCount: Int {
         switch selectedScope {
         case .selection:
             appModel.selectedNodeIds.count
         case .visible:
-            0//visibleScopeIds.count
+            0
         case .canvas:
             appModel.currentCanvas?.nodes?.count ?? 0
         }
     }
-
 
     // MARK: - State
 
@@ -43,58 +42,63 @@ struct AIEditCanvasView: View {
     // MARK: - Body
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            ScrollView(.vertical) {
-                VStack(alignment: .leading, spacing: 20) {
+        VStack(spacing: 0) {
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 28) {
+
                     modeSection
-                    
+
                     scopeSection
-                    
+
                     promptSection
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, horizontalPadding)
+                .padding(.top, 24)
+                .padding(.bottom, 24)
             }
-            
+
             footer
-            
+                .padding(.horizontal, horizontalPadding)
+                .padding(.bottom, 20)
+                .padding(.top, 12)
         }
+        .navigationTitle("Edit Canvas with AI")
         .navigationBarTitleDisplayMode(.inline)
-        .navigationBarTitle("Edit Canvas with AI")
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
                 Button(role: .close) {
-//                    AIGenerationService.shared.cancelCurrentTask()
-                    withAnimation {
+                    withAnimation(.snappy) {
                         showEditor = false
                     }
                 }
             }
         }
-        .padding(20)
-        .background(Color(.secondarySystemBackground))
-//        .clipShape(RoundedRectangle(cornerRadius: 26))
-        .onChange(of: selectedMode, { _, newValue in
+        .frame(maxWidth: contentWidth)
+        .frame(maxWidth: .infinity)
+        .background(backgroundView)
+        .onChange(of: selectedMode) { _, _ in
             if selectedMode == .summarize {
                 selectedScope = .selection
             }
-        })
+        }
         .onAppear {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
                 isPromptFocused = true
             }
         }
-
     }
 
     // MARK: - Mode
 
     private var modeSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 14) {
 
             sectionTitle("Mode")
 
             ScrollView(.horizontal) {
-
-                HStack(spacing: 12) {
+                HStack(spacing: 14) {
 
                     ForEach(AIMode.allCases) { mode in
 
@@ -106,9 +110,17 @@ struct AIEditCanvasView: View {
                         ) {
                             selectedMode = mode
                         }
+                        #if os(visionOS)
+                        .glassBackgroundEffect(
+                            in: .rect(
+                                cornerRadius: 22,
+                                style: .continuous
+                            )
+                        )
+                        #endif
                     }
                 }
-                .padding(.horizontal, 1)
+                .padding(.horizontal, 2)
             }
             .scrollIndicators(.hidden)
         }
@@ -149,7 +161,9 @@ struct AIEditCanvasView: View {
                     }
                     .disabled(selectedMode == .summarize && scope == .canvas)
                     .buttonStyle(.plain)
-                    
+                    #if os(visionOS)
+                    .glassBackgroundEffect()
+                    #endif
                 }
             }
             
@@ -162,7 +176,7 @@ struct AIEditCanvasView: View {
     // MARK: - Prompt
 
     private var promptSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 14) {
 
             sectionTitle(selectedMode.promptTitle)
 
@@ -172,68 +186,114 @@ struct AIEditCanvasView: View {
                 axis: .vertical
             )
             .focused($isPromptFocused)
-            .lineLimit(5...8)
+            .lineLimit(6...10)
             .textInputAutocapitalization(.sentences)
-            .padding(14)
-            .background(
-                RoundedRectangle(cornerRadius: 18)
-                    .fill(Color(.tertiarySystemBackground))
+            .padding(16)
+            .background {
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .fill(cardBackground)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 22, style: .continuous)
+                            .strokeBorder(borderColor)
+                    }
+            }
+            #if os(visionOS)
+            .glassBackgroundEffect(
+                in: .rect(
+                    cornerRadius: 22,
+                    style: .continuous
+                )
             )
+            #endif
         }
     }
 
     // MARK: - Footer
 
     private var footer: some View {
-        
+
         Button(action: runSelectedAction) {
-            Label(title: {
-                Text(selectedMode.actionTitle)
-                    .font(.system(size: 17, weight: .semibold))
-            }, icon: {
-                Image(systemName: "sparkles")
-            })
-            .frame(maxWidth: .infinity)
-            .padding()
-            .background(
-                LinearGradient(
-                    colors: [Color.accentColor.opacity(0.9), Color.accentColor],
-                    startPoint: .leading,
-                    endPoint: .trailing
-                )
-            )
-            .foregroundStyle(.white)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
+            Label(selectedMode.actionTitle, systemImage: "sparkles")
+                .font(.headline)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
         }
+        .buttonStyle(.borderedProminent)
+        .tint(.accentColor)
         .disabled(AIGenerationService.shared.isRunning || scopeNodesCount == 0)
-        .opacity(!(AIGenerationService.shared.isRunning || scopeNodesCount == 0) ? 1 : 0.5)
         .sheet(isPresented: $showAiResponse) {
             NavigationStack {
                 AIResponseView(response: $aiResponse)
             }
             .interactiveDismissDisabled()
         }
-        
     }
 
     // MARK: - Helpers
 
     private func sectionTitle(_ text: String) -> some View {
         Text(text)
-            .font(.headline)
+            .font(.title3.weight(.semibold))
+    }
+
+    private var horizontalPadding: CGFloat {
+        #if os(visionOS)
+        32
+        #else
+        20
+        #endif
+    }
+
+    private var contentWidth: CGFloat? {
+        #if os(visionOS)
+        820
+        #else
+        nil
+        #endif
+    }
+
+    private var cardBackground: some ShapeStyle {
+        #if os(visionOS)
+        .clear
+        #else
+        Color(.tertiarySystemBackground)
+        #endif
+    }
+
+    private var borderColor: Color {
+        #if os(visionOS)
+        .white.opacity(0.15)
+        #else
+        Color.primary.opacity(0.08)
+        #endif
+    }
+
+    @ViewBuilder
+    private var backgroundView: some View {
+        #if os(visionOS)
+        Color.clear
+        #else
+        Color(.secondarySystemBackground)
+        #endif
     }
 
     // MARK: - Actions
 
     private func runSelectedAction() {
         isPromptFocused = false
+
         switch selectedMode {
         case .extend:
-            appModel.generateNodes(selectedScope: selectedScope, userPrompt: prompt)
+            appModel.generateNodes(
+                selectedScope: selectedScope,
+                userPrompt: prompt
+            )
             showEditor = false
+
         case .summarize:
             appModel.summarizeNodes(userPrompt: prompt)
             showEditor = false
+
         case .explain:
             explainCanvas()
             showAiResponse = true
@@ -244,38 +304,48 @@ struct AIEditCanvasView: View {
 // MARK: - AI Action Handlers
 
 extension AIEditCanvasView {
+
     private func explainCanvas() {
         Task {
             isPromptFocused = false
-            guard let canvas = appModel.currentCanvas else { return }
-            
+
+            guard let canvas = appModel.currentCanvas else {
+                return
+            }
+
             var scope: [Node] = []
-            
+
             switch selectedScope {
+
             case .selection:
                 scope = appModel.selectedNodeIds.compactMap {
                     appModel.node(forId: $0)
                 }
+
             case .visible:
                 break
+
             case .canvas:
                 scope = appModel.nodes
             }
-            
+
             do {
                 let stream = AIGenerationService.shared
-                    .askQuestions(scope: scope, userInput: prompt, in: canvas)
-                
+                    .askQuestions(
+                        scope: scope,
+                        userInput: prompt,
+                        in: canvas
+                    )
+
                 for try await chunk in stream {
-                    print(chunk)
                     aiResponse = chunk
                 }
+
             } catch {
-                print("error while generating canvas: \(error.localizedDescription)")
+                print(
+                    "error while generating canvas: \(error.localizedDescription)"
+                )
             }
-            
         }
     }
 }
-
-

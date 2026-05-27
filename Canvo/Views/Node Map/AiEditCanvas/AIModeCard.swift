@@ -59,6 +59,7 @@ struct AIModeCard: View {
                             )
                     }
             }
+            .contentShape(RoundedRectangle(cornerRadius: 22))
         }
         .buttonStyle(.plain)
     }
