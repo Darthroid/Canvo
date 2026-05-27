@@ -7,6 +7,7 @@ struct NodeMapView: View {
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     @Environment(\.verticalSizeClass) var verticalSizeClass
     @Environment(\.openWindow) private var openWindow
+    @Environment(\.dismissWindow) private var dismissWindow
     
     var isCompact: Bool {
         return horizontalSizeClass == .compact || verticalSizeClass == .compact
@@ -31,12 +32,10 @@ struct NodeMapView: View {
     @State private var showAIEditCanvas = false
     @State private var showNodeForm = false
     @State private var showtagsFilter: Bool = false
-    @State private var showNodeSpace = false
     @State private var pendingNodePosition: SIMD3<Float>? = nil
     @State private var containerSize: CGSize = .zero
     
     @State private var searchText = ""
-    @State private var showOutline = false
     @State private var searchResults: [Node] = []
     @State private var selectedSearchResultIndex = 0
     @FocusState private var isSearchFieldFocused: Bool
@@ -356,7 +355,8 @@ struct NodeMapView: View {
                     ZStack(alignment: .topLeading) {
                         
                         // sidebar
-                        if showOutline && !isCompact {
+                        #if !os(visionOS)
+                        if appModel.outlineOpen && !isCompact {
                             let size = min(300, geo.size.width - 40)
                             HStack {
                                 OutlineView(preferredWidth: size, style: .overlay)
@@ -367,6 +367,7 @@ struct NodeMapView: View {
                             .padding(.horizontal, 20)
                             .transition(.move(edge: .leading))
                         }
+                        #endif
                     }
                     
                     Spacer()
@@ -440,11 +441,12 @@ struct NodeMapView: View {
                     )
                 }
             }
+            #if !os(visionOS)
             .sheet(isPresented: Binding(
-                get: { showOutline && isCompact },
+                get: { appModel.outlineOpen && isCompact },
                 set: { newValue in
                     if !newValue {
-                        showOutline = false
+                        appModel.outlineOpen = false
                     }
                 }
             )) {
@@ -453,6 +455,7 @@ struct NodeMapView: View {
                     .presentationDetents([.large])
                     .presentationDragIndicator(.visible)
             }
+            #endif
             .sheet(isPresented: $showNodeForm) {
                 CreateNodeView(position: pendingNodePosition)
                     .environment(appModel)
@@ -580,18 +583,21 @@ struct NodeMapView: View {
 #if os(visionOS)
                     // visionOS immersive map
                     Button {
-                        showNodeSpace.toggle()
-                        if showNodeSpace {
+                        appModel.immersiveMapOpen.toggle()
+                        if appModel.immersiveMapOpen {
                             Task {
                                 await openImmersiveSpace(id: "ImmersiveNodeMapView")
+                                // Call Push Window and hide main window
+                                openWindow(id: "ImmersiveMapToolbar")
                             }
                         } else {
                             Task {
                                 await dismissImmersiveSpace()
+                                dismissWindow(id: "ImmersiveMapToolbar")
                             }
                         }
                     } label: {
-                        Label(showNodeSpace ? "Hide Immersive Map" : "Show Immersive Map", systemImage: "graph.3d")
+                        Label("Immersive Mode", systemImage: "graph.3d")
                     }
                         Divider()
 #endif
@@ -600,13 +606,17 @@ struct NodeMapView: View {
                         Button {
                             withAnimation {
                                 #if os(visionOS)
-                                openWindow(id: "outline")
-                                #else
-                                showOutline.toggle()
+                                
+                                if appModel.outlineOpen {
+                                    dismissWindow(id: "outline")
+                                } else {
+                                    openWindow(id: "outline")
+                                }
                                 #endif
+                                appModel.outlineOpen.toggle()
                             }
                         } label: {
-                            Label(showOutline ? "Hide Outlie" : "Show Outline",
+                            Label(appModel.outlineOpen ? "Hide Outline" : "Show Outline",
                                   systemImage: "list.bullet.indent"
                             )
                         }
@@ -692,6 +702,16 @@ struct NodeMapView: View {
                 .opacity(0.5)
                 .allowsHitTesting(false)
         }
+        #if os(visionOS)
+        .onChange(of: appModel.immersiveMapToolbarOpen) { _, new in
+            if !new {
+                Task {
+                    await dismissImmersiveSpace()
+                    appModel.immersiveMapOpen = new
+                }
+            }
+        }
+        #endif
         .onReceive(zoomIn, perform: { _ in
             applyZoom(multiplier: 1.2)
         })
@@ -701,11 +721,13 @@ struct NodeMapView: View {
         .onReceive(resetZoom, perform: { _ in
             setDefaultZoom()
         })
+        #if !os(visionOS)
         .onReceive(outline, perform: { _ in
             withAnimation {
-                showOutline.toggle()
+                appModel.outlineOpen.toggle()
             }
         })
+        #endif
         .onReceive(toggleGrid, perform: { _ in
             withAnimation {
                 showGrid.toggle()

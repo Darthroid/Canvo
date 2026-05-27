@@ -13,6 +13,11 @@ import SwiftData
 @MainActor
 @Observable
 final class AppModel: Sendable {
+    var immersiveMapToolbarOpen = false
+    var immersiveMapOpen = false
+    var outlineOpen = false
+    var aiEditorOpen = false
+    
     private var container: ModelContainer?
     private var context: ModelContext? {
         container?.mainContext
