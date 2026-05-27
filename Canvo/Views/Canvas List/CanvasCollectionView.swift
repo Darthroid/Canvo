@@ -163,8 +163,10 @@ struct CanvasCollectionView: View {
                             }
                             
                         } label: {
-                            Image(systemName: "ellipsis")
+                            Label("", systemImage: "ellipsis")
                         }
+                        .menuStyle(.button)
+                        .labelStyle(.iconOnly)
                     }
                 }
         }

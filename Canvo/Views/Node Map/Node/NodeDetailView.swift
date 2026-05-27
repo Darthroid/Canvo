@@ -156,8 +156,10 @@ struct NodeDetailView: View {
                             Label("Delete", systemImage: "trash")
                         }
                     } label: {
-                        Image(systemName: "ellipsis.circle")
+                        Label("", systemImage: "ellipsis")
                     }
+                    .menuStyle(.button)
+                    .labelStyle(.iconOnly)
                 }
             }
             .sheet(isPresented: $showEditor) {

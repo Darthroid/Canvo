@@ -544,7 +544,8 @@ struct NodeMapView: View {
 
                 DefaultToolbarItem(kind: .search, placement: .bottomBar)
                 
-                ToolbarItem(placement: .confirmationAction) {
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    
                     Menu {
                         Text(appModel.currentCanvas?.name ?? "Canvo")
                             .font(.headline)
@@ -654,8 +655,10 @@ struct NodeMapView: View {
                             }
                         }
                     } label: {
-                        Image(systemName: "ellipsis")
+                        Label("", systemImage: "ellipsis")
                     }
+                    .menuStyle(.button)
+                    .labelStyle(.iconOnly)
                 }
                 
                 #if !os(visionOS)
