@@ -21,7 +21,7 @@ struct nodes_demoApp: App {
                     "Generation failed",
                     isPresented: Binding(
                         get: {
-                            AIGenerationService.shared.error != nil
+                            AIGenerationService.shared.error != nil && !appModel.immersiveMapToolbarOpen
                         },
                         set: { newValue in
                             if !newValue {
@@ -144,7 +144,7 @@ struct nodes_demoApp: App {
             ImmersiveMapToolbar()
                 .environment(appModel)
         }
-        .defaultSize(CGSize(width: 400, height: 200))
+        .defaultSize(CGSize(width: 500, height: 250))
         .windowStyle(.plain)
         .defaultWindowPlacement { _, context in
             if let mainWindow = context.windows.first(where: { $0.id == "MainWindow" }) {

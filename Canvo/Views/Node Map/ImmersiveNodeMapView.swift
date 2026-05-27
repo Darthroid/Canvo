@@ -200,8 +200,7 @@ struct ImmersiveNodeMapView: View {
 
                     // Обновляем entity
                     if let entity = sceneCache.nodeEntities[id] {
-                        entity.position =
-                            convertToVisionOSPosition(node: node)
+                        entity.position = GeometryService.visionOSPosition(node.position)
                     }
 
                     updateConnectionsForNode(nodeId: id)
@@ -307,7 +306,7 @@ struct ImmersiveNodeMapView: View {
 
         for node in appModel.nodes {
 
-            let position = convertToVisionOSPosition(node: node)
+            let position = GeometryService.visionOSPosition(node.position)
 
             if let entity = sceneCache.nodeEntities[node.id] {
 
@@ -417,8 +416,8 @@ struct ImmersiveNodeMapView: View {
 
         updateConnectionEntity(
             connectionEntity,
-            startPosition: convertToVisionOSPosition(node: fromNode),
-            endPosition: convertToVisionOSPosition(node: toNode)
+            startPosition: GeometryService.visionOSPosition(fromNode.position),
+            endPosition: GeometryService.visionOSPosition(toNode.position)
         )
 
         return connectionEntity
@@ -519,21 +518,6 @@ struct ImmersiveNodeMapView: View {
     }
     
     // MARK: - Drawing nodes
-    
-    private func convertToVisionOSPosition(node: Node) -> SIMD3<Float> {
-        let scaleFactor: Float = 0.001
-
-        let x = Float(node.position.x) * scaleFactor
-        let y = -Float(node.position.y) * scaleFactor
-
-        let z = -1.5 + Float(node.position.z) * scaleFactor
-
-        return SIMD3<Float>(
-            x,
-            y + 1.5,
-            z
-        )
-    }
     
     private func updateCollision(for id: String, size: CGSize) {
 
