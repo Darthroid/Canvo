@@ -14,7 +14,7 @@ struct nodes_demoApp: App {
     @AppStorage("hasSeenOnboarding") var hasSeenOnboarding: Bool = false
     
     var body: some Scene {
-        WindowGroup {
+        WindowGroup(id: "MainWindow") {
             if hasSeenOnboarding {
                 CanvasCollectionView()
                     .environment(appModel)
@@ -133,11 +133,17 @@ struct nodes_demoApp: App {
             ImmersiveNodeMapView()
                 .environment(appModel)
         }
-        Window("Outlien", id: "outline") {
+        Window("Outline", id: "outline") {
             OutlineView(preferredWidth: nil, style: .sheet)
                 .environment(appModel)
         }
         .defaultSize(width: 400, height: 800)
+        .defaultWindowPlacement { _, context in
+            if let mainWindow = context.windows.first(where: { $0.id == "MainWindow" }) {
+                return WindowPlacement(.leading(mainWindow))
+            }
+            return WindowPlacement(.none)
+        }
         #endif
     }
 }
