@@ -71,9 +71,9 @@ struct nodes_demoApp: App {
             // Focus: We can also hide the window drag bar and controls
                 .persistentSystemOverlays(appModel.immersiveMapOpen ? .hidden : .visible)
         }
-        #if os(visionOS)
-        .windowStyle(.plain)
-        #endif
+//        #if os(visionOS)
+//        .windowStyle(.plain)
+//        #endif
         .commands {
             CommandGroup(replacing: .undoRedo) {
 
@@ -144,7 +144,7 @@ struct nodes_demoApp: App {
             ImmersiveMapToolbar()
                 .environment(appModel)
         }
-        .defaultSize(CGSize(width: 500, height: 250))
+        .defaultSize(CGSize(width: 500, height: 1200))
         .windowStyle(.plain)
         .defaultWindowPlacement { _, context in
             if let mainWindow = context.windows.first(where: { $0.id == "MainWindow" }) {

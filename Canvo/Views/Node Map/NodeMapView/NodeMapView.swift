@@ -7,6 +7,9 @@ struct NodeMapView: View {
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     @Environment(\.verticalSizeClass) var verticalSizeClass
     @Environment(\.openWindow) private var openWindow
+    #if os(visionOS)
+    @Environment(\.pushWindow) private var pushWindow
+    #endif
     @Environment(\.dismissWindow) private var dismissWindow
     
     var isCompact: Bool {
@@ -582,7 +585,7 @@ struct NodeMapView: View {
                             Task {
                                 await openImmersiveSpace(id: "ImmersiveNodeMapView")
                                 // Call Push Window and hide main window
-                                openWindow(id: "ImmersiveMapToolbar")
+                                pushWindow(id: "ImmersiveMapToolbar")
                             }
                         } else {
                             Task {

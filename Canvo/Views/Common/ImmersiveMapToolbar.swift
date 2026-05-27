@@ -80,6 +80,7 @@ struct ImmersiveMapToolbar: View {
     var body: some View {
         
         VStack(spacing: 12) {
+            Spacer()
             if AIGenerationService.shared.isRunning {
                 AIGenerationSnackbar(
                     title: AIGenerationService.shared.runningStage ?? "Generating",
