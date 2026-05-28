@@ -100,14 +100,7 @@ extension AppModel {
                 // delete current scope to replace with summarized
                 actionService.beginBatch()
                 for node in scope {
-                    let snapshot = makeNodeSnapshotWithConnections(node)
-                    
-                    let action = RemoveNodeAction(
-                        node: snapshot.node,
-                        connections: snapshot.connections
-                    )
-                    
-                    actionService.perform(action)
+                    removeNode(node)
                 }
                 
                 let nodeSnapshot = NodeSnapshot(

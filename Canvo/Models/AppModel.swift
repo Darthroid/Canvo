@@ -592,6 +592,21 @@ extension AppModel {
     
     // MARK: - Nodes actions
     
+    func removeNode(_ node: Node) {
+        withAnimation {
+            selectedNodeIds.removeAll()
+        }
+        
+        let snapshot = makeNodeSnapshotWithConnections(node)
+        
+        let action = RemoveNodeAction(
+            node: snapshot.node,
+            connections: snapshot.connections
+        )
+        
+        actionService.perform(action)
+    }
+    
     func deleteSelectedNodes() {
         guard !selectedNodeIds.isEmpty else { return }
         

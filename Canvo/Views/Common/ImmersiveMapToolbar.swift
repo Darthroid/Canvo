@@ -19,6 +19,7 @@ struct ImmersiveMapToolbar: View {
     @State var showNodeForm = false
     
     @State private var showDetailNode: Node?
+    @State private var showLinkToNode: Node?
     
     let session = ARKitSession()
     let worldTracking = WorldTrackingProvider()
@@ -174,6 +175,15 @@ struct ImmersiveMapToolbar: View {
                 self.showDetailNode = node
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .linkWithNode)) { notification in
+            guard let node = notification.userInfo?["node"] as? Node else {
+                return
+            }
+
+            DispatchQueue.main.async {
+                self.showLinkToNode = node
+            }
+        }
         .onAppear {
             Task {
                 _ = await session.requestAuthorization(for: [.worldSensing, .handTracking])
@@ -183,6 +193,11 @@ struct ImmersiveMapToolbar: View {
         .sheet(item: $showDetailNode) { node in
             NavigationStack {
                 NodeDetailView(node: node)
+            }
+        }
+        .sheet(item: $showLinkToNode) { node in
+            NavigationStack {
+                LinkEditorView(fromNode: node)
             }
         }
         .sheet(isPresented: $showNodeForm) {

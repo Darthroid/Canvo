@@ -25,7 +25,7 @@ struct ImmersiveNodeMapView: View {
     
     final class SceneCache {
 
-        var nodeEntities: [String: ViewAttachmentEntity] = [:]
+        var nodeEntities: [String: Entity] = [:]
 
         var connectionEntities: [String: ModelEntity] = [:]
     }
@@ -76,12 +76,29 @@ struct ImmersiveNodeMapView: View {
                         isSelected: appModel.selectedNodeIds.contains(node.id),
                         isExpanded: appModel.expandedNodeIds.contains(node.id),
                         isMatchingSearch: false,
-                        toolbarEnabled: false,
+                        toolbarEnabled: true,
                         onSizeChange: { size in
                             layoutCache.sizes[node.id] = size
                             DispatchQueue.main.async {
                                 updateCollision(for: node.id, size: size)
                             }
+                        },
+                        onDetail: {
+                            NotificationCenter.default.post(
+                                name: .pinchOutWithNode,
+                                object: nil,
+                                userInfo: ["node": node]
+                            )
+                        },
+                        onLink: {
+                            NotificationCenter.default.post(
+                                name: .linkWithNode,
+                                object: nil,
+                                userInfo: ["node": node]
+                            )
+                        },
+                        onDelete: {
+                            appModel.removeNode(node)
                         }
                     )
                     .frame(maxWidth: 400)
@@ -328,26 +345,38 @@ struct ImmersiveNodeMapView: View {
                 guard let attachment =
                         attachments.entity(for: node.id)
                 else { continue }
-                
-                attachment.position = position
 
-                attachment.components.set(
-                    InputTargetComponent()
-                )
+                let root = Entity()
+
+                root.position = position
+
+                attachment.position = .zero
 
                 attachment.components.set(
                     BillboardComponent()
                 )
 
-                attachment.components.set(PinchComponent())
-                
-                attachment.components.set(
+                root.addChild(attachment)
+
+                root.components.set(
+                    InputTargetComponent()
+                )
+
+                root.components.set(
+                    HoverEffectComponent()
+                )
+
+                root.components.set(
+                    PinchComponent()
+                )
+
+                root.components.set(
                     NodeDataComponent(node: node)
                 )
 
-                sceneCache.nodeEntities[node.id] = attachment
+                sceneCache.nodeEntities[node.id] = root
 
-                content.add(attachment)
+                content.add(root)
             }
         }
     }
@@ -541,10 +570,17 @@ struct ImmersiveNodeMapView: View {
 
         let shape = ShapeResource.generateBox(
             width: width,
-            height: height,
+            height: height * 0.75,
             depth: 0.02
         )
+        .offsetBy(
+            translation: [0, height * 0.1, 0]
+        )
 
-        entity.components.set(CollisionComponent(shapes: [shape]))
+        entity.components.set(
+            CollisionComponent(
+                shapes: [shape]
+            )
+        )
     }
 }
