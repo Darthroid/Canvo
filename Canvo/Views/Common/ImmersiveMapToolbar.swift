@@ -18,6 +18,8 @@ struct ImmersiveMapToolbar: View {
     
     @State var showNodeForm = false
     
+    @State private var showDetailNode: Node?
+    
     let session = ARKitSession()
     let worldTracking = WorldTrackingProvider()
     
@@ -153,8 +155,6 @@ struct ImmersiveMapToolbar: View {
                 .glassBackgroundEffect()
             }
         }
-        
-//        .persistentSystemOverlays(.hidden)
         .onChange(of: scenePhase, initial: true) {
             switch scenePhase {
             case .inactive, .background:
@@ -165,10 +165,24 @@ struct ImmersiveMapToolbar: View {
                 appModel.immersiveMapToolbarOpen = false
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .pinchOutWithNode)) { notification in
+            guard let node = notification.userInfo?["node"] as? Node else {
+                return
+            }
+
+            DispatchQueue.main.async {
+                self.showDetailNode = node
+            }
+        }
         .onAppear {
             Task {
                 _ = await session.requestAuthorization(for: [.worldSensing, .handTracking])
                 try? await session.run([worldTracking])
+            }
+        }
+        .sheet(item: $showDetailNode) { node in
+            NavigationStack {
+                NodeDetailView(node: node)
             }
         }
         .sheet(isPresented: $showNodeForm) {

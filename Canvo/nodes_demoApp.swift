@@ -163,8 +163,10 @@ struct nodes_demoApp: App {
         }
         .defaultSize(width: 400, height: 800)
         .defaultWindowPlacement { _, context in
-            if let mainWindow = context.windows.first(where: { $0.id == "MainWindow" }) {
+            if let mainWindow = context.windows.first(where: { $0.id == "MainWindow" }), !appModel.immersiveMapToolbarOpen {
                 return WindowPlacement(.leading(mainWindow))
+            } else if let toolbarWindow = context.windows.first(where: { $0.id == "ImmersiveMapToolbar" }) {
+                return WindowPlacement(.leading(toolbarWindow))
             }
             return WindowPlacement(.none)
         }

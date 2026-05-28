@@ -15,6 +15,10 @@ struct ImmersiveNodeMapView: View {
         var cylinder: ModelEntity
     }
     
+    struct PinchComponent: Component {
+        // Empty.
+    }
+    
     final class NodeLayoutCache {
         var sizes: [String: CGSize] = [:]
     }
@@ -35,9 +39,10 @@ struct ImmersiveNodeMapView: View {
     @State private var dragStartPositions: [String: SIMD3<Float>] = [:]
     @State private var draggedNodeIds: Set<String> = []
     
-    @State private var showDetailNode: Node?
-    @State private var showLinkToNode: Node?
-    @State private var showDeleteNode: Node?
+    @State var magnification: CGFloat = 1.0
+    
+    @State var hasPinchIn = false
+    @State var hasPinchOut = false
     
     private let uiToWorldScale: Float = 0.0012
     
@@ -51,6 +56,7 @@ struct ImmersiveNodeMapView: View {
             )
 
             updateConnections(in: content)
+//            setupPinchArea()
         } update: { content, attachments in
 
             updateEntities(
@@ -85,47 +91,10 @@ struct ImmersiveNodeMapView: View {
         .gesture(selectiveDragGesture)
         .gesture(tapGesture)
         .gesture(doubleTapGesture)
+        .gesture(pinchGesture())
         .onChange(of: appModel.connections) { oldValue, newValue in
             guard let content = realityViewContent else { return }
             updateConnections(in: content)
-        }
-        .sheet(item: $showDetailNode) { node in
-            NavigationStack {
-                NodeDetailView(node: node)
-            }
-        }
-        .sheet(item: $showLinkToNode) { node in
-            NavigationStack {
-                LinkEditorView(fromNode: node)
-            }
-        }
-        .alert(
-            "Delete Node",
-            isPresented: Binding(
-                get: {
-                    showDeleteNode != nil
-                },
-                set: { newValue in
-                    if !newValue {
-                        showDeleteNode = nil
-                    }
-                }
-            ),
-            presenting: showDeleteNode
-        ) { node in
-            Button("Delete", role: .destructive) {
-                let snapshot = appModel.makeNodeSnapshotWithConnections(node)
-                
-                let action = RemoveNodeAction(
-                    node: snapshot.node,
-                    connections: snapshot.connections
-                )
-                
-                appModel.actionService.perform(action)
-            }
-            Button(role: .cancel) {}
-        } message: { _ in
-            Text("Are you sure you want to delete this node?")
         }
     }
     
@@ -244,8 +213,6 @@ struct ImmersiveNodeMapView: View {
                 draggedEntity = nil
             }
     }
-
-
     
     private var tapGesture: some Gesture {
         SpatialTapGesture(count: 1)
@@ -282,6 +249,50 @@ struct ImmersiveNodeMapView: View {
                 } else {
                     appModel.expandedNodeIds.insert(nodeId)
                 }
+            }
+    }
+    
+    func pinchGesture() -> some Gesture {
+        MagnifyGesture()
+            .targetedToAnyEntity()
+            .onChanged { value in
+                                
+                guard value.entity.components[PinchComponent.self] != nil, let node = value.entity.components[NodeDataComponent.self]?.node else {
+                    return
+                }
+                
+                let pinchInMagnification: CGFloat = 0.8
+                let pinchOutMagnification: CGFloat = 1.2
+                
+                if !hasPinchIn && value.magnification <= pinchInMagnification {
+                    hasPinchIn = true
+                    
+                    DispatchQueue.main.async {
+                        NotificationCenter.default.post(
+                            name: .pinchInWithNode,
+                            object: nil,
+                            userInfo: ["node": node]
+                        )
+                    }
+                }
+                
+                if !hasPinchOut && value.magnification >= pinchOutMagnification {
+                    hasPinchOut = true
+                    
+                    NotificationCenter.default.post(
+                        name: .pinchOutWithNode,
+                        object: nil,
+                        userInfo: ["node": node]
+                    )
+                }
+                
+                magnification = value.magnification
+            }
+            .onEnded { _ in
+                magnification = 1.0
+                
+                hasPinchIn = false
+                hasPinchOut = false
             }
     }
     
@@ -328,6 +339,8 @@ struct ImmersiveNodeMapView: View {
                     BillboardComponent()
                 )
 
+                attachment.components.set(PinchComponent())
+                
                 attachment.components.set(
                     NodeDataComponent(node: node)
                 )
