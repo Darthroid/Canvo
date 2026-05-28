@@ -3,10 +3,14 @@ import SwiftData
 import StoreKit
 
 struct NodeMapView: View {
-    @Environment(AppModel.self) private var appModel
+    @Environment(AppModel.self) var appModel
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     @Environment(\.verticalSizeClass) var verticalSizeClass
     @Environment(\.openWindow) private var openWindow
+    #if os(visionOS)
+    @Environment(\.pushWindow) private var pushWindow
+    #endif
+    @Environment(\.dismissWindow) private var dismissWindow
     
     var isCompact: Bool {
         return horizontalSizeClass == .compact || verticalSizeClass == .compact
@@ -17,26 +21,23 @@ struct NodeMapView: View {
     @Environment(\.dismissImmersiveSpace) var dismissImmersiveSpace
 #endif
     
-    @State private var dragStartPositions: [String: SIMD3<Float>] = [:]
-    @State private var draggedNodeIds: Set<String> = []
+    @State var dragStartPositions: [String: SIMD3<Float>] = [:]
+    @State var draggedNodeIds: Set<String> = []
     
-    @State private var scale: CGFloat = 1.0
-    @State private var baseScale: CGFloat = 1.0
-    @State private var offset: CGSize = .zero
-    @State private var lastPanTranslation: CGSize = .zero
-    @State private var lastDragTranslation: CGSize = .zero
+    @State var scale: CGFloat = 1.0
+    @State var baseScale: CGFloat = 1.0
+    @State var offset: CGSize = .zero
+    @State var lastPanTranslation: CGSize = .zero
+    @State var lastDragTranslation: CGSize = .zero
     
     @State private var showGrid = true
     
-    @State private var showAIEditCanvas = false
     @State private var showNodeForm = false
     @State private var showtagsFilter: Bool = false
-    @State private var showNodeSpace = false
-    @State private var pendingNodePosition: SIMD3<Float>? = nil
+    
     @State private var containerSize: CGSize = .zero
     
     @State private var searchText = ""
-    @State private var showOutline = false
     @State private var searchResults: [Node] = []
     @State private var selectedSearchResultIndex = 0
     @FocusState private var isSearchFieldFocused: Bool
@@ -45,16 +46,14 @@ struct NodeMapView: View {
     @State private var showLinkToNode: Node?
     @State private var showDeleteNode: Node?
     
-    @State private var showZoomLevel = false
-    private let minScale: CGFloat = 0.1
-    private let maxScale: CGFloat = 4.0
-    private let zoomSensitivity: CGFloat = 0.35
-    private let searchAnimationDuration: Double = 0.5
+    @State var showZoomLevel = false
+
+    let searchAnimationDuration: Double = 0.5
     
-    @State private var generatedPreview: UIImage?
-    @State private var generatedJSON: Data?
-    @State private var showShareSheet = false
-    @State private var selectedFormat: ExportFormat = .png
+    @State var generatedPreview: UIImage?
+    @State var generatedJSON: Data?
+    @State var showShareSheet = false
+    @State var selectedFormat: ExportFormat = .png
     
     @Environment(\.requestReview) private var requestReview
 
@@ -94,24 +93,6 @@ struct NodeMapView: View {
     private var resetZoom = NotificationCenter.default.publisher(for: .init("resetzoom"))
     private var outline = NotificationCenter.default.publisher(for: .init("outline"))
     private var toggleGrid = NotificationCenter.default.publisher(for: .init("togglegrid"))
-    
-    private func applyZoom(multiplier: CGFloat) {
-        let next = scale * multiplier
-        let clamped = min(max(next, minScale), maxScale)
-        scale = clamped
-        baseScale = clamped
-        showZoomLevel = true
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-            self.showZoomLevel = false
-        }
-    }
-    
-    private func setDefaultZoom() {
-        scale = 1.0
-        baseScale = 1.0
-        offset = .zero
-    }
     
     private func visibleCenterPosition() -> SIMD3<Float> {
         let screenCenterX = containerSize.width / 2
@@ -195,7 +176,7 @@ struct NodeMapView: View {
             Text(String(format: appModel.selectedNodeIds.count > 1 ? "%d items" : "%d item", appModel.selectedNodeIds.count))
             
             Button {
-                deleteSelectedNodes()
+                appModel.deleteSelectedNodes()
             } label: {
                 Image(systemName: "trash")
             }
@@ -203,7 +184,7 @@ struct NodeMapView: View {
             .labelsHidden()
             
             Button {
-                showAIEditCanvas.toggle()
+                appModel.aiEditorOpen.toggle()
             } label: {
                 Image(systemName: "sparkles")
             }
@@ -220,7 +201,7 @@ struct NodeMapView: View {
                 }
                 
                 Button {
-                    duplicateSelectedNodes()
+                    appModel.duplicateSelectedNodes()
                 } label: {
                     Text("Duplicate")
                 }
@@ -247,7 +228,6 @@ struct NodeMapView: View {
         #else
         .glassBackgroundEffect()
         #endif
-        
     }
     
     var canvas: some View {
@@ -312,10 +292,10 @@ struct NodeMapView: View {
                     .fill(Color.clear)
                     .frame(width: 12, height: 12)
                     .position(
-                        x: CGFloat(pendingNodePosition?.x ?? 0),
-                        y: CGFloat(pendingNodePosition?.y ?? 0)
+                        x: CGFloat(appModel.pendingNodePosition?.x ?? 0),
+                        y: CGFloat(appModel.pendingNodePosition?.y ?? 0)
                     )
-                    .opacity(pendingNodePosition == nil ? 0 : 0.7)
+                    .opacity(appModel.pendingNodePosition == nil ? 0 : 0.7)
             }
             .scaleEffect(scale)
             .offset(offset)
@@ -356,7 +336,8 @@ struct NodeMapView: View {
                     ZStack(alignment: .topLeading) {
                         
                         // sidebar
-                        if showOutline && !isCompact {
+                        #if !os(visionOS)
+                        if appModel.outlineOpen && !isCompact {
                             let size = min(300, geo.size.width - 40)
                             HStack {
                                 OutlineView(preferredWidth: size, style: .overlay)
@@ -367,19 +348,26 @@ struct NodeMapView: View {
                             .padding(.horizontal, 20)
                             .transition(.move(edge: .leading))
                         }
+                        #endif
                     }
                     
                     Spacer()
                     
                     if appModel.selectedNodeIds.count > 0 {
-                        selectedNodesFloatingPanel
+                        SelectedNodesPanel {
+                            appModel.deleteSelectedNodes()
+                        } onAiEdit: {
+                            appModel.aiEditorOpen.toggle()
+                        } onDuplicate: {
+                            appModel.duplicateSelectedNodes()
+                        }
                     }
                     
                     #if os(visionOS)
                     HStack {
                         Spacer()
                         Button {
-                            pendingNodePosition = visibleCenterPosition()
+                            appModel.pendingNodePosition = visibleCenterPosition()
                             showNodeForm = true
                         } label: {
                             Image(systemName: "plus")
@@ -440,11 +428,12 @@ struct NodeMapView: View {
                     )
                 }
             }
+            #if !os(visionOS)
             .sheet(isPresented: Binding(
-                get: { showOutline && isCompact },
+                get: { appModel.outlineOpen && isCompact },
                 set: { newValue in
                     if !newValue {
-                        showOutline = false
+                        appModel.outlineOpen = false
                     }
                 }
             )) {
@@ -453,8 +442,9 @@ struct NodeMapView: View {
                     .presentationDetents([.large])
                     .presentationDragIndicator(.visible)
             }
+            #endif
             .sheet(isPresented: $showNodeForm) {
-                CreateNodeView(position: pendingNodePosition)
+                CreateNodeView(position: appModel.pendingNodePosition)
                     .environment(appModel)
             }
             .sheet(item: $showDetailNode) { node in
@@ -467,10 +457,20 @@ struct NodeMapView: View {
                     LinkEditorView(fromNode: node)
                 }
             }
-            .sheet(isPresented: $showAIEditCanvas) {
+            .sheet(isPresented: Binding(
+                get: { appModel.aiEditorOpen && !appModel.immersiveMapToolbarOpen },
+                set: { newValue in
+                    appModel.aiEditorOpen = newValue
+                }
+            )) {
                 if #available(iOS 26.0, macOS 26.0, visionOS 26.0, *) {
                     NavigationStack {
-                        AIEditCanvasView(showEditor: $showAIEditCanvas, visibleScopeIds: [])
+                        AIEditCanvasView(showEditor: Binding(
+                            get: { appModel.aiEditorOpen },
+                            set: { newValue in
+                                appModel.aiEditorOpen = newValue
+                            }
+                        ), visibleScopeIds: [])
                             .environment(appModel)
                             .presentationBackground(Color(.secondarySystemBackground))
                     }
@@ -491,14 +491,7 @@ struct NodeMapView: View {
                 presenting: showDeleteNode
             ) { node in
                 Button("Delete", role: .destructive) {
-                    let snapshot = appModel.makeNodeSnapshotWithConnections(node)
-                    
-                    let action = RemoveNodeAction(
-                        node: snapshot.node,
-                        connections: snapshot.connections
-                    )
-                    
-                    appModel.actionService.perform(action)
+                    appModel.removeNode(node)
                 }
                 Button(role: .cancel) {}
             } message: { _ in
@@ -580,18 +573,21 @@ struct NodeMapView: View {
 #if os(visionOS)
                     // visionOS immersive map
                     Button {
-                        showNodeSpace.toggle()
-                        if showNodeSpace {
+                        appModel.immersiveMapOpen.toggle()
+                        if appModel.immersiveMapOpen {
                             Task {
                                 await openImmersiveSpace(id: "ImmersiveNodeMapView")
+                                // Call Push Window and hide main window
+                                pushWindow(id: "ImmersiveMapToolbar")
                             }
                         } else {
                             Task {
                                 await dismissImmersiveSpace()
+                                dismissWindow(id: "ImmersiveMapToolbar")
                             }
                         }
                     } label: {
-                        Label(showNodeSpace ? "Hide Immersive Map" : "Show Immersive Map", systemImage: "graph.3d")
+                        Label("Immersive Mode", systemImage: "graph.3d")
                     }
                         Divider()
 #endif
@@ -600,13 +596,17 @@ struct NodeMapView: View {
                         Button {
                             withAnimation {
                                 #if os(visionOS)
-                                openWindow(id: "outline")
-                                #else
-                                showOutline.toggle()
+                                
+                                if appModel.outlineOpen {
+                                    dismissWindow(id: "outline")
+                                } else {
+                                    openWindow(id: "outline")
+                                }
                                 #endif
+                                appModel.outlineOpen.toggle()
                             }
                         } label: {
-                            Label(showOutline ? "Hide Outlie" : "Show Outline",
+                            Label(appModel.outlineOpen ? "Hide Outline" : "Show Outline",
                                   systemImage: "list.bullet.indent"
                             )
                         }
@@ -650,7 +650,12 @@ struct NodeMapView: View {
                         // ai edit
                         if AIGenerationService.shared.isAvailable {
                             
-                            Toggle(isOn: $showAIEditCanvas.animation()) {
+                            Toggle(isOn: Binding(
+                                get: { appModel.aiEditorOpen },
+                                set: { newValue in
+                                    appModel.aiEditorOpen = newValue
+                                }
+                            ).animation()) {
                                 Label("AI Editor", systemImage: "sparkles")
                             }
                         }
@@ -667,7 +672,7 @@ struct NodeMapView: View {
                 
                 ToolbarItem(placement: .bottomBar) {
                     Button {
-                        pendingNodePosition = visibleCenterPosition()
+                        appModel.pendingNodePosition = visibleCenterPosition()
                         showNodeForm = true
                     } label: {
                         Image(systemName: "plus")
@@ -692,6 +697,16 @@ struct NodeMapView: View {
                 .opacity(0.5)
                 .allowsHitTesting(false)
         }
+        #if os(visionOS)
+        .onChange(of: appModel.immersiveMapToolbarOpen) { _, new in
+            if !new {
+                Task {
+                    await dismissImmersiveSpace()
+                    appModel.immersiveMapOpen = new
+                }
+            }
+        }
+        #endif
         .onReceive(zoomIn, perform: { _ in
             applyZoom(multiplier: 1.2)
         })
@@ -701,11 +716,13 @@ struct NodeMapView: View {
         .onReceive(resetZoom, perform: { _ in
             setDefaultZoom()
         })
+        #if !os(visionOS)
         .onReceive(outline, perform: { _ in
             withAnimation {
-                showOutline.toggle()
+                appModel.outlineOpen.toggle()
             }
         })
+        #endif
         .onReceive(toggleGrid, perform: { _ in
             withAnimation {
                 showGrid.toggle()
@@ -725,296 +742,5 @@ struct NodeMapView: View {
         if screenDismissCount.isMultiple(of: 5) {
             requestReview()
         }
-    }
-    
-    private func deleteSelectedNodes() {
-        guard !appModel.selectedNodeIds.isEmpty else { return }
-        
-        let snapshots = appModel.selectedNodeIds
-            .compactMap { appModel.node(forId: $0) }
-            .map { appModel.makeNodeSnapshotWithConnections($0) }
-        
-        appModel.actionService.beginBatch()
-        snapshots.forEach {
-            let action = RemoveNodeAction(node: $0.node, connections: $0.connections)
-            appModel.actionService.perform(action)
-        }
-        appModel.actionService.endBatch()
-        
-        withAnimation {
-            appModel.selectedNodeIds.removeAll()
-        }
-    }
-    
-    private func duplicateSelectedNodes() {
-        guard !appModel.selectedNodeIds.isEmpty else { return }
-        
-        let snapshots = appModel.selectedNodeIds
-            .compactMap { appModel.node(forId: $0) }
-            .map {
-                NodeSnapshot(
-                    id: UUID().uuidString,
-                    name: $0.name,
-                    detail: $0.detail,
-                    x: $0.x,
-                    y: $0.y + 100,
-                    z: $0.z, color: $0.colorRaw,
-                    tagsRaw: $0.tagsRaw
-                )
-            }
-        
-        appModel.actionService.beginBatch()
-        snapshots.forEach {
-            let action = AddNodeAction(node: $0)
-            appModel.actionService.perform(action)
-        }
-        appModel.actionService.endBatch()
-        
-        appModel.selectedNodeIds.removeAll()
-        snapshots.forEach { appModel.selectedNodeIds.insert($0.id) }
-    }
-}
-
-extension NodeMapView {
-    @ViewBuilder
-    private func previewCanvas(
-        layout: PreviewLayout
-    ) -> some View {
-        ZStack {
-            ForEach(appModel.connections) { c in
-                if let a = appModel.node(forId: c.fromNodeId),
-                   let b = appModel.node(forId: c.toNodeId) {
-                    ConnectionView(
-                        from: a.position.position2D,
-                        to: b.position.position2D
-                    )
-                    .stroke(.secondary, lineWidth: 1.25)
-                }
-            }
-            
-            ForEach(appModel.nodes) { node in
-                NodeView(
-                    node: node,
-                    isSelected: false,
-                    isExpanded: false,
-                    isMatchingSearch: false,
-                    toolbarEnabled: true
-                )
-                .position(node.position.position2D)
-            }
-        }
-        .scaleEffect(layout.scale, anchor: .topLeading)
-        .offset(layout.offset)
-    }
-    
-    
-    private struct PreviewLayout {
-        let scale: CGFloat
-        let offset: CGSize
-    }
-    
-    private func previewLayout(targetSize: CGSize) -> PreviewLayout? {
-        let points = appModel.nodes.map { $0.position.position2D }
-        guard !points.isEmpty else { return nil }
-        
-        let minX = points.map(\.x).min()!
-        let maxX = points.map(\.x).max()!
-        let minY = points.map(\.y).min()!
-        let maxY = points.map(\.y).max()!
-        
-        let padding: CGFloat = 80
-        
-        let contentWidth = (maxX - minX) + padding * 2
-        let contentHeight = (maxY - minY) + padding * 2
-        
-        let scale = min(
-            targetSize.width / contentWidth,
-            targetSize.height / contentHeight
-        )
-        
-        let offsetX = targetSize.width / 2 - ((minX + maxX) / 2) * scale
-        let offsetY = targetSize.height / 2 - ((minY + maxY) / 2) * scale
-        
-        return PreviewLayout(
-            scale: scale,
-            offset: CGSize(width: offsetX, height: offsetY)
-        )
-    }
-    
-    // MARK: - PAN
-    
-    private var panGesture: some Gesture {
-        DragGesture()
-            .onChanged { v in
-                let dx = v.translation.width - lastPanTranslation.width
-                let dy = v.translation.height - lastPanTranslation.height
-                offset.width += dx
-                offset.height += dy
-                lastPanTranslation = v.translation
-            }
-            .onEnded { _ in
-                lastPanTranslation = .zero
-            }
-    }
-    
-    // MARK: - ZOOM
-    
-    private var zoomGesture: some Gesture {
-        MagnificationGesture()
-            .onChanged { value in
-                let delta = 1 + (value - 1) * zoomSensitivity
-                scale = min(max(baseScale * delta, minScale), maxScale)
-                
-                showZoomLevel = true
-            }
-            .onEnded { _ in
-                baseScale = scale
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                    self.showZoomLevel = false
-                }
-            }
-    }
-    
-    // MARK: - NODE DRAG
-    
-    private func nodeDrag(_ node: Node) -> some Gesture {
-        DragGesture(coordinateSpace: .named("canvas"))
-            .onChanged { value in
-                // 1. Определяем, какие ноды будут перемещаться
-                let isDraggedNodeSelected = appModel.selectedNodeIds.contains(node.id)
-                let movingIds = isDraggedNodeSelected ? appModel.selectedNodeIds : [node.id]
-
-                // 2. Сбрасываем выделение, если тащим невыделенную ноду
-                if !isDraggedNodeSelected {
-                    appModel.selectedNodeIds = [node.id]
-                }
-
-                // 3. Запоминаем стартовые позиции (один раз за жест)
-                for id in movingIds {
-                    if dragStartPositions[id] == nil,
-                       let n = appModel.node(forId: id) {
-                        dragStartPositions[id] = n.position
-                    }
-                }
-
-                // 4. Добавляем все перемещаемые ноды в отслеживаемый набор
-                draggedNodeIds.formUnion(movingIds)
-
-                // 5. Вычисляем общее смещение (в координатах canvas)
-                let dx = Float(value.translation.width) / Float(scale)
-                let dy = Float(value.translation.height) / Float(scale)
-
-                // 6. Применяем смещение ко всем нодам (только визуально, без сохранения)
-                for id in movingIds {
-                    guard let start = dragStartPositions[id],
-                          let n = appModel.node(forId: id) else { continue }
-                    n.x = start.x + dx
-                    n.y = start.y + dy
-                }
-            }
-            .onEnded { _ in
-                // 1. Собираем данные для batch-действия
-                var nodeIds: [String] = []
-                var oldPositions: [SIMD3<Float>] = []
-                var newPositions: [SIMD3<Float>] = []
-
-                for id in draggedNodeIds {
-                    guard let start = dragStartPositions[id],
-                          let node = appModel.node(forId: id) else { continue }
-                    let end = node.position
-                    if start != end {
-                        nodeIds.append(id)
-                        oldPositions.append(start)
-                        newPositions.append(end)
-                    }
-                }
-
-                // 2. Выполняем batch-действие, если есть изменения
-                if !nodeIds.isEmpty {
-                    let action = MoveNodesBatchAction(
-                        nodeIds: nodeIds,
-                        oldPositions: oldPositions,
-                        newPositions: newPositions
-                    )
-                    appModel.actionService.perform(action)
-                }
-
-                // 3. Очищаем временные данные
-                for id in draggedNodeIds {
-                    dragStartPositions.removeValue(forKey: id)
-                }
-                draggedNodeIds.removeAll()
-            }
-    }
-    
-    @MainActor
-    private func exportAsImage(format: ExportFormat) {
-        let image = previewImage(targetSize: .init(width: 2048, height: 1024), removeBackground: false)
-        self.generatedPreview = image
-        self.selectedFormat = format
-        
-        showShareSheet.toggle()
-    }
-    
-    @MainActor func exportJSON() {
-        guard let canvas = appModel.currentCanvas else { return }
-        
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = .prettyPrinted
-        
-        do {
-            let data = try encoder.encode(canvas)
-//            let json = String(data: data, encoding: .utf8)
-            self.generatedJSON = data
-            self.selectedFormat = .json
-            
-            showShareSheet.toggle()
-        } catch {
-            print("error encoding json on export: \(error)")
-        }
-    }
-    
-    @MainActor
-    private func previewImage(
-        targetSize: CGSize = CGSize(width: 220, height: 160),
-        removeBackground: Bool = true
-    ) -> UIImage {
-
-        let view: AnyView
-
-        if let layout = previewLayout(targetSize: targetSize) {
-            view = AnyView(
-                previewCanvas(layout: layout)
-                    .frame(
-                        width: targetSize.width,
-                        height: targetSize.height
-                    )
-            )
-        } else {
-            view = AnyView(
-                GridLayer()
-                    .frame(
-                        width: targetSize.width,
-                        height: targetSize.height
-                    )
-            )
-        }
-
-        return view.asImage(
-            size: targetSize,
-            scale: 2,
-            removeBackground: removeBackground
-        )
-    }
-    
-    @MainActor
-    private func generatePreview(targetSize: CGSize = CGSize(width: 220, height: 160)) {
-        guard let canvas = appModel.currentCanvas else { return }
-        let image = previewImage(targetSize: targetSize)
-
-        CanvasPreviewService.shared.generatePreview(
-            image: image,
-            for: canvas.id
-        )
     }
 }

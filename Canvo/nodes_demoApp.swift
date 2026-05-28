@@ -13,56 +13,67 @@ struct nodes_demoApp: App {
     
     @AppStorage("hasSeenOnboarding") var hasSeenOnboarding: Bool = false
     
-    var body: some Scene {
-        WindowGroup(id: "MainWindow") {
-            if hasSeenOnboarding {
-                CanvasCollectionView()
-                    .environment(appModel)
-                    .alert(
-                        "Generation failed",
-                        isPresented: Binding(
-                            get: {
-                                AIGenerationService.shared.error != nil
-                            },
-                            set: { newValue in
-                                if !newValue {
-                                    AIGenerationService.shared.clearErrors()
+    @ViewBuilder var mainContent: some View {
+        if hasSeenOnboarding {
+            CanvasCollectionView()
+                .environment(appModel)
+                .alert(
+                    "Generation failed",
+                    isPresented: Binding(
+                        get: {
+                            AIGenerationService.shared.error != nil && !appModel.immersiveMapToolbarOpen
+                        },
+                        set: { newValue in
+                            if !newValue {
+                                AIGenerationService.shared.clearErrors()
+                            }
+                        }
+                    ),
+                    presenting: AIGenerationService.shared.error
+                ) { detail in
+                    Button("OK", role: .cancel) {
+                        AIGenerationService.shared.clearErrors()
+                    }
+                } message: { detail in
+                    Text(detail)
+                }
+                .overlay(alignment: .bottom) {
+                    if AIGenerationService.shared.isRunning {
+                        AIGenerationSnackbar(
+                            title: AIGenerationService.shared.runningStage ?? "Generating",
+                            onCancel: {
+                                withAnimation(.spring(response: 0.45, dampingFraction: 0.9)) {
+                                    AIGenerationService.shared.cancelCurrentTask()
                                 }
                             }
-                        ),
-                        presenting: AIGenerationService.shared.error
-                    ) { detail in
-                        Button("OK", role: .cancel) {
-                            AIGenerationService.shared.clearErrors()
-                        }
-                    } message: { detail in
-                        Text(detail)
+                        )
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 24)
+                        .transition(
+                            .move(edge: .bottom)
+                            .combined(with: .opacity)
+                        )
                     }
-                    .overlay(alignment: .bottom) {
-                        if AIGenerationService.shared.isRunning {
-                            AIGenerationSnackbar(
-                                title: AIGenerationService.shared.runningStage ?? "Generating",
-                                onCancel: {
-                                    withAnimation(.spring(response: 0.45, dampingFraction: 0.9)) {
-                                        AIGenerationService.shared.cancelCurrentTask()
-                                    }
-                                }
-                            )
-                            .padding(.horizontal, 16)
-                            .padding(.bottom, 24)
-                            .transition(
-                                .move(edge: .bottom)
-                                .combined(with: .opacity)
-                            )
-                        }
-                    }
-            } else {
-                OnboardingView(onFinish: {
-                    hasSeenOnboarding = true
-                })
-                .environment(appModel)
-            }
+                }
+        } else {
+            OnboardingView(onFinish: {
+                hasSeenOnboarding = true
+            })
+            .environment(appModel)
         }
+    }
+    
+    var body: some Scene {
+        WindowGroup(id: "MainWindow") {
+            mainContent
+            // Focus: When the immersive space is showing, hide the content.
+                .opacity(appModel.immersiveMapOpen ? 0 : 1)
+            // Focus: We can also hide the window drag bar and controls
+                .persistentSystemOverlays(appModel.immersiveMapOpen ? .hidden : .visible)
+        }
+//        #if os(visionOS)
+//        .windowStyle(.plain)
+//        #endif
         .commands {
             CommandGroup(replacing: .undoRedo) {
 
@@ -129,6 +140,19 @@ struct nodes_demoApp: App {
             }
         }
         #if os(visionOS)
+        WindowGroup(id: "ImmersiveMapToolbar") {
+            ImmersiveMapToolbar()
+                .environment(appModel)
+        }
+        .defaultSize(CGSize(width: 500, height: 1200))
+        .windowStyle(.plain)
+        .defaultWindowPlacement { _, context in
+            if let mainWindow = context.windows.first(where: { $0.id == "MainWindow" }) {
+                return WindowPlacement(.below(mainWindow))
+            }
+            return WindowPlacement(.none)
+        }
+        
         ImmersiveSpace(id: "ImmersiveNodeMapView") {
             ImmersiveNodeMapView()
                 .environment(appModel)
@@ -139,8 +163,10 @@ struct nodes_demoApp: App {
         }
         .defaultSize(width: 400, height: 800)
         .defaultWindowPlacement { _, context in
-            if let mainWindow = context.windows.first(where: { $0.id == "MainWindow" }) {
+            if let mainWindow = context.windows.first(where: { $0.id == "MainWindow" }), !appModel.immersiveMapToolbarOpen {
                 return WindowPlacement(.leading(mainWindow))
+            } else if let toolbarWindow = context.windows.first(where: { $0.id == "ImmersiveMapToolbar" }) {
+                return WindowPlacement(.leading(toolbarWindow))
             }
             return WindowPlacement(.none)
         }

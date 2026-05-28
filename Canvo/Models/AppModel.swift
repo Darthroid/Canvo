@@ -13,6 +13,11 @@ import SwiftData
 @MainActor
 @Observable
 final class AppModel: Sendable {
+    var immersiveMapToolbarOpen = false
+    var immersiveMapOpen = false
+    var outlineOpen = false
+    var aiEditorOpen = false
+    
     private var container: ModelContainer?
     private var context: ModelContext? {
         container?.mainContext
@@ -24,6 +29,8 @@ final class AppModel: Sendable {
     private(set) var currentCanvas: Canvas?
     var expandedNodeIds: Set<String> = []
     var selectedNodeIds: Set<String> = []
+    
+    var pendingNodePosition: SIMD3<Float>? = nil
     
     var centerOnNodeId: String?
     
@@ -584,6 +591,68 @@ extension AppModel {
     }
     
     // MARK: - Nodes actions
+    
+    func removeNode(_ node: Node) {
+        withAnimation {
+            selectedNodeIds.removeAll()
+        }
+        
+        let snapshot = makeNodeSnapshotWithConnections(node)
+        
+        let action = RemoveNodeAction(
+            node: snapshot.node,
+            connections: snapshot.connections
+        )
+        
+        actionService.perform(action)
+    }
+    
+    func deleteSelectedNodes() {
+        guard !selectedNodeIds.isEmpty else { return }
+        
+        let snapshots = selectedNodeIds
+            .compactMap { node(forId: $0) }
+            .map { makeNodeSnapshotWithConnections($0) }
+        
+        actionService.beginBatch()
+        snapshots.forEach {
+            let action = RemoveNodeAction(node: $0.node, connections: $0.connections)
+            actionService.perform(action)
+        }
+        actionService.endBatch()
+        
+        withAnimation {
+            selectedNodeIds.removeAll()
+        }
+    }
+    
+    func duplicateSelectedNodes() {
+        guard !selectedNodeIds.isEmpty else { return }
+        
+        let snapshots = selectedNodeIds
+            .compactMap { node(forId: $0) }
+            .map {
+                NodeSnapshot(
+                    id: UUID().uuidString,
+                    name: $0.name,
+                    detail: $0.detail,
+                    x: $0.x,
+                    y: $0.y + 100,
+                    z: $0.z, color: $0.colorRaw,
+                    tagsRaw: $0.tagsRaw
+                )
+            }
+        
+        actionService.beginBatch()
+        snapshots.forEach {
+            let action = AddNodeAction(node: $0)
+            actionService.perform(action)
+        }
+        actionService.endBatch()
+        
+        selectedNodeIds.removeAll()
+        snapshots.forEach { selectedNodeIds.insert($0.id) }
+    }
     
     func insertNodeInternal(_ snapshot: NodeSnapshot) {
         guard let currentCanvas else { return }

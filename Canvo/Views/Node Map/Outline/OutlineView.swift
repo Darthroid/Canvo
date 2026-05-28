@@ -17,6 +17,7 @@ struct OutlineView: View {
     let preferredWidth: CGFloat?
     let style: SidebarPresentationStyle
     
+    @Environment(\.scenePhase) private var scenePhase
     @Environment(AppModel.self) private var appModel
     
     var body: some View {
@@ -70,6 +71,16 @@ struct OutlineView: View {
                      : AnyShape(RoundedRectangle(cornerRadius: 20)))
         #else
         .glassBackgroundEffect()
+        .onChange(of: scenePhase, initial: true) {
+            switch scenePhase {
+            case .inactive, .background:
+                appModel.outlineOpen = false
+            case .active:
+                appModel.outlineOpen = true
+            @unknown default:
+                appModel.outlineOpen = false
+            }
+        }
         #endif
     }
 }

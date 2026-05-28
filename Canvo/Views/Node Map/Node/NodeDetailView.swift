@@ -181,14 +181,7 @@ struct NodeDetailView: View {
                 Button("Delete", role: .destructive) {
                     dismiss()
                     
-                    let snapshot = appModel.makeNodeSnapshotWithConnections(node)
-                    
-                    let action = RemoveNodeAction(
-                        node: snapshot.node,
-                        connections: snapshot.connections
-                    )
-                    
-                    appModel.actionService.perform(action)
+                    appModel.removeNode(node)
                 }
 
                 Button(role: .cancel) {}

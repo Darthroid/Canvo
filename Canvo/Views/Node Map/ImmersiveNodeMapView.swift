@@ -15,13 +15,17 @@ struct ImmersiveNodeMapView: View {
         var cylinder: ModelEntity
     }
     
+    struct PinchComponent: Component {
+        // Empty.
+    }
+    
     final class NodeLayoutCache {
         var sizes: [String: CGSize] = [:]
     }
     
     final class SceneCache {
 
-        var nodeEntities: [String: ViewAttachmentEntity] = [:]
+        var nodeEntities: [String: Entity] = [:]
 
         var connectionEntities: [String: ModelEntity] = [:]
     }
@@ -35,9 +39,10 @@ struct ImmersiveNodeMapView: View {
     @State private var dragStartPositions: [String: SIMD3<Float>] = [:]
     @State private var draggedNodeIds: Set<String> = []
     
-    @State private var showDetailNode: Node?
-    @State private var showLinkToNode: Node?
-    @State private var showDeleteNode: Node?
+    @State var magnification: CGFloat = 1.0
+    
+    @State var hasPinchIn = false
+    @State var hasPinchOut = false
     
     private let uiToWorldScale: Float = 0.0012
     
@@ -51,6 +56,7 @@ struct ImmersiveNodeMapView: View {
             )
 
             updateConnections(in: content)
+//            setupPinchArea()
         } update: { content, attachments in
 
             updateEntities(
@@ -70,12 +76,29 @@ struct ImmersiveNodeMapView: View {
                         isSelected: appModel.selectedNodeIds.contains(node.id),
                         isExpanded: appModel.expandedNodeIds.contains(node.id),
                         isMatchingSearch: false,
-                        toolbarEnabled: false,
+                        toolbarEnabled: true,
                         onSizeChange: { size in
                             layoutCache.sizes[node.id] = size
                             DispatchQueue.main.async {
                                 updateCollision(for: node.id, size: size)
                             }
+                        },
+                        onDetail: {
+                            NotificationCenter.default.post(
+                                name: .pinchOutWithNode,
+                                object: nil,
+                                userInfo: ["node": node]
+                            )
+                        },
+                        onLink: {
+                            NotificationCenter.default.post(
+                                name: .linkWithNode,
+                                object: nil,
+                                userInfo: ["node": node]
+                            )
+                        },
+                        onDelete: {
+                            appModel.removeNode(node)
                         }
                     )
                     .frame(maxWidth: 400)
@@ -85,47 +108,10 @@ struct ImmersiveNodeMapView: View {
         .gesture(selectiveDragGesture)
         .gesture(tapGesture)
         .gesture(doubleTapGesture)
+        .gesture(pinchGesture())
         .onChange(of: appModel.connections) { oldValue, newValue in
             guard let content = realityViewContent else { return }
             updateConnections(in: content)
-        }
-        .sheet(item: $showDetailNode) { node in
-            NavigationStack {
-                NodeDetailView(node: node)
-            }
-        }
-        .sheet(item: $showLinkToNode) { node in
-            NavigationStack {
-                LinkEditorView(fromNode: node)
-            }
-        }
-        .alert(
-            "Delete Node",
-            isPresented: Binding(
-                get: {
-                    showDeleteNode != nil
-                },
-                set: { newValue in
-                    if !newValue {
-                        showDeleteNode = nil
-                    }
-                }
-            ),
-            presenting: showDeleteNode
-        ) { node in
-            Button("Delete", role: .destructive) {
-                let snapshot = appModel.makeNodeSnapshotWithConnections(node)
-                
-                let action = RemoveNodeAction(
-                    node: snapshot.node,
-                    connections: snapshot.connections
-                )
-                
-                appModel.actionService.perform(action)
-            }
-            Button(role: .cancel) {}
-        } message: { _ in
-            Text("Are you sure you want to delete this node?")
         }
     }
     
@@ -200,8 +186,7 @@ struct ImmersiveNodeMapView: View {
 
                     // Обновляем entity
                     if let entity = sceneCache.nodeEntities[id] {
-                        entity.position =
-                            convertToVisionOSPosition(node: node)
+                        entity.position = GeometryService.visionOSPosition(node.position)
                     }
 
                     updateConnectionsForNode(nodeId: id)
@@ -245,8 +230,6 @@ struct ImmersiveNodeMapView: View {
                 draggedEntity = nil
             }
     }
-
-
     
     private var tapGesture: some Gesture {
         SpatialTapGesture(count: 1)
@@ -286,6 +269,50 @@ struct ImmersiveNodeMapView: View {
             }
     }
     
+    func pinchGesture() -> some Gesture {
+        MagnifyGesture()
+            .targetedToAnyEntity()
+            .onChanged { value in
+                                
+                guard value.entity.components[PinchComponent.self] != nil, let node = value.entity.components[NodeDataComponent.self]?.node else {
+                    return
+                }
+                
+                let pinchInMagnification: CGFloat = 0.8
+                let pinchOutMagnification: CGFloat = 1.2
+                
+                if !hasPinchIn && value.magnification <= pinchInMagnification {
+                    hasPinchIn = true
+                    
+                    DispatchQueue.main.async {
+                        NotificationCenter.default.post(
+                            name: .pinchInWithNode,
+                            object: nil,
+                            userInfo: ["node": node]
+                        )
+                    }
+                }
+                
+                if !hasPinchOut && value.magnification >= pinchOutMagnification {
+                    hasPinchOut = true
+                    
+                    NotificationCenter.default.post(
+                        name: .pinchOutWithNode,
+                        object: nil,
+                        userInfo: ["node": node]
+                    )
+                }
+                
+                magnification = value.magnification
+            }
+            .onEnded { _ in
+                magnification = 1.0
+                
+                hasPinchIn = false
+                hasPinchOut = false
+            }
+    }
+    
 // MARK: - Drawing connections
 
     private func updateEntities(
@@ -307,7 +334,7 @@ struct ImmersiveNodeMapView: View {
 
         for node in appModel.nodes {
 
-            let position = convertToVisionOSPosition(node: node)
+            let position = GeometryService.visionOSPosition(node.position)
 
             if let entity = sceneCache.nodeEntities[node.id] {
 
@@ -318,24 +345,38 @@ struct ImmersiveNodeMapView: View {
                 guard let attachment =
                         attachments.entity(for: node.id)
                 else { continue }
-                
-                attachment.position = position
 
-                attachment.components.set(
-                    InputTargetComponent()
-                )
+                let root = Entity()
+
+                root.position = position
+
+                attachment.position = .zero
 
                 attachment.components.set(
                     BillboardComponent()
                 )
 
-                attachment.components.set(
+                root.addChild(attachment)
+
+                root.components.set(
+                    InputTargetComponent()
+                )
+
+                root.components.set(
+                    HoverEffectComponent()
+                )
+
+                root.components.set(
+                    PinchComponent()
+                )
+
+                root.components.set(
                     NodeDataComponent(node: node)
                 )
 
-                sceneCache.nodeEntities[node.id] = attachment
+                sceneCache.nodeEntities[node.id] = root
 
-                content.add(attachment)
+                content.add(root)
             }
         }
     }
@@ -417,8 +458,8 @@ struct ImmersiveNodeMapView: View {
 
         updateConnectionEntity(
             connectionEntity,
-            startPosition: convertToVisionOSPosition(node: fromNode),
-            endPosition: convertToVisionOSPosition(node: toNode)
+            startPosition: GeometryService.visionOSPosition(fromNode.position),
+            endPosition: GeometryService.visionOSPosition(toNode.position)
         )
 
         return connectionEntity
@@ -520,21 +561,6 @@ struct ImmersiveNodeMapView: View {
     
     // MARK: - Drawing nodes
     
-    private func convertToVisionOSPosition(node: Node) -> SIMD3<Float> {
-        let scaleFactor: Float = 0.001
-
-        let x = Float(node.position.x) * scaleFactor
-        let y = -Float(node.position.y) * scaleFactor
-
-        let z = -1.5 + Float(node.position.z) * scaleFactor
-
-        return SIMD3<Float>(
-            x,
-            y + 1.5,
-            z
-        )
-    }
-    
     private func updateCollision(for id: String, size: CGSize) {
 
         guard let entity = sceneCache.nodeEntities[id] else { return }
@@ -544,10 +570,17 @@ struct ImmersiveNodeMapView: View {
 
         let shape = ShapeResource.generateBox(
             width: width,
-            height: height,
+            height: height * 0.75,
             depth: 0.02
         )
+        .offsetBy(
+            translation: [0, height * 0.1, 0]
+        )
 
-        entity.components.set(CollisionComponent(shapes: [shape]))
+        entity.components.set(
+            CollisionComponent(
+                shapes: [shape]
+            )
+        )
     }
 }
