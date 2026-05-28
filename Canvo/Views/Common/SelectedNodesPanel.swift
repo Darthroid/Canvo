@@ -19,21 +19,13 @@ struct SelectedNodesPanel: View {
         HStack(spacing: 24) {
             Text(String(format: appModel.selectedNodeIds.count > 1 ? "%d items" : "%d item", appModel.selectedNodeIds.count))
             
-            Button {
+            panelButton(systemImage: "trash") {
                 onDelete()
-            } label: {
-                Image(systemName: "trash")
             }
-            .buttonStyle(.plain)
-            .labelsHidden()
             
-            Button {
+            panelButton(systemImage: "sparkles") {
                 onAiEdit()
-            } label: {
-                Image(systemName: "sparkles")
             }
-            .buttonStyle(.plain)
-            .labelsHidden()
             
             Menu {
                 Button {
@@ -51,19 +43,19 @@ struct SelectedNodesPanel: View {
                 }
             } label: {
                 Image(systemName: "ellipsis")
+                    .frame(width: 36, height: 36)
+                    .contentShape(Circle())
             }
             .buttonStyle(.plain)
-            .labelsHidden()
+            #if os(visionOS)
+            .clipShape(Circle())
+            #endif
             
-            Button {
+            panelButton(systemImage: "xmark") {
                 withAnimation {
                     appModel.selectedNodeIds.removeAll()
                 }
-            } label: {
-                Image(systemName: "xmark")
             }
-            .buttonStyle(.plain)
-            .labelsHidden()
         }
         .padding(.horizontal, 20)
         .padding(.vertical)
@@ -73,5 +65,22 @@ struct SelectedNodesPanel: View {
         .glassBackgroundEffect()
         #endif
 
+    }
+    
+    @ViewBuilder
+    private func panelButton(
+        systemImage: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .frame(width: 36, height: 36)
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .labelsHidden()
+        #if os(visionOS)
+        .clipShape(Circle())
+        #endif
     }
 }
