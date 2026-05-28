@@ -1,3 +1,55 @@
-# Privacy Policy version 1.0 for the Canvo iOS app
+# Canvo
+<br>
+<a href="https://apps.apple.com/us/app/canvo/id6761765531">
+  <img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" height="40">
+</a>
+<br><br>
+<a href="https://raw.githubusercontent.com/Darthroid/Canvo-documentation/refs/heads/main/privacy.md">
+  Privacy Policy
+</a>
+<br><br>
 
-The Canvo iOS app does not collect any user data of any kind. The app does not access the Internet at all.
+Canvo is a fast and intuitive mind mapping app designed for organizing ideas, planning projects, researching topics, and building connected knowledge visually.
+
+Create flexible canvases with nodes, descriptions, tags, and connections that help you structure information the way you think.
+
+Whether you are brainstorming, studying, planning workflows, or building personal knowledge systems, Canvo helps you stay focused and organized.
+
+## Screenshots
+
+<img src="https://raw.githubusercontent.com/Darthroid/Canvo-documentation/refs/heads/main/Screenshots/1.png" width="200"><img src="https://raw.githubusercontent.com/Darthroid/Canvo-documentation/refs/heads/main/Screenshots/2.png" width="200"><img src="https://raw.githubusercontent.com/Darthroid/Canvo-documentation/refs/heads/main/Screenshots/3.png" width="200"><img src="https://raw.githubusercontent.com/Darthroid/Canvo-documentation/refs/heads/main/Screenshots/4.png" width="200">
+
+
+## Key Features
+
+• **Fast and responsive canvas**. Smooth interactions designed for large and complex mind maps.
+
+• **Flexible node system**. Create nodes with descriptions, tags, and visual connections between ideas.
+
+• **Powerful navigation**. Quickly find information with canvas search and tag-based filtering.
+
+• **AI Canvas Generation**. Start with a few ideas and instantly generate an initial mind map structure with connected topics and elements.
+
+• **AI Editing Tools**. Expand topics with new ideas, summarize selected sections, compress large structures, and get explanations for key concepts across the entire canvas or selected areas.
+
+• **Built for productivity**. Designed to help you think clearly, organize knowledge, and turn ideas into actionable structures.
+
+
+
+## USE CANVO FOR:
+
+• Brainstorming
+
+• Knowledge management
+
+• Study notes
+
+• Project planning
+
+• Research organization
+
+• Creative workflows
+
+• Personal idea systems
+
+Visualize your thoughts and build smarter connections with Canvo.
