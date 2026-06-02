@@ -37,6 +37,8 @@ struct EditCanvasView: View {
     @State private var name: String = ""
     @State private var ideas: String = ""
     
+    @State private var generationStyle: CanvasGenerationStyle = .tree
+    
     @FocusState private var isIdeasFocused: Bool
     @FocusState private var isNameFocused: Bool
     
@@ -60,7 +62,7 @@ struct EditCanvasView: View {
                 ScrollView {
                     VStack(spacing: 20) {
                         
-                        // MARK: Mode cards
+                        // Mode cards
                         if mode != .edit {
                             VStack(spacing: 12) {
                                 modeCard(
@@ -83,8 +85,32 @@ struct EditCanvasView: View {
                             .padding(.top, 8)
                         }
                         
-                        // MARK: Input
+                        // Input
                         VStack(alignment: .leading, spacing: 8) {
+                            if mode == .aiCreate {
+                                VStack(alignment: .leading, spacing: 8) {
+
+                                    Text("Layout")
+                                        .font(.headline)
+
+                                    ScrollView(.horizontal, showsIndicators: false) {
+                                        HStack(spacing: 12) {
+
+                                            layoutCard(
+                                                style: .tree,
+                                                imageName: "scheme_tree"
+                                            )
+
+                                            layoutCard(
+                                                style: .radial,
+                                                imageName: "scheme_radial"
+                                            )
+                                        }
+                                        .padding(.vertical, 4)
+                                    }
+                                }
+                            }
+                            
                             Text(mode == .aiCreate ? "Ideas" : "Name")
                                 .font(.headline)
                             
@@ -116,30 +142,6 @@ struct EditCanvasView: View {
                     }
                     .padding(.horizontal, 20)
                 }
-                
-                // MARK: Bottom CTA
-//                VStack {
-//                    Spacer()
-//                    
-//                    Button(action: submit) {
-//                        Text(mode == .aiCreate ? "Generate with AI" : mode.confirmActionTitle)
-//                            .font(.system(size: 17, weight: .semibold))
-//                            .frame(maxWidth: .infinity)
-//                            .padding()
-//                            .background(
-//                                LinearGradient(
-//                                    colors: [Color.accentColor.opacity(0.9), Color.accentColor],
-//                                    startPoint: .leading,
-//                                    endPoint: .trailing
-//                                )
-//                            )
-//                            .foregroundStyle(.white)
-//                            .clipShape(RoundedRectangle(cornerRadius: 16))
-//                    }
-//                    .disabled(!canSubmit)
-//                    .opacity(canSubmit ? 1 : 0.5)
-//                    .padding()
-//                }
             }
             .navigationTitle(mode.navTitle)
             .navigationBarTitleDisplayMode(.inline)
@@ -169,6 +171,32 @@ struct EditCanvasView: View {
     }
 }
 
+// MARK: - Actions
+
+private extension EditCanvasView {
+    
+    func submit() {
+        switch mode {
+        case .create:
+            appModel.createCanvasAction(name: name)
+            
+        case .aiCreate:
+            appModel.generateCanvasStream(
+                prompt: ideas,
+                style: generationStyle
+            )
+            
+        case .edit:
+            guard let editCanvas else { return }
+            appModel.renameCanvasAction(id: editCanvas.id, newName: name)
+        }
+        
+        isNameFocused = false
+        isIdeasFocused = false
+        dismiss()
+    }
+}
+
 // MARK: - Components
 
 private extension EditCanvasView {
@@ -189,7 +217,7 @@ private extension EditCanvasView {
                     .foregroundStyle(.primary)
                     .background(.thinMaterial)
                     #else
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(.accent)
                     #endif
                     .clipShape(RoundedRectangle(cornerRadius: 10))
                 
@@ -226,21 +254,53 @@ private extension EditCanvasView {
         .contentShape(RoundedRectangle(cornerRadius: 20))
     }
     
-    func submit() {
-        switch mode {
-        case .create:
-            appModel.createCanvasAction(name: name)
-            
-        case .aiCreate:
-            appModel.generateCanvasStream(prompt: ideas)
-            
-        case .edit:
-            guard let editCanvas else { return }
-            appModel.renameCanvasAction(id: editCanvas.id, newName: name)
+    @ViewBuilder
+    func layoutCard(
+        style: CanvasGenerationStyle,
+        imageName: String
+    ) -> some View {
+
+        Button {
+            generationStyle = style
+        } label: {
+
+            VStack(alignment: .center, spacing: 12) {
+
+                Image(imageName)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(height: 100)
+                    .clipShape(
+                        RoundedRectangle(cornerRadius: 12)
+                    )
+                    .foregroundStyle(.accent)
+
+                VStack(alignment: .leading) {
+                    Text(style.title)
+                        .font(.headline)
+
+                    Text(style.subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                }
+            }
+            .frame(width: 160, alignment: .leading)
+            .padding(12)
+            .background(.thinMaterial)
+            .overlay {
+                RoundedRectangle(cornerRadius: 20)
+                    .stroke(
+                        generationStyle == style
+                        ? Color.accentColor
+                        : .clear,
+                        lineWidth: 2
+                    )
+            }
+            .clipShape(
+                RoundedRectangle(cornerRadius: 20)
+            )
         }
-        
-        isNameFocused = false
-        isIdeasFocused = false
-        dismiss()
+        .buttonStyle(.plain)
     }
 }

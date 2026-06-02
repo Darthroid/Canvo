@@ -10,11 +10,14 @@ import Foundation
 
 // MARK: - Generate Canvas from AI
 extension AppModel {
-    func generateCanvasStream(prompt: String) {
+    func generateCanvasStream(prompt: String, style: CanvasGenerationStyle = .tree) {
         Task {
             do {
                 var finalCanvas: Canvas?
-                for try await schema in AIGenerationService.shared.generateCanvasStream(prompt: prompt) {
+                for try await schema in AIGenerationService.shared.generateCanvasStream(
+                    prompt: prompt,
+                    style: style
+                ) {
                     let canvas = Canvas(from: schema)
                     finalCanvas = canvas
                 }

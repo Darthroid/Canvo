@@ -8,6 +8,31 @@
 import FoundationModels
 import Foundation
 
+enum CanvasGenerationStyle: String, CaseIterable, Identifiable {
+    case radial
+    case tree
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .radial:
+            return "Radial"
+        case .tree:
+            return "Tree"
+        }
+    }
+
+    var subtitle: String {
+        switch self {
+        case .radial:
+            return "One idea in the center with connected topics around it"
+        case .tree:
+            return "Hierarchical structure with branches and subtopics"
+        }
+    }
+}
+
 @available(iOS 26.0, macOS 26.0, visionOS 26.0, *)
 @Observable
 class AIGenerationService: Sendable {
@@ -44,89 +69,314 @@ class AIGenerationService: Sendable {
         error = nil
     }
     
-    func generateCanvasStream(prompt: String) -> AsyncThrowingStream<CanvasSchema, Error> {
+    func generateCanvasStream(
+        prompt: String,
+        style: CanvasGenerationStyle = .tree
+    ) -> AsyncThrowingStream<CanvasSchema, Error> {
         AsyncThrowingStream { continuation in
-            
-            // Cancel previous generation if still active
+
             self.cancelCurrentTask()
-            
+
             self.currentTask = Task {
                 do {
+
                     try Task.checkCancellation()
+
                     runningStage = "Creating canvas"
-                    
+
                     let session = LanguageModelSession(
                         model: model,
                         instructions: "You are an AI that designs a structured mind map."
                     )
-                    
-                    // Create canvas
-                    var canvas = try await generaeteEmptyCanvas(session: session, prompt: prompt)
+
+                    var canvas = try await generaeteEmptyCanvas(
+                        session: session,
+                        prompt: prompt
+                    )
+
                     continuation.yield(canvas)
-                    
+
+                    // MAIN NODE
+
                     runningStage = "Creating main idea"
-                    
-                    try Task.checkCancellation()
-                    
-                    // Create main node
+
                     var mainIdea = try await generateMainNode(
                         session: session,
                         prompt: prompt,
                         canvasTitle: canvas.name
                     )
-                    
-                    // dirty fix just in case
-                    // sometimes ai halucinates and inserts name of node in id field
+
                     mainIdea.id = UUID().uuidString
-                    
-                    canvas.nodes = [mainIdea]
+                    mainIdea.position = .init(
+                        x: 0,
+                        y: 0,
+                        z: 0
+                    )
+
+                    canvas.nodes.append(mainIdea)
+
                     continuation.yield(canvas)
-                    
-                    runningStage = "Extending main idea"
-                    
+
                     try Task.checkCancellation()
                     
-                    // Create child nodes
-                    let childNodes = try await generateChildNodes(
+                    runningStage = "Extending main idea"
+
+                    let generated = try await generateNodes(
+                        style: style,
                         session: session,
                         prompt: prompt,
                         canvasTitle: canvas.name,
                         mainNode: mainIdea
                     )
-                    
-                    try Task.checkCancellation()
-                    
-                    canvas.nodes.append(contentsOf: childNodes)
-                    
-                    // Connect child nodes to main idea node
-                    canvas.connections = childNodes.map {
-                        .init(
-                            id: UUID().uuidString,
-                            fromNodeId: mainIdea.id,
-                            toNodeId: $0.id
-                        )
-                    }
-                    
-                    // Position nodes around main idea node
-                    self.layoutNodesInCircle(
-                        nodes: &canvas.nodes,
-                        centerNodeId: mainIdea.id
-                    )
-                    
-                    runningStage = "Finalizing"
-                    
+
+                    canvas.nodes.append(contentsOf: generated.nodes)
+                    canvas.connections.append(contentsOf: generated.connections)
+
                     continuation.yield(canvas)
-                    
+
+                    runningStage = "Finalizing"
+
+                    continuation.yield(canvas)
+
                     continuation.finish()
+
                     self.currentTask = nil
-                    
+
                 } catch {
+
                     if !(error is CancellationError) {
                         self.error = error.localizedDescription
                     }
+
+                    continuation.finish(throwing: error)
+
                     self.currentTask = nil
                 }
             }
+        }
+    }
+    
+    private func generateNodes(
+        style: CanvasGenerationStyle,
+        session: LanguageModelSession,
+        prompt: String,
+        canvasTitle: String,
+        mainNode: NodeSchema
+    ) async throws -> (
+        nodes: [NodeSchema],
+        connections: [NodeConnectionSchema]
+    ) {
+
+        switch style {
+
+        case .radial:
+
+            var nodes = try await generateChildNodes(
+                session: session,
+                prompt: prompt,
+                canvasTitle: canvasTitle,
+                mainNode: mainNode
+            )
+
+            nodes = nodes.map {
+                NodeSchema(
+                    id: UUID().uuidString,
+                    name: $0.name,
+                    detail: $0.detail,
+                    color: $0.color,
+                    position: $0.position
+                )
+            }
+
+            var allNodes = [mainNode]
+            allNodes.append(contentsOf: nodes)
+
+            layoutNodesInCircle(
+                nodes: &allNodes,
+                centerNodeId: mainNode.id
+            )
+
+            let positionedNodes = Array(allNodes.dropFirst())
+
+            let connections = positionedNodes.map {
+                NodeConnectionSchema(
+                    id: UUID().uuidString,
+                    fromNodeId: mainNode.id,
+                    toNodeId: $0.id
+                )
+            }
+
+            return (
+                nodes: positionedNodes,
+                connections: connections
+            )
+
+        case .tree:
+
+            var generatedNodes: [NodeSchema] = []
+            var connections: [NodeConnectionSchema] = []
+
+            var branches = try await generateBranchNodes(
+                session: session,
+                prompt: prompt,
+                canvasTitle: canvasTitle,
+                mainNode: mainNode
+            )
+
+            let branchPositions: [Position3DSchema] = [
+                .init(x: -200, y:  150, z: 0), // top left
+                .init(x: -200, y: -150, z: 0), // bottom left
+                .init(x:  200, y:  150, z: 0), // top right
+                .init(x:  200, y: -150, z: 0)  // bottom right
+            ]
+
+            for index in branches.indices {
+
+                branches[index].id = UUID().uuidString
+                branches[index].position = branchPositions[index]
+
+                generatedNodes.append(branches[index])
+
+                connections.append(
+                    NodeConnectionSchema(
+                        id: UUID().uuidString,
+                        fromNodeId: mainNode.id,
+                        toNodeId: branches[index].id
+                    )
+                )
+            }
+
+            for branch in branches {
+
+                var leafNodes = try await generateLeafNodes(
+                    session: session,
+                    branchNode: branch
+                )
+
+                let isLeftSide = branch.position.x < 0
+
+                let childX: Float = isLeftSide
+                    ? branch.position.x - 250
+                    : branch.position.x + 250
+
+                if leafNodes.indices.contains(0) {
+
+                    leafNodes[0].id = UUID().uuidString
+
+                    leafNodes[0].position = .init(
+                        x: childX,
+                        y: branch.position.y + 60,
+                        z: 0
+                    )
+
+                    generatedNodes.append(leafNodes[0])
+
+                    connections.append(
+                        NodeConnectionSchema(
+                            id: UUID().uuidString,
+                            fromNodeId: branch.id,
+                            toNodeId: leafNodes[0].id
+                        )
+                    )
+                }
+
+                if leafNodes.indices.contains(1) {
+
+                    leafNodes[1].id = UUID().uuidString
+
+                    leafNodes[1].position = .init(
+                        x: childX,
+                        y: branch.position.y - 60,
+                        z: 0
+                    )
+
+                    generatedNodes.append(leafNodes[1])
+
+                    connections.append(
+                        NodeConnectionSchema(
+                            id: UUID().uuidString,
+                            fromNodeId: branch.id,
+                            toNodeId: leafNodes[1].id
+                        )
+                    )
+                }
+            }
+
+            return (
+                nodes: generatedNodes,
+                connections: connections
+            )
+        }
+    }
+    
+    private func generateBranchNodes(
+        session: LanguageModelSession,
+        prompt: String,
+        canvasTitle: String,
+        mainNode: NodeSchema
+    ) async throws -> [NodeSchema] {
+
+        let prompt = """
+        RULES:
+        - Generate exactly 4 nodes.
+        - Every node must be a major branch of the main idea.
+        - Branches should cover different aspects.
+        - Keep names concise.
+
+        MAIN IDEA:
+        \(mainNode.name)
+
+        DETAIL:
+        \(mainNode.detail)
+        """
+
+        let nodes = try await session.respond(
+            to: prompt,
+            generating: [NodeSchema].self
+        ).content
+
+        return nodes.prefix(4).map {
+            NodeSchema(
+                id: UUID().uuidString,
+                name: $0.name,
+                detail: $0.detail,
+                color: $0.color,
+                position: .init(x: 0, y: 0, z: 0)
+            )
+        }
+    }
+    
+    private func generateLeafNodes(
+        session: LanguageModelSession,
+        branchNode: NodeSchema
+    ) async throws -> [NodeSchema] {
+
+        let prompt = """
+        RULES:
+        - Generate exactly 2 nodes.
+        - Nodes must expand the parent topic.
+        - Keep names concise.
+
+        PARENT:
+        \(branchNode.name)
+
+        DETAIL:
+        \(branchNode.detail)
+        """
+
+        let nodes = try await session.respond(
+            to: prompt,
+            generating: [NodeSchema].self
+        ).content
+
+        return nodes.prefix(2).map {
+            NodeSchema(
+                id: UUID().uuidString,
+                name: $0.name,
+                detail: $0.detail,
+                color: $0.color,
+                position: .init(x: 0, y: 0, z: 0)
+            )
         }
     }
     
