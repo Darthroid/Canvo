@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import RichTextKit
 
 struct NodeDetailView: View {
     @Environment(\.dismiss) private var dismiss
@@ -97,7 +98,9 @@ struct NodeDetailView: View {
                         Text("No description")
                             .foregroundStyle(.secondary)
                     } else {
-                        Text(node.detail)
+//                        Text(node.detail)
+                        RichTextViewer(node.richText ?? .init())
+                            .frame(minHeight: 400)
                     }
                 } header: {
                     Text("Description")
@@ -163,13 +166,7 @@ struct NodeDetailView: View {
                 }
             }
             .sheet(isPresented: $showEditor) {
-                EditNodeView(
-                    nodeId: node.id,
-                    name: node.name,
-                    detail: node.detail,
-                    color: Color(uiColor: node.color ?? .white),
-                    tagsRaw: node.tagsRaw ?? ""
-                )
+                EditNodeView(node: node)
             }
             .sheet(isPresented: $showLinkEditor) {
                 LinkEditorView(fromNode: node)

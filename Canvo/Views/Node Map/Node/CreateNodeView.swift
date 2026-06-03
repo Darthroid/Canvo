@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import RichTextKit
 
 struct CreateNodeView: View {
     @Environment(AppModel.self) private var appModel
@@ -14,9 +15,13 @@ struct CreateNodeView: View {
     let position: SIMD3<Float>?
 
     @State private var name: String = ""
-    @State private var detail: String = ""
+//    @State private var detail: String = ""
     @State private var color: Color = .white
     @State private var tagsRaw: String = ""
+    
+    @State private var attributedDetail = NSAttributedString()
+    
+    @StateObject private var context = RichTextContext()
 
     @FocusState private var isNameFocused: Bool
 
@@ -30,12 +35,18 @@ struct CreateNodeView: View {
                 }
 
                 Section {
-                    TextField(
-                        "Description",
-                        text: $detail,
-                        axis: .vertical
+//                    TextField(
+//                        "Description",
+//                        text: $detail,
+//                        axis: .vertical
+//                    )
+//                    .lineLimit(3...6)
+                    
+                    RichTextEditor(
+                        text: $attributedDetail,
+                        context: context
                     )
-                    .lineLimit(3...6)
+                    .frame(minHeight: 200)
                 }
 
                 Section {
@@ -82,10 +93,19 @@ struct CreateNodeView: View {
         
         let positionValue = position ?? SIMD3<Float>(0, 1.0, -1.5)
         
+        
+        let richTextData = try? attributedDetail.data(
+            from: NSRange(location: 0, length: attributedDetail.length),
+            documentAttributes: [
+                .documentType: NSAttributedString.DocumentType.rtf
+            ]
+        )
+        
         let snapshot = NodeSnapshot(
             id: id,
             name: name,
-            detail: detail,
+            detail: "",
+            detailRichText: richTextData,
             x: positionValue.x,
             y: positionValue.y,
             z: positionValue.z,

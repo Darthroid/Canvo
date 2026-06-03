@@ -11,6 +11,7 @@ struct NodeSnapshot: Sendable {
     let id: String
     let name: String
     let detail: String
+    let detailRichText: Data?
     let x: Float
     let y: Float
     let z: Float
