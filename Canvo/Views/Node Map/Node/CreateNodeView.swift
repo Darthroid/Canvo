@@ -29,6 +29,9 @@ struct CreateNodeView: View {
                     TextField("Name", text: $name)
                         .focused($isNameFocused)
                         .textInputAutocapitalization(.sentences)
+                    ColorPicker("Color", selection: $color, supportsOpacity: true)
+                } header: {
+                    Text("Name")
                 }
 
                 Section {
@@ -41,10 +44,8 @@ struct CreateNodeView: View {
                     
                     TextEditor(text: $attributedDetail)
                         .frame(minHeight: 200)
-                }
-
-                Section {
-                    ColorPicker("Color", selection: $color, supportsOpacity: true)
+                } header: {
+                    Text("Description")
                 }
                 
                 Section {
@@ -55,6 +56,8 @@ struct CreateNodeView: View {
                     )
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
+                }  header: {
+                    Text("Tags")
                 }
             }
             .navigationTitle("Create Node")
