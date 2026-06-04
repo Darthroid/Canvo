@@ -43,18 +43,21 @@ class Node: Identifiable, Codable {
     
     var tagsRaw: String? = ""
     
-    var richText: NSAttributedString? {
-        guard let detailRichText else {
-            return NSAttributedString(string: detail)
-        }
+    var richText: AttributedString {
+        get {
+            guard let detailRichText else {
+                return AttributedString(detail)
+            }
 
-        return try? NSAttributedString(
-            data: detailRichText,
-            options: [
-                .documentType: NSAttributedString.DocumentType.rtfd
-            ],
-            documentAttributes: nil
-        )
+            return (try? JSONDecoder().decode(
+                AttributedString.self,
+                from: detailRichText
+            )) ?? AttributedString(detail)
+        }
+        set {
+            detail = String(newValue.characters)
+            detailRichText = try? JSONEncoder().encode(newValue)
+        }
     }
     
     private enum CodingKeys: String, CodingKey {

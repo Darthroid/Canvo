@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import RichTextKit
 
 struct EditNodeView: View {
     @Environment(AppModel.self) private var appModel
@@ -19,10 +18,8 @@ struct EditNodeView: View {
     @State var color: Color
     @State var tagsRaw: String
     
-    @State private var attributedDetail: NSAttributedString
-    
-    @StateObject private var context = RichTextContext()
-    
+    @State private var attributedDetail: AttributedString
+        
     @FocusState private var isNameFocused: Bool
     
     init(node: Node) {
@@ -32,16 +29,7 @@ struct EditNodeView: View {
         _detail = State(initialValue: node.detail)
         _color = State(initialValue: Color(hex: node.colorRaw ?? "") ?? .white)
         _tagsRaw = State(initialValue: node.tagsRaw ?? "")
-
-        let richText: NSAttributedString
-
-        if let detailRichText = node.richText {
-            richText = detailRichText
-        } else {
-            richText = NSAttributedString(string: node.detail)
-        }
-
-        _attributedDetail = State(initialValue: richText)
+        _attributedDetail = State(initialValue: node.richText)
     }
 
     var body: some View {
@@ -65,11 +53,8 @@ struct EditNodeView: View {
 //                    )
 //                    .lineLimit(3...6)
 
-                    RichTextEditor(
-                        text: $attributedDetail,
-                        context: context
-                    )
-                    .frame(minHeight: 200)
+                    TextEditor(text: $attributedDetail)
+                        .frame(minHeight: 200)
                     
                 } header: {
                     Text("Description")
@@ -126,18 +111,10 @@ struct EditNodeView: View {
         let snapshot = appModel.makeNodeSnapshotWithConnections(node)
         let oldNode = snapshot.node
 
-        let richTextData = try? attributedDetail.data(
-            from: NSRange(location: 0, length: attributedDetail.length),
-            documentAttributes: [
-                .documentType: NSAttributedString.DocumentType.rtfd
-            ]
-        )
-
         let newNode = NodeSnapshot(
             id: nodeId,
             name: name,
-            detail: attributedDetail.string,
-            detailRichText: richTextData,
+            richText: attributedDetail,
             x: oldNode.x,
             y: oldNode.y,
             z: oldNode.z,

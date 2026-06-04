@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import RichTextKit
 
 struct CreateNodeView: View {
     @Environment(AppModel.self) private var appModel
@@ -19,10 +18,8 @@ struct CreateNodeView: View {
     @State private var color: Color = .white
     @State private var tagsRaw: String = ""
     
-    @State private var attributedDetail = NSAttributedString()
+    @State private var attributedDetail = AttributedString()
     
-    @StateObject private var context = RichTextContext()
-
     @FocusState private var isNameFocused: Bool
 
     var body: some View {
@@ -42,11 +39,8 @@ struct CreateNodeView: View {
 //                    )
 //                    .lineLimit(3...6)
                     
-                    RichTextEditor(
-                        text: $attributedDetail,
-                        context: context
-                    )
-                    .frame(minHeight: 200)
+                    TextEditor(text: $attributedDetail)
+                        .frame(minHeight: 200)
                 }
 
                 Section {
@@ -88,33 +82,24 @@ struct CreateNodeView: View {
         }
     }
     
-    private func createNode() {        
+    private func createNode() {
         let id = UUID().uuidString
-        
+
         let positionValue = position ?? SIMD3<Float>(0, 1.0, -1.5)
-        
-        
-        let richTextData = try? attributedDetail.data(
-            from: NSRange(location: 0, length: attributedDetail.length),
-            documentAttributes: [
-                .documentType: NSAttributedString.DocumentType.rtf
-            ]
-        )
-        
+
         let snapshot = NodeSnapshot(
             id: id,
             name: name,
-            detail: "",
-            detailRichText: richTextData,
+            richText: attributedDetail,
             x: positionValue.x,
             y: positionValue.y,
             z: positionValue.z,
             color: color.toHex(includeAlpha: true),
             tagsRaw: tagsRaw
         )
-        
+
         let action = AddNodeAction(node: snapshot)
-        
+
         appModel.actionService.perform(action)
     }
 }

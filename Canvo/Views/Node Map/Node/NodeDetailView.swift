@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import RichTextKit
 
 struct NodeDetailView: View {
     @Environment(\.dismiss) private var dismiss
@@ -99,8 +98,9 @@ struct NodeDetailView: View {
                             .foregroundStyle(.secondary)
                     } else {
 //                        Text(node.detail)
-                        RichTextViewer(node.richText ?? .init())
-                            .frame(minHeight: 400)
+                        TextEditor(text: .constant(node.richText))
+                            .disabled(true)
+                            .frame(minHeight: 300)
                     }
                 } header: {
                     Text("Description")

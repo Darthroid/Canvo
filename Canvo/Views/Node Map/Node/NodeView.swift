@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import RichTextKit
 
 struct NodeView: View {
     let node: Node
@@ -23,8 +22,6 @@ struct NodeView: View {
     var onDelete: (() -> Void)?
     
     @State private var dashPhase: CGFloat = 0
-    
-    private var context: RichTextContext = .init()
 
     private var backgroundUIColor: UIColor {
         node.color ?? UIColor.systemBackground
@@ -55,14 +52,16 @@ struct NodeView: View {
 //                        .font(.system(size: 14))
 //                        .foregroundColor(secondaryColor)
 //                        .multilineTextAlignment(.leading)
-                    if node.detailRichText == nil {
+                    if node.richText.characters.isEmpty {
                         Text("No description")
                             .font(.system(size: 14))
                             .foregroundColor(secondaryColor)
                     } else {
-                        RichTextViewer(node.richText ?? .init())
-                            .allowsHitTesting(false)
-                            .frame(maxHeight: 200)
+                        Text(node.richText)
+                            .foregroundStyle(titleColor)
+                            .multilineTextAlignment(.leading)
+//                            .frame(idealHeight: 100)
+//                            .frame(maxHeight: 400)
                     }
                 }
             }

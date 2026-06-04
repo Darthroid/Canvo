@@ -8,7 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		9397B9E92FB5B1A100146914 /* MarkdownUI in Frameworks */ = {isa = PBXBuildFile; productRef = 9397B9E82FB5B1A100146914 /* MarkdownUI */; };
-		93F141AB2FD066BD004D9C13 /* RichTextKit in Frameworks */ = {isa = PBXBuildFile; productRef = 93F141AA2FD066BD004D9C13 /* RichTextKit */; };
 		D1ACB3282ECB560000411AD6 /* RealityKitContent in Frameworks */ = {isa = PBXBuildFile; productRef = D1ACB3272ECB560000411AD6 /* RealityKitContent */; };
 /* End PBXBuildFile section */
 
@@ -48,7 +47,6 @@
 			files = (
 				D1ACB3282ECB560000411AD6 /* RealityKitContent in Frameworks */,
 				9397B9E92FB5B1A100146914 /* MarkdownUI in Frameworks */,
-				93F141AB2FD066BD004D9C13 /* RichTextKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -102,7 +100,6 @@
 			packageProductDependencies = (
 				D1ACB3272ECB560000411AD6 /* RealityKitContent */,
 				9397B9E82FB5B1A100146914 /* MarkdownUI */,
-				93F141AA2FD066BD004D9C13 /* RichTextKit */,
 			);
 			productName = "nodes-demo";
 			productReference = D1ACB3222ECB560000411AD6 /* Canvo.app */;
@@ -134,7 +131,6 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				9397B9E72FB5B1A100146914 /* XCRemoteSwiftPackageReference "swift-markdown-ui" */,
-				93F141A92FD066BD004D9C13 /* XCRemoteSwiftPackageReference "RichTextKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = D1ACB3232ECB560000411AD6 /* Products */;
@@ -408,14 +404,6 @@
 				minimumVersion = 2.4.1;
 			};
 		};
-		93F141A92FD066BD004D9C13 /* XCRemoteSwiftPackageReference "RichTextKit" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/danielsaidi/RichTextKit";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.2.0;
-			};
-		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -423,11 +411,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 9397B9E72FB5B1A100146914 /* XCRemoteSwiftPackageReference "swift-markdown-ui" */;
 			productName = MarkdownUI;
-		};
-		93F141AA2FD066BD004D9C13 /* RichTextKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 93F141A92FD066BD004D9C13 /* XCRemoteSwiftPackageReference "RichTextKit" */;
-			productName = RichTextKit;
 		};
 		D1ACB3272ECB560000411AD6 /* RealityKitContent */ = {
 			isa = XCSwiftPackageProductDependency;
