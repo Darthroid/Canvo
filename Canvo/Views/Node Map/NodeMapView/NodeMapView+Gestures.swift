@@ -62,7 +62,7 @@ extension NodeMapView {
     func setDefaultZoom() {
         scale = 1.0
         baseScale = 1.0
-        offset = .zero
+//        offset = .zero
     }
     
     // MARK: - NODE DRAG

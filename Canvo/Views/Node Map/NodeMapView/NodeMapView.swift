@@ -383,6 +383,8 @@ struct NodeMapView: View {
                 }
             }
             .onAppear {
+                // set offset so map zero coordinates will be on screen center
+                offset = CGSize(width: geo.size.width / 2, height: geo.size.height / 2)
                 containerSize = geo.size
             }
             .onChange(of: geo.size) { oldSize, newSize in
