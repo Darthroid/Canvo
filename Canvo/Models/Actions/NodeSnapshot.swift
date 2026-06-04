@@ -11,6 +11,7 @@ struct NodeSnapshot: Sendable {
     let id: String
     let name: String
     let detail: String
+    let detailRichText: Data?
     let x: Float
     let y: Float
     let z: Float
@@ -18,8 +19,43 @@ struct NodeSnapshot: Sendable {
     let tagsRaw: String?
 }
 
-struct ConnectionSnapshot: Sendable {
-    let id: String
-    let fromNodeId: String
-    let toNodeId: String
+
+extension NodeSnapshot {
+    var richText: AttributedString {
+        get {
+            guard let detailRichText else {
+                return AttributedString(detail)
+            }
+
+            return (try? JSONDecoder().decode(
+                AttributedString.self,
+                from: detailRichText
+            )) ?? AttributedString(detail)
+        }
+    }
+}
+
+extension NodeSnapshot {
+    init(
+        id: String,
+        name: String,
+        richText: AttributedString,
+        x: Float,
+        y: Float,
+        z: Float,
+        color: String?,
+        tagsRaw: String?
+    ) {
+        self.init(
+            id: id,
+            name: name,
+            detail: String(richText.characters),
+            detailRichText: try? JSONEncoder().encode(richText),
+            x: x,
+            y: y,
+            z: z,
+            color: color,
+            tagsRaw: tagsRaw
+        )
+    }
 }

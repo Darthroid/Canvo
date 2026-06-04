@@ -110,6 +110,7 @@ extension AppModel {
                     id: summary.id,
                     name: summary.name,
                     detail: summary.detail,
+                    detailRichText: nil,
                     x: scope.first?.x ?? summary.position.x,
                     y: scope.first?.y ?? summary.position.y,
                     z: scope.first?.z ?? summary.position.z,

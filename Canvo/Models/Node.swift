@@ -19,6 +19,10 @@ class Node: Identifiable, Codable {
     var name: String = ""
     var detail: String = ""
     
+    @Attribute(.externalStorage)
+    var detailRichText: Data?
+
+    
     var x: Float = 0
     var y: Float = 0
     var z: Float = 0
@@ -38,6 +42,23 @@ class Node: Identifiable, Codable {
     var positionDescription: String { "(\(x), \(y), \(z))" }
     
     var tagsRaw: String? = ""
+    
+    var richText: AttributedString {
+        get {
+            guard let detailRichText else {
+                return AttributedString(detail)
+            }
+
+            return (try? JSONDecoder().decode(
+                AttributedString.self,
+                from: detailRichText
+            )) ?? AttributedString(detail)
+        }
+        set {
+            detail = String(newValue.characters)
+            detailRichText = try? JSONEncoder().encode(newValue)
+        }
+    }
     
     private enum CodingKeys: String, CodingKey {
         case id, name, detail, x, y, z, colorRaw = "color", tags

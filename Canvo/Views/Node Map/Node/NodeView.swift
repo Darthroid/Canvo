@@ -48,10 +48,21 @@ struct NodeView: View {
                     .multilineTextAlignment(.center)
 
                 if isExpanded {
-                    Text(node.detail.isEmpty ? "No description" : node.detail)
-                        .font(.system(size: 14))
-                        .foregroundColor(secondaryColor)
-                        .multilineTextAlignment(.leading)
+//                    Text(node.detail.isEmpty ? "No description" : node.detail)
+//                        .font(.system(size: 14))
+//                        .foregroundColor(secondaryColor)
+//                        .multilineTextAlignment(.leading)
+                    if node.richText.characters.isEmpty {
+                        Text("No description")
+                            .font(.system(size: 14))
+                            .foregroundColor(secondaryColor)
+                    } else {
+                        Text(node.richText)
+                            .foregroundStyle(titleColor)
+                            .multilineTextAlignment(.leading)
+//                            .frame(idealHeight: 100)
+//                            .frame(maxHeight: 400)
+                    }
                 }
             }
             .padding(.horizontal, 16)

@@ -14,10 +14,12 @@ struct CreateNodeView: View {
     let position: SIMD3<Float>?
 
     @State private var name: String = ""
-    @State private var detail: String = ""
+//    @State private var detail: String = ""
     @State private var color: Color = .white
     @State private var tagsRaw: String = ""
-
+    
+    @State private var attributedDetail = AttributedString()
+    
     @FocusState private var isNameFocused: Bool
 
     var body: some View {
@@ -30,12 +32,15 @@ struct CreateNodeView: View {
                 }
 
                 Section {
-                    TextField(
-                        "Description",
-                        text: $detail,
-                        axis: .vertical
-                    )
-                    .lineLimit(3...6)
+//                    TextField(
+//                        "Description",
+//                        text: $detail,
+//                        axis: .vertical
+//                    )
+//                    .lineLimit(3...6)
+                    
+                    TextEditor(text: $attributedDetail)
+                        .frame(minHeight: 200)
                 }
 
                 Section {
@@ -77,24 +82,24 @@ struct CreateNodeView: View {
         }
     }
     
-    private func createNode() {        
+    private func createNode() {
         let id = UUID().uuidString
-        
+
         let positionValue = position ?? SIMD3<Float>(0, 1.0, -1.5)
-        
+
         let snapshot = NodeSnapshot(
             id: id,
             name: name,
-            detail: detail,
+            richText: attributedDetail,
             x: positionValue.x,
             y: positionValue.y,
             z: positionValue.z,
             color: color.toHex(includeAlpha: true),
             tagsRaw: tagsRaw
         )
-        
+
         let action = AddNodeAction(node: snapshot)
-        
+
         appModel.actionService.perform(action)
     }
 }

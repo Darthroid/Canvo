@@ -97,7 +97,10 @@ struct NodeDetailView: View {
                         Text("No description")
                             .foregroundStyle(.secondary)
                     } else {
-                        Text(node.detail)
+//                        Text(node.detail)
+                        TextEditor(text: .constant(node.richText))
+                            .disabled(true)
+                            .frame(minHeight: 300)
                     }
                 } header: {
                     Text("Description")
@@ -163,13 +166,7 @@ struct NodeDetailView: View {
                 }
             }
             .sheet(isPresented: $showEditor) {
-                EditNodeView(
-                    nodeId: node.id,
-                    name: node.name,
-                    detail: node.detail,
-                    color: Color(uiColor: node.color ?? .white),
-                    tagsRaw: node.tagsRaw ?? ""
-                )
+                EditNodeView(node: node)
             }
             .sheet(isPresented: $showLinkEditor) {
                 LinkEditorView(fromNode: node)

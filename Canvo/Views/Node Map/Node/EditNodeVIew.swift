@@ -17,30 +17,52 @@ struct EditNodeView: View {
     @State var detail: String
     @State var color: Color
     @State var tagsRaw: String
-
+    
+    @State private var attributedDetail: AttributedString
+        
     @FocusState private var isNameFocused: Bool
+    
+    init(node: Node) {
+        self.nodeId = node.id
+
+        _name = State(initialValue: node.name)
+        _detail = State(initialValue: node.detail)
+        _color = State(initialValue: Color(hex: node.colorRaw ?? "") ?? .white)
+        _tagsRaw = State(initialValue: node.tagsRaw ?? "")
+        _attributedDetail = State(initialValue: node.richText)
+    }
 
     var body: some View {
         NavigationStack {
             Form {
                 Section {
+                    
                     TextField("Name", text: $name)
                         .focused($isNameFocused)
                         .textInputAutocapitalization(.sentences)
-                }
-
-                Section {
-                    TextField(
-                        "Description",
-                        text: $detail,
-                        axis: .vertical
-                    )
-                    .lineLimit(3...6)
-                }
-
-                Section {
                     ColorPicker("Color", selection: $color, supportsOpacity: true)
+                } header: {
+                    Text("Name")
                 }
+
+                Section {
+//                    TextField(
+//                        "Description",
+//                        text: $detail,
+//                        axis: .vertical
+//                    )
+//                    .lineLimit(3...6)
+
+                    TextEditor(text: $attributedDetail)
+                        .frame(minHeight: 200)
+                    
+                } header: {
+                    Text("Description")
+                }
+
+//                Section {
+//                    ColorPicker("Color", selection: $color, supportsOpacity: true)
+//                }
                 
                 Section {
                     TextField(
@@ -50,6 +72,8 @@ struct EditNodeView: View {
                     )
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
+                } header: {
+                    Text("Tags")
                 }
             }
             .navigationTitle("Edit Node")
@@ -82,30 +106,30 @@ struct EditNodeView: View {
     }
     
     private func submit() {
-        let snapshot = appModel.makeNodeSnapshotWithConnections(
-            appModel.node(forId: nodeId)!
-        )
+        guard let node = appModel.node(forId: nodeId) else { return }
+
+        let snapshot = appModel.makeNodeSnapshotWithConnections(node)
         let oldNode = snapshot.node
-        
+
         let newNode = NodeSnapshot(
             id: nodeId,
             name: name,
-            detail: detail,
+            richText: attributedDetail,
             x: oldNode.x,
             y: oldNode.y,
             z: oldNode.z,
             color: color.toHex(includeAlpha: true),
             tagsRaw: tagsRaw
         )
-        
+
         let action = UpdateNodeContentAction(
             nodeId: nodeId,
             old: oldNode,
             new: newNode
         )
-        
+
         appModel.actionService.perform(action)
-        
+
         dismiss()
     }
 }

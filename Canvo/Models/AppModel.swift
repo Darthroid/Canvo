@@ -381,6 +381,7 @@ extension AppModel {
             id: node.id,
             name: node.name,
             detail: node.detail,
+            detailRichText: node.detailRichText,
             x: node.x,
             y: node.y,
             z: node.z,
@@ -407,6 +408,7 @@ extension AppModel {
                 id: $0.id,
                 name: $0.name,
                 detail: $0.detail,
+                detailRichText: $0.detailRichText,
                 x: $0.x,
                 y: $0.y,
                 z: $0.z,
@@ -475,6 +477,7 @@ extension AppModel {
                 id: $0.id,
                 name: $0.name,
                 detail: $0.detail,
+                detailRichText: $0.detailRichText,
                 x: $0.x,
                 y: $0.y,
                 z: $0.z,
@@ -636,6 +639,7 @@ extension AppModel {
                     id: UUID().uuidString,
                     name: $0.name,
                     detail: $0.detail,
+                    detailRichText: $0.detailRichText,
                     x: $0.x,
                     y: $0.y + 100,
                     z: $0.z, color: $0.colorRaw,
@@ -705,6 +709,7 @@ extension AppModel {
         
         node.name = snapshot.name
         node.detail = snapshot.detail
+        node.detailRichText = snapshot.detailRichText
         node.x = snapshot.x
         node.y = snapshot.y
         node.z = snapshot.z
