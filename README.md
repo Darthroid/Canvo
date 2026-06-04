@@ -15,11 +15,13 @@
 
 </p>
 
-Canvo is a fast and intuitive mind mapping app designed for organizing ideas, planning projects, researching topics, and building connected knowledge visually.
+## Canvo – AI Mind Mapping & Visual Thinking
 
-Create flexible canvases with nodes, descriptions, tags, and connections that help you structure information the way you think.
+Canvo is an AI-powered mind mapping app designed for visual thinking, brainstorming, knowledge management, project planning, and idea organization.
 
-Whether you are brainstorming, studying, planning workflows, or building personal knowledge systems, Canvo helps you stay focused and organized.
+Create interactive mind maps, connect ideas, organize research, and build your personal knowledge system on an infinite canvas. Whether you're planning a project, studying complex topics, taking visual notes, or developing creative ideas, Canvo helps you structure information and see relationships clearly.
+
+Unlike traditional note-taking apps, Canvo combines mind mapping, visual organization, and AI-powered assistance to help you think faster and build connected knowledge.
 
 ## Screenshots
 
@@ -31,36 +33,106 @@ Whether you are brainstorming, studying, planning workflows, or building persona
 <img src="https://github.com/Darthroid/Canvo/blob/main/Screenshots/vision1.png" width="400"><img src="https://github.com/Darthroid/Canvo/blob/main/Screenshots/vision2.png" width="400">
 <img src="https://github.com/Darthroid/Canvo/blob/main/Screenshots/vision3.png" width="400"><img src="https://github.com/Darthroid/Canvo/blob/main/Screenshots/vision4.png" width="400">
 
-## Key Features
+## AI-Powered Mind Mapping
 
-• **Fast and responsive canvas**. Smooth interactions designed for large and complex mind maps.
+Turn a simple topic into a structured mind map in seconds.
 
-• **Flexible node system**. Create nodes with descriptions, tags, and visual connections between ideas.
+Use AI to generate connected ideas, discover related concepts, and create an initial visual structure for brainstorming, research, learning, and planning.
 
-• **Powerful navigation**. Quickly find information with canvas search and tag-based filtering.
+## AI Features
 
-• **AI Canvas Generation**. Start with a few ideas and instantly generate an initial mind map structure with connected topics and elements.
+• Generate mind maps from a topic or idea
 
-• **AI Editing Tools**. Expand topics with new ideas, summarize selected sections, compress large structures, and get explanations for key concepts across the entire canvas or selected areas.
+• Expand nodes with related concepts and suggestions
 
-• **Built for productivity**. Designed to help you think clearly, organize knowledge, and turn ideas into actionable structures.
+• Summarize sections of large mind maps
 
+• Simplify and compress complex structures
 
+• Get explanations for concepts and topics
 
-## USE CANVO FOR:
+• Build knowledge networks faster with AI assistance
 
-• Brainstorming
+## Powerful Visual Organization
 
-• Knowledge management
+Canvo gives you a flexible canvas for organizing information visually.
 
-• Study notes
+Create nodes, add descriptions, apply tags, and connect ideas using visual relationships that mirror how you naturally think.
+
+## Perfect for:
+
+• Mind mapping
+
+• Brainstorming sessions
 
 • Project planning
 
+• Knowledge management
+
 • Research organization
 
-• Creative workflows
+• Study notes and learning
 
-• Personal idea systems
+• Personal knowledge bases
 
-Visualize your thoughts and build smarter connections with Canvo.
+• Second brain systems
+
+• Creative thinking
+
+• Concept mapping
+
+• Workflow design
+
+• Strategic planning
+
+## Key Features
+• **Infinite Mind Map Canvas**
+
+Build small idea maps or large interconnected knowledge structures without limitations.
+
+• **Flexible Nodes**
+
+Create nodes with titles, descriptions, tags, and connections to organize information exactly the way you want.
+
+• **Fast Navigation**
+
+Search across your canvas, filter by tags, and quickly find important information.
+
+• **Visual Knowledge Management**
+
+Connect related ideas and create a personal knowledge graph that grows over time.
+
+• **Built for Productivity**
+
+Designed to help students, professionals, researchers, creators, founders, and lifelong learners organize thoughts and make better decisions.
+
+## Use Canvo To
+
+• Brainstorm new ideas
+
+• Create AI-generated mind maps
+
+• Organize research and references
+
+• Plan projects and workflows
+
+• Study complex subjects
+
+• Build a personal knowledge management system
+
+• Create concept maps and knowledge graphs
+
+• Visualize relationships between ideas
+
+• Develop creative projects
+
+• Structure notes and information
+
+Canvo helps you transform scattered thoughts into connected knowledge through AI-powered mind mapping, visual thinking, brainstorming, and knowledge organization.
+
+
+<br>
+<a href="https://raw.githubusercontent.com/Darthroid/Canvo-documentation/refs/heads/main/privacy.md">
+  Privacy Policy
+</a>
+<br><br>
