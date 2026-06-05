@@ -84,12 +84,12 @@ struct ImmersiveMapToolbar: View {
         
         VStack(spacing: 12) {
             Spacer()
-            if AIGenerationService.shared.isRunning {
+            if appModel.aiGenerationService.isRunning {
                 AIGenerationSnackbar(
-                    title: AIGenerationService.shared.runningStage ?? "Generating",
+                    title: appModel.aiGenerationService.runningStage ?? "Generating",
                     onCancel: {
                         withAnimation(.spring(response: 0.45, dampingFraction: 0.9)) {
-                            AIGenerationService.shared.cancelCurrentTask()
+                            appModel.aiGenerationService.cancelCurrentTask()
                         }
                     }
                 )
@@ -227,18 +227,18 @@ struct ImmersiveMapToolbar: View {
             "Generation failed",
             isPresented: Binding(
                 get: {
-                    AIGenerationService.shared.error != nil
+                    appModel.aiGenerationService.error != nil
                 },
                 set: { newValue in
                     if !newValue {
-                        AIGenerationService.shared.clearErrors()
+                        appModel.aiGenerationService.clearErrors()
                     }
                 }
             ),
-            presenting: AIGenerationService.shared.error
+            presenting: appModel.aiGenerationService.error
         ) { detail in
             Button("OK", role: .cancel) {
-                AIGenerationService.shared.clearErrors()
+                appModel.aiGenerationService.clearErrors()
             }
         } message: { detail in
             Text(detail)

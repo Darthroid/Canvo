@@ -9,6 +9,8 @@ import UIKit
 import SwiftUI
 
 struct CompactCanvasCardView: View {
+    @Environment(AppModel.self) private var appModel
+    
     let canvas: Canvas
 
     @State private var previewImage: UIImage?
@@ -31,13 +33,6 @@ struct CompactCanvasCardView: View {
                     .year()
             )
         }
-    }
-
-    init(canvas: Canvas) {
-        self.canvas = canvas
-        self._previewImage = State(
-            initialValue: Self.loadPreview(for: canvas)
-        )
     }
 
     var body: some View {
@@ -90,13 +85,16 @@ struct CompactCanvasCardView: View {
                     lineWidth: 1
                 )
         )
+        .onAppear {
+            previewImage = loadPreview(for: canvas)
+        }
         .onReceive(NotificationCenter.default.publisher(for: .canvasPreviewUpdated)) { notification in
             guard
                 let canvasId = notification.userInfo?["canvasId"] as? String,
                 canvasId == canvas.id
             else { return }
 
-            previewImage = Self.loadPreview(for: canvas)
+            previewImage = loadPreview(for: canvas)
         }
     }
 
@@ -152,8 +150,8 @@ struct CompactCanvasCardView: View {
         )
     }
 
-    private static func loadPreview(for canvas: Canvas) -> UIImage? {
-        let url = CanvasPreviewService.shared.getPreviewURL(for: canvas)
+    private func loadPreview(for canvas: Canvas) -> UIImage? {
+        let url = appModel.previewService.getPreviewURL(for: canvas)
         return UIImage(contentsOfFile: url.path)
     }
 }

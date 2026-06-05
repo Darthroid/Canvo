@@ -9,6 +9,7 @@ import SwiftUI
 import MarkdownUI
 
 struct AIResponseView: View {
+    @Environment(AppModel.self) private var appModel
     @Environment(\.dismiss) private var dismiss
     @Binding var response: String
         
@@ -41,7 +42,7 @@ struct AIResponseView: View {
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
                 Button(role: .close) {
-                    AIGenerationService.shared.cancelCurrentTask()
+                    appModel.aiGenerationService.cancelCurrentTask()
                     response = ""
                     dismiss()
                 }

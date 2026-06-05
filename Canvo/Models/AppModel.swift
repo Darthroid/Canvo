@@ -23,7 +23,11 @@ final class AppModel: Sendable {
         container?.mainContext
     }
     
+    var aiGenerationService = AIGenerationService()
     var actionService = ActionService()
+    var importService = ImportService()
+    var exportService = ExportService()
+    var previewService = CanvasPreviewService()
     
     var canvases: [Canvas] = []
     private(set) var currentCanvas: Canvas?
@@ -78,8 +82,21 @@ final class AppModel: Sendable {
         )
         
         actionService.set(model: self)
+        importService.set(model: self)
+        exportService.set(model: self)
+        previewService.set(model: self)
+        
         fetchCanvases()
 //        fetchTags()
+    }
+    
+    func tryImport(from urls: [URL]) async throws {
+        let canvases = try await importService.processImport(from: urls)
+        canvases.forEach {
+            context?.insert($0)
+        }
+        
+        fetchCanvases()
     }
     
     func fetchCanvases() {

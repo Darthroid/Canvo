@@ -36,7 +36,6 @@ enum CanvasGenerationStyle: String, CaseIterable, Identifiable {
 @available(iOS 26.0, macOS 26.0, visionOS 26.0, *)
 @Observable
 class AIGenerationService: Sendable {
-    static let shared = AIGenerationService()
     
     private let model = SystemLanguageModel.default
     
@@ -54,7 +53,7 @@ class AIGenerationService: Sendable {
         return currentTask?.isCancelled == false
     }
     
-    private init() {}
+    public init() {}
     
     /// Cancel currently running AI task
     func cancelCurrentTask() {
@@ -668,7 +667,7 @@ extension AIGenerationService {
                     
                     try Task.checkCancellation()
                     
-                    var instructions = """
+                    let instructions = """
                         You are an AI expert that operates a structured mind map and generates a concise summary of nodes describing their shared theme, category, meaning, or relationship.
                         RULES:
                         - Exactly 1 node as summary to current input.
