@@ -20,6 +20,9 @@ struct CanvasCollectionView: View {
     @State var renameCanvas: Canvas?
     @State var deleteCanvas: Canvas?
     
+    @State private var showError: Bool = false
+    @State private var errorMessage: String?
+    
     @State private var selectedFilter: CanvasFilter = .all
 
     @State var searchQuery = ""
@@ -136,10 +139,16 @@ struct CanvasCollectionView: View {
             switch result {
             case .success(let urls):
                 Task {
-                    try await appModel.tryImport(from: urls)
+                    do {
+                        try await appModel.tryImport(from: urls)
+                    } catch {
+                        showError.toggle()
+                        errorMessage = "Import Failed" + "\n" + error.localizedDescription
+                    }
                 }
             case .failure(let failure):
-                print(failure.localizedDescription)
+                showError.toggle()
+                errorMessage = "Import failed" + "\n" + failure.localizedDescription
             }
         }
         .sheet(isPresented: $showCreateCanvas) {
@@ -149,6 +158,16 @@ struct CanvasCollectionView: View {
         .sheet(item: $renameCanvas) { canvas in
             EditCanvasView(mode: .edit, editCanvas: canvas)
                 .environment(appModel)
+        }
+        .alert(
+            "Error",
+            isPresented: $showError
+        ) {
+            Button("OK") {
+                // Handle the acknowledgement.
+            }
+        } message: {
+            Text(errorMessage ?? "Something went wrong")
         }
         .alert(item: $deleteCanvas) { canvas in
             Alert(
