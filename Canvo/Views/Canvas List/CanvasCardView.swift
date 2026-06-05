@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct CanvasCardView: View {
+    @Environment(AppModel.self) private var appModel
+    
     let canvas: Canvas
 
     @State private var previewImage: UIImage?
@@ -37,13 +39,6 @@ struct CanvasCardView: View {
                     .minute()
             )
         }
-    }
-
-    init(canvas: Canvas) {
-        self.canvas = canvas
-        self._previewImage = State(
-            initialValue: Self.loadPreview(for: canvas)
-        )
     }
 
     var body: some View {
@@ -137,6 +132,9 @@ struct CanvasCardView: View {
             RoundedRectangle(cornerRadius: 28, style: .continuous)
                 .stroke(Color(uiColor: .lightGray).opacity(0.1), lineWidth: 1)
         )
+        .onAppear {
+            previewImage = loadPreview(for: canvas)
+        }
         .onReceive(NotificationCenter.default.publisher(for: .canvasPreviewUpdated)) { notification in
             guard
                 let canvasId = notification.userInfo?["canvasId"] as? String,
@@ -144,13 +142,13 @@ struct CanvasCardView: View {
             else { return }
 
             DispatchQueue.main.async {
-                self.previewImage = Self.loadPreview(for: canvas)
+                self.previewImage = loadPreview(for: canvas)
             }
         }
     }
 
-    private static func loadPreview(for canvas: Canvas) -> UIImage? {
-        let url = CanvasPreviewService.shared.getPreviewURL(for: canvas)
+    private func loadPreview(for canvas: Canvas) -> UIImage? {
+        let url = appModel.previewService.getPreviewURL(for: canvas)
         return UIImage(contentsOfFile: url.path)
     }
 }

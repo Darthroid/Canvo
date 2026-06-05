@@ -74,13 +74,13 @@ struct EditCanvasView: View {
 
                                 modeCard(
                                     title: "Generate with AI",
-                                    subtitle: AIGenerationService.shared.isAvailable
+                                    subtitle: appModel.aiGenerationService.isAvailable
                                         ? "Describe a topic and AI will build a canvas"
                                         : "Currently not available",
                                     icon: "sparkles",
                                     current: .aiCreate
                                 )
-                                .disabled(!AIGenerationService.shared.isAvailable)
+                                .disabled(!appModel.aiGenerationService.isAvailable)
                             }
                             .padding(.top, 8)
                         }
@@ -148,7 +148,7 @@ struct EditCanvasView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(role: .cancel) {
-                        AIGenerationService.shared.cancelCurrentTask()
+                        appModel.aiGenerationService.cancelCurrentTask()
                         dismiss()
                     }
                 }

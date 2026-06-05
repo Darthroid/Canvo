@@ -220,10 +220,11 @@ struct AIEditCanvasView: View {
         }
         .buttonStyle(.borderedProminent)
         .tint(.accentColor)
-        .disabled(AIGenerationService.shared.isRunning || scopeNodesCount == 0)
+        .disabled(appModel.aiGenerationService.isRunning || scopeNodesCount == 0)
         .sheet(isPresented: $showAiResponse) {
             NavigationStack {
                 AIResponseView(response: $aiResponse)
+                    .environment(appModel)
             }
             .interactiveDismissDisabled()
         }
@@ -330,7 +331,7 @@ extension AIEditCanvasView {
             }
 
             do {
-                let stream = AIGenerationService.shared
+                let stream = appModel.aiGenerationService
                     .askQuestions(
                         scope: scope,
                         userInput: prompt,

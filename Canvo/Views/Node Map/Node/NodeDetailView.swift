@@ -167,9 +167,11 @@ struct NodeDetailView: View {
             }
             .sheet(isPresented: $showEditor) {
                 EditNodeView(node: node)
+                    .interactiveDismissDisabled()
             }
             .sheet(isPresented: $showLinkEditor) {
                 LinkEditorView(fromNode: node)
+                    .interactiveDismissDisabled()
             }
             .alert(
                 "Delete Node",

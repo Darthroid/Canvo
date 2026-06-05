@@ -14,7 +14,7 @@ extension AppModel {
         Task {
             do {
                 var finalCanvas: Canvas?
-                for try await schema in AIGenerationService.shared.generateCanvasStream(
+                for try await schema in aiGenerationService.generateCanvasStream(
                     prompt: prompt,
                     style: style
                 ) {
@@ -57,7 +57,7 @@ extension AppModel {
                 var nodes: [Node] = []
                 var connections: [NodeConnection] = []
                 for single in scope {
-                    for try await schema in AIGenerationService.shared.extendNodes(nodes: [single], in: canvas, userInput: userPrompt) {
+                    for try await schema in aiGenerationService.extendNodes(nodes: [single], in: canvas, userInput: userPrompt) {
                         nodes += schema.0
                             .map { Node(from: $0) }
                         
@@ -85,7 +85,7 @@ extension AppModel {
             do {
                 var summary: NodeSchema?
                 let exclude = Array(Set(scope.flatMap { nodesConnectedWith(node: $0) }))
-                let stream = try await AIGenerationService.shared.summarize(exclude: exclude, scope: scope, userInput: userPrompt, in: canvas)
+                let stream = try await aiGenerationService.summarize(exclude: exclude, scope: scope, userInput: userPrompt, in: canvas)
                 
                 for try await chunk in stream {
                     summary = chunk

@@ -457,6 +457,7 @@ struct NodeMapView: View {
             .sheet(item: $showLinkToNode) { node in
                 NavigationStack {
                     LinkEditorView(fromNode: node)
+                        .interactiveDismissDisabled()
                 }
             }
             .sheet(isPresented: Binding(
@@ -650,7 +651,7 @@ struct NodeMapView: View {
                         }
                         
                         // ai edit
-                        if AIGenerationService.shared.isAvailable {
+                        if appModel.aiGenerationService.isAvailable {
                             
                             Toggle(isOn: Binding(
                                 get: { appModel.aiEditorOpen },
@@ -733,7 +734,7 @@ struct NodeMapView: View {
         .onDisappear {
             handleReviewRequest()
             generatePreview()
-            AIGenerationService.shared.cancelCurrentTask()
+            appModel.aiGenerationService.cancelCurrentTask()
             appModel.switchToCanvas(nil)
         }
     }

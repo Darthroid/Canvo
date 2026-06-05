@@ -6,66 +6,11 @@
 //
 
 import SwiftUI
+internal import UniformTypeIdentifiers
 #if os(visionOS)
 import RealityKit
 import RealityKitContent
 #endif
-
-struct CanvasTabsView: View {
-    @Binding var selectedFilter: CanvasFilter
-    
-    var body: some View {
-        HStack {
-//            Picker("", selection: $selectedFilter) {
-//                ForEach(CanvasFilter.allCases) { filter in
-//                    Text(filter.rawValue).tag(filter)
-//                }
-//            }
-//            .pickerStyle(.segmented)
-//            .fixedSize()
-            ForEach(CanvasFilter.allCases) { filter in
-                Button {
-                    withAnimation(.easeInOut(duration: 0.15)) {
-                        selectedFilter = filter
-                    }
-                } label: {
-                    HStack(spacing: 6) {
-                        
-                        Text(filter.rawValue)
-                            .font(.system(size: 15, weight: .medium))
-                    }
-                    .foregroundStyle(selectedFilter == filter ? .white : .primary)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(
-                        ZStack {
-                            if selectedFilter == filter {
-                                RoundedRectangle(cornerRadius: 10)
-                                    .fill(Color.accentColor)
-                            } else {
-                                RoundedRectangle(cornerRadius: 10)
-                                    .fill(Color(.secondarySystemBackground))
-                            }
-                        }
-                    )
-                }
-                .buttonStyle(.plain)
-                
-            }
-            Spacer()
-        }
-        .padding(.horizontal, 24)
-        .padding(.vertical, 8)
-    }
-}
-
-enum CanvasFilter: String, CaseIterable, Identifiable {
-    case all = "All"
-    case recent = "Recent"
-    case favorites = "Favorites"
-    
-    var id: String { rawValue }
-}
 
 struct CanvasCollectionView: View {
     @AppStorage("isCompactPresentation") var isCompactPresentation: Bool = false
@@ -78,6 +23,8 @@ struct CanvasCollectionView: View {
     @State private var selectedFilter: CanvasFilter = .all
 
     @State var searchQuery = ""
+    
+    @State private var isShowingPicker = false
     
     private let minCardWidth: CGFloat = 320
     private let listSpacing: CGFloat = 18
@@ -116,7 +63,6 @@ struct CanvasCollectionView: View {
                 .navigationBarTitleDisplayMode(.large)
                 .searchable(
                     text: $searchQuery,
-//                    prompt: "Search canvases"
                 )
                 .searchToolbarBehavior(.minimize)
                 .toolbar {
@@ -142,24 +88,36 @@ struct CanvasCollectionView: View {
                     
                     ToolbarItem(placement: .topBarTrailing) {
                         Menu {
-                            Button {
-                                isCompactPresentation = false
-                            } label: {
-                                if !isCompactPresentation {
-                                    Label("Grid", systemImage: "checkmark")
-                                } else {
-                                    Text("Grid")
+                            Menu {
+                                Button {
+                                    isCompactPresentation = false
+                                } label: {
+                                    if !isCompactPresentation {
+                                        Label("Grid", systemImage: "checkmark")
+                                    } else {
+                                        Text("Grid")
+                                    }
                                 }
+                                
+                                Button {
+                                    isCompactPresentation = true
+                                } label: {
+                                    if isCompactPresentation {
+                                        Label("List", systemImage: "checkmark")
+                                    } else {
+                                        Text("List")
+                                    }
+                                }
+                            } label: {
+                                Label("Display mode", systemImage: isCompactPresentation ? "list.bullet" : "square.grid.2x2" )
                             }
                             
+                            Divider()
+                            
                             Button {
-                                isCompactPresentation = true
+                                isShowingPicker.toggle()
                             } label: {
-                                if isCompactPresentation {
-                                    Label("List", systemImage: "checkmark")
-                                } else {
-                                    Text("List")
-                                }
+                                Label("Import Canvas", systemImage: "square.and.arrow.down")
                             }
                             
                         } label: {
@@ -169,6 +127,20 @@ struct CanvasCollectionView: View {
                         .labelStyle(.iconOnly)
                     }
                 }
+        }
+        .fileImporter(
+            isPresented: $isShowingPicker,
+            allowedContentTypes: [.json],
+            allowsMultipleSelection: false
+        ) { result in
+            switch result {
+            case .success(let urls):
+                Task {
+                    try await appModel.tryImport(from: urls)
+                }
+            case .failure(let failure):
+                print(failure.localizedDescription)
+            }
         }
         .sheet(isPresented: $showCreateCanvas) {
             EditCanvasView(mode: .create)
@@ -192,7 +164,7 @@ struct CanvasCollectionView: View {
             )
         }
         .onDisappear {
-            AIGenerationService.shared.cancelCurrentTask()
+            appModel.aiGenerationService.cancelCurrentTask()
         }
         
     }
@@ -307,9 +279,12 @@ struct CanvasCollectionView: View {
         } label: {
             if isCompactPresentation {
                 CompactCanvasCardView(canvas: canvas)
+                    .environment(appModel)
                     .hoverEffect(.lift)
+                    
             } else {
                 CanvasCardView(canvas: canvas)
+                    .environment(appModel)
                     .hoverEffect(.lift)
             }
         }
