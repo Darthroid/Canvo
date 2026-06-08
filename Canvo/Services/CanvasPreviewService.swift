@@ -9,6 +9,10 @@ import UIKit
 import SwiftUI
 
 final class CanvasPreviewService {
+    public static var watermarkImage: UIImage? {
+        UIImage(named: "watermark")
+    }
+    
     private weak var model: AppModel?
     
     private let fileManager = FileManager.default
@@ -184,7 +188,8 @@ extension CanvasPreviewService {
     func previewImage(
         nodes: [Node],
         connections: [NodeConnection],
-        removeBackground: Bool = true
+        removeBackground: Bool = true,
+        watermark: UIImage? = nil
     ) -> UIImage {
 
         guard let layout = previewLayout(nodes: nodes) else {
@@ -206,11 +211,58 @@ extension CanvasPreviewService {
                    height: layout.size.height)
         )
 
-        return view.asImage(
+        let image = view.asImage(
             size: layout.size,
             scale: 2,
             removeBackground: removeBackground
         )
+
+        guard let watermark else {
+            return image
+        }
+
+        return addWatermark(
+            watermark,
+            to: image
+        )
+    }
+    
+    private func addWatermark(
+        _ watermark: UIImage,
+        to image: UIImage
+    ) -> UIImage {
+
+        let renderer = UIGraphicsImageRenderer(size: image.size)
+
+        return renderer.image { context in
+
+            image.draw(in: CGRect(origin: .zero, size: image.size))
+
+            let margin: CGFloat = 24
+
+            // размер вотермарки = 15% ширины изображения
+            let targetWidth = image.size.width * 0.15
+
+            let aspectRatio = watermark.size.height / watermark.size.width
+
+            let targetSize = CGSize(
+                width: targetWidth,
+                height: targetWidth * aspectRatio
+            )
+
+            let rect = CGRect(
+                x: image.size.width - targetSize.width - margin,
+                y: image.size.height - targetSize.height - margin,
+                width: targetSize.width,
+                height: targetSize.height
+            )
+
+            watermark.draw(
+                in: rect,
+                blendMode: .normal,
+                alpha: 0.9
+            )
+        }
     }
 }
 
