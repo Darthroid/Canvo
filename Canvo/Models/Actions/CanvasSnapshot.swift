@@ -6,7 +6,7 @@
 //
 
 
-struct CanvasSnapshot: Sendable {
+public struct CanvasSnapshot: Sendable {
     let id: String
     let name: String
     let isPinned: Bool

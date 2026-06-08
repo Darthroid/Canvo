@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct CompositeAction: CanvasAction {
+public struct CompositeAction: CanvasAction {
     let id = UUID()
     
     let actions: [CanvasAction]

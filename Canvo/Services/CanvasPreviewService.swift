@@ -101,41 +101,61 @@ extension CanvasPreviewService {
     struct PreviewLayout {
         let scale: CGFloat
         let offset: CGSize
+        let size: CGSize
     }
+    
+    func previewLayout(nodes: [Node]) -> PreviewLayout? {
 
-    func previewLayout(
-        nodes: [Node],
-        targetSize: CGSize
-    ) -> PreviewLayout? {
+        let padding: CGFloat = 100
 
         let points = nodes.map(\.position.position2D)
-
-        guard !points.isEmpty else {
-            return nil
-        }
+        guard !points.isEmpty else { return nil }
 
         let minX = points.map(\.x).min()!
         let maxX = points.map(\.x).max()!
         let minY = points.map(\.y).min()!
         let maxY = points.map(\.y).max()!
 
-        let padding: CGFloat = 80
+        let width = maxX - minX
+        let height = maxY - minY
 
-        let contentWidth = (maxX - minX) + padding * 2
-        let contentHeight = (maxY - minY) + padding * 2
-
-        let scale = min(
-            targetSize.width / contentWidth,
-            targetSize.height / contentHeight
+        let size = CGSize(
+            width: width + padding * 2,
+            height: height + padding * 2
         )
 
-        let offsetX = targetSize.width / 2 - ((minX + maxX) / 2) * scale
-        let offsetY = targetSize.height / 2 - ((minY + maxY) / 2) * scale
+        let scale: CGFloat = 1.0
+
+        let offset = CGSize(
+            width: -minX + padding,
+            height: -minY + padding
+        )
 
         return PreviewLayout(
             scale: scale,
-            offset: CGSize(width: offsetX, height: offsetY)
+            offset: offset,
+            size: size
         )
+    }
+    
+    private func contentBounds(nodes: [Node]) -> (min: CGPoint, max: CGPoint)? {
+        let points = nodes.map(\.position.position2D)
+        guard let first = points.first else { return nil }
+
+        var minX = first.x
+        var maxX = first.x
+        var minY = first.y
+        var maxY = first.y
+
+        for p in points {
+            minX = min(minX, p.x)
+            maxX = max(maxX, p.x)
+            minY = min(minY, p.y)
+            maxY = max(maxY, p.y)
+        }
+
+        return (CGPoint(x: minX, y: minY),
+                CGPoint(x: maxX, y: maxY))
     }
 }
 
@@ -144,14 +164,12 @@ extension CanvasPreviewService {
     func generatePreview(
         for canvas: Canvas,
         nodes: [Node],
-        connections: [NodeConnection],
-        targetSize: CGSize = CGSize(width: 220, height: 160)
+        connections: [NodeConnection]
     ) {
 
         let image = previewImage(
             nodes: nodes,
-            connections: connections,
-            targetSize: targetSize
+            connections: connections
         )
 
         generatePreview(
@@ -166,42 +184,30 @@ extension CanvasPreviewService {
     func previewImage(
         nodes: [Node],
         connections: [NodeConnection],
-        targetSize: CGSize = CGSize(width: 220, height: 160),
         removeBackground: Bool = true
     ) -> UIImage {
 
-        let view: AnyView
-
-        if let layout = previewLayout(
-            nodes: nodes,
-            targetSize: targetSize
-        ) {
-
-            view = AnyView(
-                CanvasPreviewView(
-                    nodes: nodes,
-                    connections: connections,
-                    layout: layout
-                )
-                .frame(
-                    width: targetSize.width,
-                    height: targetSize.height
-                )
-            )
-
-        } else {
-
-            view = AnyView(
-                GridLayer()
-                    .frame(
-                        width: targetSize.width,
-                        height: targetSize.height
-                    )
+        guard let layout = previewLayout(nodes: nodes) else {
+            let fallback = AnyView(GridLayer())
+            return fallback.asImage(
+                size: CGSize(width: 200, height: 200),
+                scale: 2,
+                removeBackground: removeBackground
             )
         }
 
+        let view = AnyView(
+            CanvasPreviewView(
+                nodes: nodes,
+                connections: connections,
+                layout: layout
+            )
+            .frame(width: layout.size.width,
+                   height: layout.size.height)
+        )
+
         return view.asImage(
-            size: targetSize,
+            size: layout.size,
             scale: 2,
             removeBackground: removeBackground
         )
@@ -240,7 +246,6 @@ private struct CanvasPreviewView: View {
                 .position(node.position.position2D)
             }
         }
-        .scaleEffect(layout.scale, anchor: .topLeading)
         .offset(layout.offset)
     }
 }

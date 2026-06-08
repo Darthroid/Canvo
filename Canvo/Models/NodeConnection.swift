@@ -14,9 +14,9 @@ import SwiftData
 import SwiftUI
 
 @Model
-class NodeConnection: Identifiable, Equatable, Codable {
+public class NodeConnection: Identifiable, Equatable, Codable {
 //    @Attribute(.unique)
-    var id: String = UUID().uuidString
+    public var id: String = UUID().uuidString
     var fromNodeId: String = ""
     var toNodeId: String = ""
     
@@ -29,14 +29,14 @@ class NodeConnection: Identifiable, Equatable, Codable {
         self.canvas = canvas
     }
     
-    func encode(to encoder: any Encoder) throws {
+    public func encode(to encoder: any Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(id, forKey: .id)
         try container.encode(fromNodeId, forKey: .fromNodeId)
         try container.encode(toNodeId, forKey: .toNodeId)
     }
     
-    required init(from decoder: any Decoder) throws {
+    required public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(String.self, forKey: .id)
         fromNodeId = try container.decode(String.self, forKey: .fromNodeId)

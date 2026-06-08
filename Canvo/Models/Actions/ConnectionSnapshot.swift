@@ -6,7 +6,7 @@
 //
 
 
-struct ConnectionSnapshot: Sendable {
+public struct ConnectionSnapshot: Sendable {
     let id: String
     let fromNodeId: String
     let toNodeId: String

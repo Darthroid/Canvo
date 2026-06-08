@@ -13,9 +13,9 @@ import SwiftData
 import SwiftUI
 
 @Model
-class Node: Identifiable, Codable {
+public class Node: Identifiable, Codable {
 //    @Attribute(.unique)
-    var id: String = UUID().uuidString
+    public var id: String = UUID().uuidString
     var name: String = ""
     var detail: String = ""
     
@@ -64,7 +64,7 @@ class Node: Identifiable, Codable {
         case id, name, detail, x, y, z, colorRaw = "color", tags
     }
     
-    required init(from decoder: Decoder) throws {
+    required public init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         id = try values.decode(String.self, forKey: .id)
         name = try values.decode(String.self, forKey: .name)
@@ -88,7 +88,7 @@ class Node: Identifiable, Codable {
         self.tagsRaw = tagsRaw
     }
     
-    func encode(to encoder: any Encoder) throws {
+    public func encode(to encoder: any Encoder) throws {
         var values = encoder.container(keyedBy: CodingKeys.self)
         try values.encode(id, forKey: .id)
         try values.encode(name, forKey: .name)
@@ -128,7 +128,7 @@ extension Node {
 }
 
 extension Node: NSCopying {
-    func copy(with zone: NSZone? = nil) -> Any {
+    public func copy(with zone: NSZone? = nil) -> Any {
         return Node(
             id: self.id,
             name: self.name,
@@ -145,7 +145,7 @@ extension Node: NSCopying {
 
 
 #if os(visionOS)
-struct NodeDataComponent: Component {
+public struct NodeDataComponent: Component {
     let node: Node
 }
 

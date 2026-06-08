@@ -18,6 +18,21 @@ class ImportService {
         self.model = model
     }
     
+    func processImport(from url: URL) async throws -> Canvas? {
+        
+        // gain access to the directory
+        let gotAccess = url.startAccessingSecurityScopedResource()
+        if !gotAccess { return nil }
+        
+        // access the directory URL
+        let canvas = try handleCanvas(from: url)
+        
+        // release access
+        url.stopAccessingSecurityScopedResource()
+        
+        return canvas
+    }
+    
     func processImport(from urls: [URL]) async throws -> [Canvas] {
         var canvases = [Canvas]()
         

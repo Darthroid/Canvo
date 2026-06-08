@@ -15,7 +15,6 @@ extension NodeMapView {
         let image = appModel.previewService.previewImage(
             nodes: canvas.nodes ?? [],
             connections: canvas.connections ?? [],
-            targetSize: .init(width: 2048, height: 1024),
             removeBackground: false
         )
         self.generatedPreview = image

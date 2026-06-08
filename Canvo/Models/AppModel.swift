@@ -18,11 +18,11 @@ final class AppModel: Sendable {
     var outlineOpen = false
     var aiEditorOpen = false
     
-    private var container: ModelContainer?
-    private var context: ModelContext? {
-        container?.mainContext
-    }
     
+    private let repository: CanvasRepository
+    
+    var tagsService: TagService
+    var outlineService = OutlineService()
     var aiGenerationService = AIGenerationService()
     var actionService = ActionService()
     var importService = ImportService()
@@ -75,11 +75,23 @@ final class AppModel: Sendable {
     }
     
     init() {
-        let configuration = ModelConfiguration(isStoredInMemoryOnly: false, allowsSave: true)
-        self.container = try? ModelContainer(
-            for: Canvas.self, Node.self, NodeConnection.self,
+        let configuration = ModelConfiguration(
+            isStoredInMemoryOnly: false,
+            allowsSave: true
+        )
+        
+        let container = try! ModelContainer(
+            for: Canvas.self,
+            Node.self,
+            NodeConnection.self,
             configurations: configuration
         )
+        
+        repository = CanvasRepository(
+            container: container
+        )
+        
+        tagsService = .init(repository: repository)
         
         actionService.set(model: self)
         importService.set(model: self)
@@ -90,25 +102,23 @@ final class AppModel: Sendable {
 //        fetchTags()
     }
     
-    func tryImport(from urls: [URL]) async throws {
-        let canvases = try await importService.processImport(from: urls)
-        canvases.forEach {
-            context?.insert($0)
-        }
-        
-        fetchCanvases()
+    func tryImport(from url: URL) async throws -> Canvas? {
+        return try await importService.processImport(from: url)
     }
     
     func fetchCanvases() {
+        
         do {
-            let descriptor = FetchDescriptor<Canvas>(
-                sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
-            )
-            canvases = try context?.fetch(descriptor) ?? []
+            canvases = try repository.fetchCanvases()
         } catch {
             print("Failed to fetch canvases: \(error)")
             canvases = []
         }
+    }
+    
+    func save() {
+        repository.save()
+        fetchCanvases()
     }
     
     func switchToCanvas(_ canvas: Canvas?) {
@@ -152,57 +162,13 @@ final class AppModel: Sendable {
 
     // MARK: - Tags Management
 
-    func resolveTags(from rawText: String) -> [Tag] {
 
-        let names = Set(rawText.parseTags())
-
-        guard !names.isEmpty else { return [] }
-
-        // 1. Забираем уже существующие
-        let existing = currentCanvas?.tags ?? []
-
-        var result = existing
-        let existingNames = Set(existing.map(\.name))
-
-        // 2. Создаём недостающие
-        let missing = names.subtracting(existingNames)
-        for name in missing {
-            let tag = Tag(name: name, canvas: currentCanvas)
-            context?.insert(tag)
-            result.append(tag)
-        }
-
-        return result
-    }
-    
-    func recomputeCanvasTags(canvasId: String) {
-        guard let canvas = canvasEntity(id: canvasId) else { return }
-        
-        let nodes = canvas.nodes ?? []
-        
-        // 1. собрать все теги из нод
-        let allTags: Set<String> = Set(
-            nodes
-                .flatMap { ($0.tagsRaw ?? "").parseTags() }
-        )
-        
-        // 2. удалить старые
-        for tag in canvas.tags ?? [] {
-            context?.delete(tag)
-        }
-        
-        // 3. создать новые
-        for name in allTags {
-            let tag = Tag(name: name, canvas: canvas)
-            context?.insert(tag)
-        }
-        
-        save()
-    }
     
     
     /// Called from the menu when a tag button is tapped
     func toggleTag(_ tag: Tag) {
+        selectedNodeIds.removeAll()
+        
         if selectedTags.contains(tag) {
             selectedTags.remove(tag)
         } else {
@@ -211,107 +177,22 @@ final class AppModel: Sendable {
     }
     
     func showAllTags() {
+        selectedNodeIds.removeAll()
+        
         selectedTags.removeAll()
-    }
-    
-    // MARK: - Helper Methods
-    
-    func save() {
-        guard let context, context.hasChanges else { return }
-        
-        currentCanvas?.updatedAt = Date()
-        
-        try? context.save()
-        
-        // Update current canvas timestamp
-        
-        // Refresh canvases to update lists
-        fetchCanvases()
-        
-//        fetchTags()
     }
 }
 
 // MARK: - Outline
 
 extension AppModel {
-    
-    func buildChildrenMap(connections: [NodeConnection]) -> [String: [String]] {
-        var map: [String: [String]] = [:]
-        
-        for c in connections {
-            map[c.fromNodeId, default: []].append(c.toNodeId)
-        }
-        
-        return map
-    }
-    
-    func findRootNodes(
-        nodes: [Node],
-        connections: [NodeConnection]
-    ) -> [Node] {
-        let allToIds = Set(connections.map { $0.toNodeId })
-        
-        return nodes.filter { !allToIds.contains($0.id) }
-    }
-    
-    func buildTree(
-        node: Node,
-        nodeDict: [String: Node],
-        childrenMap: [String: [String]],
-        visited: Set<String> = []
-    ) -> NodeTree {
-        
-        // prevent cycles
-        if visited.contains(node.id) {
-            return NodeTree(id: node.id, node: node, children: [])
-        }
-        
-        let newVisited = visited.union([node.id])
-        
-        let childrenIds = childrenMap[node.id] ?? []
-        
-        let children = childrenIds.compactMap { childId -> NodeTree? in
-            guard let childNode = nodeDict[childId] else { return nil }
-            return buildTree(
-                node: childNode,
-                nodeDict: nodeDict,
-                childrenMap: childrenMap,
-                visited: newVisited
-            )
-        }
-        
-        return NodeTree(
-            id: node.id,
-            node: node,
-            children: children
+    func buildOutline() -> [NodeTree] {
+        outlineService.buildOutline(
+            nodes: nodes,
+            connections: connections
         )
     }
-    
-    func buildOutline() -> [NodeTree] {
-        guard let canvas = currentCanvas else { return [] }
-        let nodes = canvas.nodes ?? []
-        let connections = canvas.connections ?? []
-        
-        let nodeDict = Dictionary(uniqueKeysWithValues: nodes.map { ($0.id, $0) })
-        
-        let childrenMap = buildChildrenMap(connections: connections)
-        var roots = findRootNodes(nodes: nodes, connections: connections)
-        
-        if roots.isEmpty, let first = nodes.first {
-            roots = [first]
-        }
-        
-        return roots.map {
-            buildTree(
-                node: $0,
-                nodeDict: nodeDict,
-                childrenMap: childrenMap
-            )
-        }
-    }
 }
-
 
 // MARK: - Public API
 
@@ -342,19 +223,45 @@ extension AppModel {
 //        currentCanvas = canvasEntity(id: id)
     }
     
+    func importCanvasAction(_ canvas: Canvas) {
+        let action = CreateAICanvasAction(canvas: canvas)
+        
+        actionService.perform(action)
+        
+        tagsService.recomputeCanvasTags(canvasId: canvas.id)
+        
+        fetchCanvases()
+    }
+    
+    func replaceCanvasAction(_ canvas: Canvas) {
+        canvas.updatedAt = Date()
+        let delete = DeleteCanvasAction(snapshot: makeCanvasSnapshot(canvas))
+        let insert = CreateAICanvasAction(canvas: canvas)
+        
+        actionService.beginBatch()
+        actionService.perform(delete)
+        actionService.perform(insert)
+        actionService.endBatch()
+        
+        tagsService.recomputeCanvasTags(canvasId: canvas.id)
+        
+        fetchCanvases()
+        
+    }
+    
     func addCanvasFromAIAction(_ canvas: Canvas) {
         
         let createCanvas = CreateAICanvasAction(canvas: canvas)
         
         actionService.perform(createCanvas)
-        
-//        currentCanvas = canvasEntity(id: canvas.id)
 
-        recomputeCanvasTags(canvasId: canvas.id)
+        tagsService.recomputeCanvasTags(canvasId: canvas.id)
+        
+        fetchCanvases()
     }
     
     func renameCanvasAction(id: String, newName: String) {
-        guard let canvas = canvasEntity(id: id) else { return }
+        guard let canvas = repository.canvas(id: id) else { return }
         
         let action = RenameCanvasAction(
             canvasId: id,
@@ -363,6 +270,8 @@ extension AppModel {
         )
         
         actionService.perform(action)
+        
+        fetchCanvases()
     }
     
     func deleteCanvasAction(_ canvas: Canvas) {
@@ -371,10 +280,12 @@ extension AppModel {
         let action = DeleteCanvasAction(snapshot: snapshot)
         
         actionService.perform(action)
+        
+        fetchCanvases()
     }
     
     func deleteCanvasIdAction(_ id: String) {
-        guard let canvas = canvasEntity(id: id) else { return }
+        guard let canvas = repository.canvas(id: id) else { return }
         let snapshot = makeCanvasSnapshot(canvas)
         
         let action = DeleteCanvasAction(snapshot: snapshot)
@@ -457,33 +368,6 @@ extension AppModel {
     }
 }
 
-// MARK: - Internal Helpers
-
-extension AppModel {
-    func nodeEntity(id: String) -> Node? {
-        try? context?.fetch(
-            FetchDescriptor<Node>(
-                predicate: #Predicate { $0.id == id }
-            )
-        ).first
-    }
-
-    func connectionEntity(id: String) -> NodeConnection? {
-        try? context?.fetch(
-            FetchDescriptor<NodeConnection>(
-                predicate: #Predicate { $0.id == id }
-            )
-        ).first
-    }
-
-    func canvasEntity(id: String) -> Canvas? {
-        try? context?.fetch(
-            FetchDescriptor<Canvas>(
-                predicate: #Predicate { $0.id == id }
-            )
-        ).first
-    }
-}
 
 extension AppModel {
     // MARK: - Canvas actions
@@ -525,21 +409,19 @@ extension AppModel {
     
     func insertCanvasInternal(id: String, name: String) {
         let canvas = Canvas(id: id, name: name)
-        context?.insert(canvas)
+        repository.insertCanvas(canvas)
         
         fetchCanvases()
     }
     
     func insertCanvasInternal(canvas: Canvas) {
-        context?.insert(canvas)
+        repository.insertCanvas(canvas)
         
         fetchCanvases()
     }
     
     func removeCanvasInternal(id: String) {
-        guard let canvas = canvasEntity(id: id) else { return }
-        
-        context?.delete(canvas)
+        repository.deleteCanvas(id: id)
         
         if currentCanvas?.id == id {
             currentCanvas = nil
@@ -556,58 +438,34 @@ extension AppModel {
         
         canvas.isPined = snapshot.isPinned
         
-        context?.insert(canvas)
+        repository.insertCanvas(canvas)
         
 //        currentCanvas = canvas
         
         // tags
         for tagName in snapshot.tags {
-            let tag = Tag(name: tagName, canvas: canvas)
-            context?.insert(tag)
+            repository.createTag(name: tagName, canvas: canvas)
         }
         
         // nodes
-        for node in snapshot.nodes {
-            let n = Node(
-                id: node.id,
-                name: node.name,
-                detail: node.detail,
-                x: node.x,
-                y: node.y,
-                z: node.z,
-                color: node.color,
-                canvas: canvas,
-                tagsRaw: node.tagsRaw
-            )
-            context?.insert(n)
-        }
+        repository.insertNodes(snapshots: snapshot.nodes, canvas: canvas)
         
         // connections
-        for conn in snapshot.connections {
-            let c = NodeConnection(
-                id: conn.id,
-                fromNodeId: conn.fromNodeId,
-                toNodeId: conn.toNodeId,
-                canvas: canvas
-            )
-            context?.insert(c)
-        }
+        repository.insertConnections(snapshots: snapshot.connections, canvas: canvas)
         
         fetchCanvases()
     }
     
     func setPinInternal(canvasId: String, value: Bool) {
-        guard let canvas = canvasEntity(id: canvasId) else { return }
+        repository.setPinned(canvasId: canvasId, value: value)
         
-        canvas.isPined = value
-        canvas.updatedAt = Date()
+        fetchCanvases()
     }
     
     func renameCanvasInternal(id: String, name: String) {
-        guard let canvas = canvasEntity(id: id) else { return }
+        repository.renameCanvas(id: id, name: name)
         
-        canvas.name = name
-        canvas.updatedAt = Date()
+        fetchCanvases()
     }
     
     // MARK: - Nodes actions
@@ -677,120 +535,71 @@ extension AppModel {
     
     func insertNodeInternal(_ snapshot: NodeSnapshot) {
         guard let currentCanvas else { return }
+
+        repository.insertNode(snapshot: snapshot, canvas: currentCanvas)
         
-        let node = Node(
-            id: snapshot.id,
-            name: snapshot.name,
-            detail: snapshot.detail,
-            x: snapshot.x,
-            y: snapshot.y,
-            z: snapshot.z,
-            color: snapshot.color,
-            canvas: currentCanvas,
-            tagsRaw: snapshot.tagsRaw
-        )
-        
-        context?.insert(node)
-        
-        recomputeCanvasTags(canvasId: currentCanvas.id)
+        tagsService.recomputeCanvasTags(canvasId: currentCanvas.id)
         save()
     }
     
     func insertNodesInternal(_ snapshots: [NodeSnapshot]) {
         guard let currentCanvas else { return }
+
+        repository.insertNodes(snapshots: snapshots, canvas: currentCanvas)
         
-        let nodes = snapshots.map { snapshot in
-            Node(
-                id: snapshot.id,
-                name: snapshot.name,
-                detail: snapshot.detail,
-                x: snapshot.x,
-                y: snapshot.y,
-                z: snapshot.z,
-                color: snapshot.color,
-                canvas: currentCanvas,
-                tagsRaw: snapshot.tagsRaw
-            )
-        }
-        
-        nodes.forEach {
-            context?.insert($0)
-        }
-        
-        recomputeCanvasTags(canvasId: currentCanvas.id)
+        tagsService.recomputeCanvasTags(canvasId: currentCanvas.id)
         save()
     }
     
     func updateNodeInternal(from snapshot: NodeSnapshot) {
-        guard let node = nodeEntity(id: snapshot.id) else { return }
+        guard let node = repository.node(id: snapshot.id),
+              let canvas = node.canvas
+        else { return }
         
-        node.name = snapshot.name
-        node.detail = snapshot.detail
-        node.detailRichText = snapshot.detailRichText
-        node.x = snapshot.x
-        node.y = snapshot.y
-        node.z = snapshot.z
-        node.colorRaw = snapshot.color
-        node.tagsRaw = snapshot.tagsRaw
+        repository.updateNode(snapshot: snapshot)
+        tagsService.recomputeCanvasTags(canvasId: canvas.id)
         
         save()
     }
     
     func removeNodeInternal(id: String) {
-        guard let node = nodeEntity(id: id),
+        guard let node = repository.node(id: id),
               let canvas = node.canvas else { return }
         
-        context?.delete(node)
-        
-        try? context?.delete(
-            model: NodeConnection.self,
-            where: #Predicate<NodeConnection> {
-                $0.fromNodeId == id || $0.toNodeId == id
-            }
-        )
-        
-        recomputeCanvasTags(canvasId: canvas.id)
+        let connections = repository.connections(withNodeId: node.id)
+        repository.deleteNode(id: node.id)
+        repository.deleteConnections(connections)
+
+        tagsService.recomputeCanvasTags(canvasId: canvas.id)
         save()
     }
     
     func removeNodesInternal(ids: [String]) {
-        let nodes = ids.compactMap { nodeEntity(id: $0) }
+        let nodes = ids.compactMap { repository.node(id: $0) }
         guard let canvas = nodes.first?.canvas else { return }
         
-        nodes.forEach { node in
-            context?.delete(node)
-            
-            try? context?.delete(
-                model: NodeConnection.self,
-                where: #Predicate<NodeConnection> {
-                    $0.fromNodeId == node.id || $0.toNodeId == node.id
-                }
-            )
-        }
+        let connections = nodes
+            .flatMap { repository.connections(withNodeId: $0.id) }
         
-        recomputeCanvasTags(canvasId: canvas.id)
+        repository.deleteNodes(ids: nodes.map(\.id))
+        repository.deleteConnections(connections)
+        
+        tagsService.recomputeCanvasTags(canvasId: canvas.id)
         save()
     }
     
     func updateNodeContentInternal(_ snapshot: NodeSnapshot) {
-        guard let node = nodeEntity(id: snapshot.id),
+        guard let node = repository.node(id: snapshot.id),
               let canvas = node.canvas else { return }
         
-        node.name = snapshot.name
-        node.detail = snapshot.detail
-        node.colorRaw = snapshot.color
-        node.tagsRaw = snapshot.tagsRaw
+        repository.updateNode(snapshot: snapshot)
         
-        recomputeCanvasTags(canvasId: canvas.id)
+        tagsService.recomputeCanvasTags(canvasId: canvas.id)
         save()
     }
     
     func updatePositionInternal(nodeId: String, position: SIMD3<Float>) {
-        guard let node = nodeEntity(id: nodeId) else { return }
-        
-        node.x = position.x
-        node.y = position.y
-        node.z = position.z
+        repository.updateNodePosition(nodeId: nodeId, position: position)
         
         save()
     }
@@ -800,82 +609,49 @@ extension AppModel {
     func insertConnectionInternal(_ snapshot: ConnectionSnapshot) {
         guard let currentCanvas else { return }
         
-        let connection = NodeConnection(
-            id: snapshot.id,
-            fromNodeId: snapshot.fromNodeId,
-            toNodeId: snapshot.toNodeId,
-            canvas: currentCanvas
-        )
-        
-        context?.insert(connection)
+        repository.insertConnection(snapshot: snapshot, canvas: currentCanvas)
     }
     
     func insertConnectionsInternal(_ snapshots: [ConnectionSnapshot]) {
         guard let currentCanvas else { return }
         
-        for s in snapshots {
-            let c = NodeConnection(
-                id: s.id,
-                fromNodeId: s.fromNodeId,
-                toNodeId: s.toNodeId,
-                canvas: currentCanvas
-            )
-            context?.insert(c)
-        }
+        repository.insertConnections(snapshots: snapshots, canvas: currentCanvas)
     }
     
     func removeConnectionInternal(id: String) {
-        guard let connection = connectionEntity(id: id) else { return }
-        
-        context?.delete(connection)
+        repository.deleteConnection(id: id)
     }
     
     func replaceConnectionsInternal(_ newConnections: [ConnectionSnapshot]) {
         guard let currentCanvas else { return }
         
-        // удалить все
-        try? context?.delete(model: NodeConnection.self, where: #Predicate<NodeConnection> { item in
-            (item.canvas?.id ?? "") == currentCanvas.id
-        })
+        repository.replaceConnections(canvasId: currentCanvas.id, snapshots: newConnections)
         
-        // вставить новые
-        insertConnectionsInternal(newConnections)
     }
-    
-    // MARK: - Tags actions
-    
-    // FIXME: TAGS currently not working
-    func updateNodeTagsInternal(nodeId: String, raw: String) {
-        guard let node = nodeEntity(id: nodeId) else { return }
-        
-        let tags = resolveTags(from: raw)
-        node.tagsRaw = tags.map(\.name).joined(separator: ",")
-    }
-    
+}
+
+// MARK: - Tags actions
+
+extension AppModel {
+
     func createTagInternal(name: String) {
-        guard let currentCanvas else { return }
-        
-        let exists = currentCanvas.tags?.contains(where: { $0.name == name }) ?? false
-        guard !exists else { return }
-        
-        let tag = Tag(name: name, canvas: currentCanvas)
-        context?.insert(tag)
+        tagsService.createTag(
+            name: name,
+            canvas: currentCanvas
+        )
+    }
+
+    func deleteTagInternal(name: String) {
+        tagsService.deleteTag(
+            name: name,
+            canvas: currentCanvas
+        )
     }
     
-    func deleteTagInternal(name: String) {
-        guard let currentCanvas else { return }
-        
-        guard let tag = currentCanvas.tags?.first(where: { $0.name == name }) else { return }
-        
-        context?.delete(tag)
-        
-        // очистить у нод
-        for node in currentCanvas.nodes ?? [] {
-            let tags = (node.tagsRaw ?? "")
-                .components(separatedBy: ",")
-                .filter { $0 != name }
-            
-            node.tagsRaw = tags.joined(separator: ",")
-        }
+    func updateNodeTagsInternal(nodeId: String, raw: String) {
+        tagsService.updateNodeTags(
+            nodeId: nodeId,
+            raw: raw
+        )
     }
 }

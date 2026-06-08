@@ -40,7 +40,7 @@ struct ImmersiveMapToolbar: View {
             }
             
             Menu {
-                ForEach(appModel.currentCanvas?.tags ?? [], id: \.name) { tag in
+                ForEach(appModel.tags ?? [], id: \.name) { tag in
                     Button {
                         appModel.toggleTag(tag)
                     } label: {

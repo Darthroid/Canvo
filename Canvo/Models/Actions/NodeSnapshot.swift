@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct NodeSnapshot: Sendable {
+public struct NodeSnapshot: Sendable {
     let id: String
     let name: String
     let detail: String
@@ -20,7 +20,7 @@ struct NodeSnapshot: Sendable {
 }
 
 
-extension NodeSnapshot {
+public extension NodeSnapshot {
     var richText: AttributedString {
         get {
             guard let detailRichText else {
@@ -35,7 +35,7 @@ extension NodeSnapshot {
     }
 }
 
-extension NodeSnapshot {
+public extension NodeSnapshot {
     init(
         id: String,
         name: String,

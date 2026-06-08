@@ -9,9 +9,9 @@ import SwiftData
 import Foundation
 
 @Model
-class Canvas: Identifiable, Codable {
+public class Canvas: Identifiable, Codable {
 //    @Attribute(.unique)
-    var id: String = UUID().uuidString
+    public var id: String = UUID().uuidString
     var name: String = ""
     var createdAt: Date = Date()
     var updatedAt: Date = Date()
@@ -37,7 +37,7 @@ class Canvas: Identifiable, Codable {
         self.connections = connections
     }
     
-    required init(from decoder: Decoder) throws {
+    required public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(String.self, forKey: .id)
         name = try container.decode(String.self, forKey: .name)
@@ -48,7 +48,7 @@ class Canvas: Identifiable, Codable {
         connections = try container.decode([NodeConnection].self, forKey: .connections)
     }
     
-    func encode(to encoder: any Encoder) throws {
+    public func encode(to encoder: any Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(id, forKey: .id)
         try container.encode(name, forKey: .name)
