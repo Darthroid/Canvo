@@ -178,7 +178,7 @@ private extension EditCanvasView {
     func submit() {
         switch mode {
         case .create:
-            appModel.createCanvasAction(name: name)
+            appModel.createCanvas(name: name)
             
         case .aiCreate:
             appModel.generateCanvasStream(
@@ -188,7 +188,7 @@ private extension EditCanvasView {
             
         case .edit:
             guard let editCanvas else { return }
-            appModel.renameCanvasAction(id: editCanvas.id, newName: name)
+            appModel.renameCanvas(id: editCanvas.id, newName: name)
         }
         
         isNameFocused = false

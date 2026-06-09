@@ -19,7 +19,11 @@ struct NodeDetailView: View {
 
     private var connectionlist: some View {
         ForEach(appModel.nodesConnectedWith(node: node)) { connectedNode in
-            let isOutgoing = appModel.connections.first(where: { $0.fromNodeId == connectedNode.id || $0.toNodeId == connectedNode.id })?.fromNodeId == connectedNode.id
+            let isOutgoing = appModel.connections.first(where: {
+                $0.fromNodeId == connectedNode.id ||
+                $0.toNodeId == connectedNode.id
+            })?.fromNodeId == connectedNode.id
+            
             HStack(spacing: 16) {
                 Image(systemName: isOutgoing ?  "arrow.left" : "arrow.right")
                 VStack(alignment: .leading) {
@@ -38,8 +42,8 @@ struct NodeDetailView: View {
                     dismiss()
                     
                     DispatchQueue.main.async {
-                        appModel.centerOnNodeId = nodeId
-                        appModel.selectedNodeIds = [nodeId]
+                        appModel.session.centerOnNodeId = nodeId
+                        appModel.session.selectedNodeIds = [nodeId]
                     }
                 } label: {
                     Image(systemName: "chevron.right")
@@ -58,14 +62,7 @@ struct NodeDetailView: View {
                         ($0.fromNodeId == node.id && $0.toNodeId == connectedNode.id)
                     }) else { return }
                     
-                    let snapshot = ConnectionSnapshot(
-                        id: connection.id,
-                        fromNodeId: connection.fromNodeId,
-                        toNodeId: connection.toNodeId
-                    )
-                    
-                    let action = RemoveConnectionAction(connection: snapshot)
-                    appModel.actionService.perform(action)
+                    appModel.removeConnection(connection)
                     
                 } label: {
                     Image(systemName: "xmark")

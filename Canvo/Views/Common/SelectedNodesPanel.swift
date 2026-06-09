@@ -17,7 +17,7 @@ struct SelectedNodesPanel: View {
     
     var body: some View {
         HStack(spacing: 24) {
-            Text(String(format: appModel.selectedNodeIds.count > 1 ? "%d items" : "%d item", appModel.selectedNodeIds.count))
+            Text(String(format: appModel.session.selectedNodeIds.count > 1 ? "%d items" : "%d item", appModel.session.selectedNodeIds.count))
             
             panelButton(systemImage: "trash") {
                 onDelete()
@@ -31,7 +31,7 @@ struct SelectedNodesPanel: View {
                 Button {
                     appModel.nodes
                         .map(\.id)
-                        .forEach { appModel.selectedNodeIds.insert($0) }
+                        .forEach { appModel.session.selectedNodeIds.insert($0) }
                 } label: {
                     Text("Select All")
                 }
@@ -53,7 +53,7 @@ struct SelectedNodesPanel: View {
             
             panelButton(systemImage: "xmark") {
                 withAnimation {
-                    appModel.selectedNodeIds.removeAll()
+                    appModel.session.clearSelection()
                 }
             }
         }

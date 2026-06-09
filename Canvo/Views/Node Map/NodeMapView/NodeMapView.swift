@@ -61,7 +61,7 @@ struct NodeMapView: View {
     private var screenDismissCount = 0
     
     private var updatedAt: String? {
-        guard let date = appModel.currentCanvas?.updatedAt else { return nil }
+        guard let date = appModel.session.currentCanvas?.updatedAt else { return nil }
         
         if Calendar.current.isDateInToday(date) {
             return "Today, " + date.formatted(
@@ -128,7 +128,7 @@ struct NodeMapView: View {
         }
         
         // Выделяем ноду
-        appModel.selectedNodeIds = [node.id]
+        appModel.session.selectedNodeIds = [node.id]
     }
     
     // Функция поиска нод
@@ -173,10 +173,10 @@ struct NodeMapView: View {
     
     var selectedNodesFloatingPanel: some View {
         HStack(spacing: 24) {
-            Text(String(format: appModel.selectedNodeIds.count > 1 ? "%d items" : "%d item", appModel.selectedNodeIds.count))
+            Text(String(format: appModel.session.selectedNodeIds.count > 1 ? "%d items" : "%d item", appModel.session.selectedNodeIds.count))
             
             Button {
-                appModel.deleteSelectedNodes()
+                appModel.removeSelectedNodes()
             } label: {
                 Image(systemName: "trash")
             }
@@ -195,7 +195,7 @@ struct NodeMapView: View {
                 Button {
                     appModel.nodes
                         .map(\.id)
-                        .forEach { appModel.selectedNodeIds.insert($0) }
+                        .forEach { appModel.session.selectedNodeIds.insert($0) }
                 } label: {
                     Text("Select All")
                 }
@@ -213,7 +213,7 @@ struct NodeMapView: View {
             
             Button {
                 withAnimation {
-                    appModel.selectedNodeIds.removeAll()
+                    appModel.session.clearSelection()
                 }
             } label: {
                 Image(systemName: "xmark")
@@ -256,8 +256,8 @@ struct NodeMapView: View {
                 ForEach(appModel.visibleNodes) { node in
                     NodeView(
                         node: node,
-                        isSelected: appModel.selectedNodeIds.contains(node.id),
-                        isExpanded: appModel.expandedNodeIds.contains(node.id),
+                        isSelected: appModel.session.selectedNodeIds.contains(node.id),
+                        isExpanded: appModel.session.expandedNodeIds.contains(node.id),
                         isMatchingSearch: searchResults.contains(where: { $0.id == node.id }),
                         toolbarEnabled: true,
                         onDetail: { showDetailNode = node },
@@ -268,20 +268,20 @@ struct NodeMapView: View {
                     .gesture(nodeDrag(node))
                     .onTapGesture(count: 1) {
                         withAnimation {
-                            if appModel.selectedNodeIds.contains(node.id) {
-                                appModel.selectedNodeIds.remove(node.id)
+                            if appModel.session.selectedNodeIds.contains(node.id) {
+                                appModel.session.selectedNodeIds.remove(node.id)
                             } else {
-                                appModel.selectedNodeIds.insert(node.id)
+                                appModel.session.selectedNodeIds.insert(node.id)
                             }
                         }
                         
                     }
                     .onTapGesture(count: 2) {
                         withAnimation(.bouncy(duration: 0.2)) {
-                            if appModel.expandedNodeIds.contains(node.id) {
-                                appModel.expandedNodeIds.remove(node.id)
+                            if appModel.session.expandedNodeIds.contains(node.id) {
+                                appModel.session.expandedNodeIds.remove(node.id)
                             } else {
-                                appModel.expandedNodeIds.insert(node.id)
+                                appModel.session.expandedNodeIds.insert(node.id)
                             }
                         }
                     }
@@ -292,10 +292,10 @@ struct NodeMapView: View {
                     .fill(Color.clear)
                     .frame(width: 12, height: 12)
                     .position(
-                        x: CGFloat(appModel.pendingNodePosition?.x ?? 0),
-                        y: CGFloat(appModel.pendingNodePosition?.y ?? 0)
+                        x: CGFloat(appModel.session.pendingNodePosition?.x ?? 0),
+                        y: CGFloat(appModel.session.pendingNodePosition?.y ?? 0)
                     )
-                    .opacity(appModel.pendingNodePosition == nil ? 0 : 0.7)
+                    .opacity(appModel.session.pendingNodePosition == nil ? 0 : 0.7)
             }
             .scaleEffect(scale)
             .offset(offset)
@@ -353,9 +353,9 @@ struct NodeMapView: View {
                     
                     Spacer()
                     
-                    if appModel.selectedNodeIds.count > 0 {
+                    if appModel.session.selectedNodeIds.count > 0 {
                         SelectedNodesPanel {
-                            appModel.deleteSelectedNodes()
+                            appModel.removeSelectedNodes()
                         } onAiEdit: {
                             appModel.aiEditorOpen.toggle()
                         } onDuplicate: {
@@ -367,7 +367,7 @@ struct NodeMapView: View {
                     HStack {
                         Spacer()
                         Button {
-                            appModel.pendingNodePosition = visibleCenterPosition()
+                            appModel.session.pendingNodePosition = visibleCenterPosition()
                             showNodeForm = true
                         } label: {
                             Image(systemName: "plus")
@@ -397,9 +397,9 @@ struct NodeMapView: View {
                     performSearch()
                 }
             }
-            .onChange(of: appModel.centerOnNodeId, { _, _ in
+            .onChange(of: appModel.session.centerOnNodeId, { _, _ in
                 guard let node = appModel.visibleNodes.first(where: {
-                    $0.id == appModel.centerOnNodeId
+                    $0.id == appModel.session.centerOnNodeId
                 }) else { return }
                 centerOnNode(node, animated: true)
             })
@@ -417,7 +417,7 @@ struct NodeMapView: View {
                     ShareSheet(
                         item: ShareImageItem(
                             image: generatedPreview,
-                            title: appModel.currentCanvas?.name ?? "Map Export",
+                            title: appModel.session.currentCanvas?.name ?? "Map Export",
                             format: selectedFormat
                         )
                     )
@@ -425,7 +425,7 @@ struct NodeMapView: View {
                     ShareSheet(
                         item: ShareJSONItem(
                             jsonData: generatedJSON,
-                            filename: appModel.currentCanvas?.name ?? "Map Export"
+                            filename: appModel.session.currentCanvas?.name ?? "Map Export"
                         )
                     )
                 }
@@ -446,7 +446,7 @@ struct NodeMapView: View {
             }
             #endif
             .sheet(isPresented: $showNodeForm) {
-                CreateNodeView(position: appModel.pendingNodePosition)
+                CreateNodeView(position: appModel.session.pendingNodePosition)
                     .environment(appModel)
             }
             .sheet(item: $showDetailNode) { node in
@@ -500,8 +500,6 @@ struct NodeMapView: View {
             } message: { _ in
                 Text("Are you sure you want to delete this node?")
             }
-//            .navigationTitle(appModel.currentCanvas?.name ?? "Canvo")
-//            .navigationSubtitle("Last Edit: \(updatedAt ?? "")")
             .navigationBarTitleDisplayMode(.inline)
             .searchable(
                 text: $searchText,
@@ -543,7 +541,7 @@ struct NodeMapView: View {
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     
                     Menu {
-                        Text(appModel.currentCanvas?.name ?? "Canvo")
+                        Text(appModel.session.currentCanvas?.name ?? "Canvo")
                             .font(.headline)
                         Divider()
 
@@ -626,11 +624,11 @@ struct NodeMapView: View {
                         
                         // tag filter
                         Menu {
-                            ForEach(appModel.currentCanvas?.tags ?? [], id: \.name) { tag in
+                            ForEach(appModel.session.currentCanvas?.tags ?? [], id: \.name) { tag in
                                 Button {
                                     appModel.toggleTag(tag)
                                 } label: {
-                                    let isSelected = appModel.selectedTags.contains(tag)
+                                    let isSelected = appModel.session.selectedTags.contains(tag)
                                     if isSelected {
                                         Label(tag.name, systemImage: "checkmark")
                                     } else {
@@ -647,7 +645,7 @@ struct NodeMapView: View {
                                 Text("Show All")
                             }
                         } label: {
-                            Label("Tag Filter", systemImage: appModel.selectedTags.isEmpty ? "tag" : "tag.fill")
+                            Label("Tag Filter", systemImage: appModel.session.selectedTags.isEmpty ? "tag" : "tag.fill")
                         }
                         
                         // ai edit
@@ -675,7 +673,7 @@ struct NodeMapView: View {
                 
                 ToolbarItem(placement: .bottomBar) {
                     Button {
-                        appModel.pendingNodePosition = visibleCenterPosition()
+                        appModel.session.pendingNodePosition = visibleCenterPosition()
                         showNodeForm = true
                     } label: {
                         Image(systemName: "plus")

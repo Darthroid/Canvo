@@ -73,8 +73,8 @@ struct ImmersiveNodeMapView: View {
                     EmptyView()
                     NodeView(
                         node: node,
-                        isSelected: appModel.selectedNodeIds.contains(node.id),
-                        isExpanded: appModel.expandedNodeIds.contains(node.id),
+                        isSelected: appModel.session.selectedNodeIds.contains(node.id),
+                        isExpanded: appModel.session.expandedNodeIds.contains(node.id),
                         isMatchingSearch: false,
                         toolbarEnabled: true,
                         onSizeChange: { size in
@@ -128,16 +128,15 @@ struct ImmersiveNodeMapView: View {
 
                 // Какие ноды двигаем
                 let isDraggedNodeSelected =
-                    appModel.selectedNodeIds.contains(draggedNodeId)
+                appModel.session.selectedNodeIds.contains(draggedNodeId)
 
-                let movingIds: Set<String> =
-                    isDraggedNodeSelected
-                    ? appModel.selectedNodeIds
+                let movingIds: Set<String> = isDraggedNodeSelected
+                    ? appModel.session.selectedNodeIds
                     : [draggedNodeId]
 
                 // Если тащим невыделенную ноду — выделяем только её
                 if !isDraggedNodeSelected {
-                    appModel.selectedNodeIds = [draggedNodeId]
+                    appModel.session.selectedNodeIds = [draggedNodeId]
                 }
 
                 // Начало drag
@@ -215,13 +214,11 @@ struct ImmersiveNodeMapView: View {
                 }
 
                 if !nodeIds.isEmpty {
-                    let action = MoveNodesBatchAction(
-                        nodeIds: nodeIds,
+                    appModel.moveNodes(
+                        ids: nodeIds,
                         oldPositions: oldPositions,
                         newPositions: newPositions
                     )
-
-                    appModel.actionService.perform(action)
                 }
 
                 // cleanup
@@ -242,10 +239,10 @@ struct ImmersiveNodeMapView: View {
                 
                 let nodeId = nodeComponent.node.id
                 
-                if appModel.selectedNodeIds.contains(nodeId) {
-                    appModel.selectedNodeIds.remove(nodeId)
+                if appModel.session.selectedNodeIds.contains(nodeId) {
+                    appModel.session.selectedNodeIds.remove(nodeId)
                 } else {
-                    appModel.selectedNodeIds.insert(nodeId)
+                    appModel.session.selectedNodeIds.insert(nodeId)
                 }
             }
     }
@@ -261,10 +258,11 @@ struct ImmersiveNodeMapView: View {
                 
                 let nodeId = nodeComponent.node.id
                 
-                if appModel.expandedNodeIds.contains(nodeId) {
-                    appModel.expandedNodeIds.remove(nodeId)
+                if appModel.session.expandedNodeIds.contains(nodeId) {
+                    appModel.session.expandedNodeIds.remove(nodeId)
                 } else {
-                    appModel.expandedNodeIds.insert(nodeId)
+                    appModel.session
+                        .expandedNodeIds.insert(nodeId)
                 }
             }
     }

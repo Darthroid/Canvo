@@ -22,11 +22,11 @@ struct AIEditCanvasView: View {
     private var scopeNodesCount: Int {
         switch selectedScope {
         case .selection:
-            appModel.selectedNodeIds.count
+            appModel.session.selectedNodeIds.count
         case .visible:
             0
         case .canvas:
-            appModel.currentCanvas?.nodes?.count ?? 0
+            appModel.session.currentCanvas?.nodes?.count ?? 0
         }
     }
 
@@ -310,7 +310,7 @@ extension AIEditCanvasView {
         Task {
             isPromptFocused = false
 
-            guard let canvas = appModel.currentCanvas else {
+            guard let canvas = appModel.session.currentCanvas else {
                 return
             }
 
@@ -319,7 +319,7 @@ extension AIEditCanvasView {
             switch selectedScope {
 
             case .selection:
-                scope = appModel.selectedNodeIds.compactMap {
+                scope = appModel.session.selectedNodeIds.compactMap {
                     appModel.node(forId: $0)
                 }
 

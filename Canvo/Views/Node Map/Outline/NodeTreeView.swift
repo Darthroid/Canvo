@@ -13,7 +13,7 @@ struct NodeTreeView: View {
     @Environment(AppModel.self) private var appModel
     
     var isSelected: Bool {
-        appModel.selectedNodeIds.contains(tree.node.id)
+        appModel.session.selectedNodeIds.contains(tree.node.id)
     }
     
     var body: some View {
@@ -41,8 +41,8 @@ struct NodeTreeView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .contentShape(Rectangle())
                     .onTapGesture {
-                        appModel.selectedNodeIds = [tree.node.id]
-                        appModel.centerOnNodeId = tree.node.id
+                        appModel.session.selectedNodeIds = [tree.node.id]
+                        appModel.session.centerOnNodeId = tree.node.id
                     }
             }
             .padding(.vertical, 8)

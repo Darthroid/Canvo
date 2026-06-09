@@ -12,13 +12,26 @@ import RealityKit
 import RealityKitContent
 #endif
 
+private enum ActiveAlert: Identifiable {
+    case delete(Canvas)
+    case replace(Canvas)
+
+    var id: String {
+        switch self {
+        case .delete(let canvas):
+            return "delete-\(canvas.id)"
+        case .replace(let canvas):
+            return "replace-\(canvas.id)"
+        }
+    }
+}
+
 struct CanvasCollectionView: View {
     @AppStorage("isCompactPresentation") var isCompactPresentation: Bool = false
     
     @Environment(AppModel.self) var appModel
     @State var showCreateCanvas: Bool = false
     @State var renameCanvas: Canvas?
-    @State var deleteCanvas: Canvas?
     
     @State private var showError: Bool = false
     @State private var errorMessage: String?
@@ -28,6 +41,8 @@ struct CanvasCollectionView: View {
     @State var searchQuery = ""
     
     @State private var isShowingPicker = false
+    
+    @State private var activeAlert: ActiveAlert?
     
     private let minCardWidth: CGFloat = 320
     private let listSpacing: CGFloat = 18
@@ -138,13 +153,9 @@ struct CanvasCollectionView: View {
         ) { result in
             switch result {
             case .success(let urls):
+                guard let url = urls.first else { return }
                 Task {
-                    do {
-                        try await appModel.tryImport(from: urls)
-                    } catch {
-                        showError.toggle()
-                        errorMessage = "Import Failed" + "\n" + error.localizedDescription
-                    }
+                    await processImport(from: url)
                 }
             case .failure(let failure):
                 showError.toggle()
@@ -169,18 +180,29 @@ struct CanvasCollectionView: View {
         } message: {
             Text(errorMessage ?? "Something went wrong")
         }
-        .alert(item: $deleteCanvas) { canvas in
-            Alert(
-                title: Text("Delete Canvas"),
-                message: Text("Are you sure you want to delete \(canvas.name)? This cannot be undone."),
-                primaryButton: .destructive(Text("Delete")) {
-                    
-                    if let id = appModel.canvases.first(where: { $0.id == canvas.id })?.id {
-                        appModel.deleteCanvasIdAction(id)
-                    }
-                },
-                secondaryButton: .cancel()
-            )
+        .alert(item: $activeAlert) { alert in
+            switch alert {
+
+            case .replace(let canvas):
+                return Alert(
+                    title: Text("Replace \(canvas.name)?"),
+                    message: Text("This cannot be undone."),
+                    primaryButton: .destructive(Text("Replace")) {
+                        appModel.replaceCanvas(canvas)
+                    },
+                    secondaryButton: .cancel()
+                )
+
+            case .delete(let canvas):
+                return Alert(
+                    title: Text("Delete Canvas"),
+                    message: Text("Are you sure you want to delete \(canvas.name)?"),
+                    primaryButton: .destructive(Text("Delete")) {
+                        appModel.deleteCanvas(canvas.id)
+                    },
+                    secondaryButton: .cancel()
+                )
+            }
         }
         .onDisappear {
             appModel.aiGenerationService.cancelCurrentTask()
@@ -310,7 +332,7 @@ struct CanvasCollectionView: View {
         .buttonStyle(.plain)
         .contextMenu {
             Button {
-                appModel.toggleCanvasPinAction(canvas)
+                appModel.toggleCanvasPin(canvas)
             } label: {
                 Label(canvas.isPined ? "Remove from Favorites" : "Favorite", systemImage: canvas.isPined ? "star.slash" : "star")
             }
@@ -321,10 +343,28 @@ struct CanvasCollectionView: View {
             }
             
             Button(role: .destructive) {
-                self.deleteCanvas = canvas
+                self.activeAlert = .delete(canvas)
             } label: {
                 Label("Delete", systemImage: "trash")
             }
+        }
+    }
+    
+    func processImport(from url: URL) async {
+        do {
+            if let canvas = try await appModel.tryImport(from: url) {
+                if !appModel.canvases.contains(where: {
+                    $0.id == canvas.id
+                }) {
+                    appModel.importCanvas(canvas)
+                } else {
+                    self.activeAlert = .replace(canvas)
+                }
+            }
+            
+        } catch {
+            showError.toggle()
+            errorMessage = "Import Failed" + "\n" + error.localizedDescription
         }
     }
 }

@@ -106,29 +106,13 @@ struct EditNodeView: View {
     }
     
     private func submit() {
-        guard let node = appModel.node(forId: nodeId) else { return }
-
-        let snapshot = appModel.makeNodeSnapshotWithConnections(node)
-        let oldNode = snapshot.node
-
-        let newNode = NodeSnapshot(
-            id: nodeId,
+        appModel.editNode(
+            nodeId: nodeId,
             name: name,
-            richText: attributedDetail,
-            x: oldNode.x,
-            y: oldNode.y,
-            z: oldNode.z,
-            color: color.toHex(includeAlpha: true),
+            attributedDetail: attributedDetail,
+            color: color,
             tagsRaw: tagsRaw
         )
-
-        let action = UpdateNodeContentAction(
-            nodeId: nodeId,
-            old: oldNode,
-            new: newNode
-        )
-
-        appModel.actionService.perform(action)
 
         dismiss()
     }

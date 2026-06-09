@@ -71,12 +71,12 @@ extension NodeMapView {
         DragGesture(coordinateSpace: .named("canvas"))
             .onChanged { value in
                 // 1. Определяем, какие ноды будут перемещаться
-                let isDraggedNodeSelected = appModel.selectedNodeIds.contains(node.id)
-                let movingIds = isDraggedNodeSelected ? appModel.selectedNodeIds : [node.id]
+                let isDraggedNodeSelected = appModel.session.selectedNodeIds.contains(node.id)
+                let movingIds = isDraggedNodeSelected ? appModel.session.selectedNodeIds : [node.id]
 
                 // 2. Сбрасываем выделение, если тащим невыделенную ноду
                 if !isDraggedNodeSelected {
-                    appModel.selectedNodeIds = [node.id]
+                    appModel.session.selectedNodeIds = [node.id]
                 }
 
                 // 3. Запоминаем стартовые позиции (один раз за жест)
@@ -121,12 +121,11 @@ extension NodeMapView {
 
                 // 2. Выполняем batch-действие, если есть изменения
                 if !nodeIds.isEmpty {
-                    let action = MoveNodesBatchAction(
-                        nodeIds: nodeIds,
+                    appModel.moveNodes(
+                        ids: nodeIds,
                         oldPositions: oldPositions,
                         newPositions: newPositions
                     )
-                    appModel.actionService.perform(action)
                 }
 
                 // 3. Очищаем временные данные

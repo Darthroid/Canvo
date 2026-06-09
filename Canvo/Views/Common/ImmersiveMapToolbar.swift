@@ -40,11 +40,11 @@ struct ImmersiveMapToolbar: View {
             }
             
             Menu {
-                ForEach(appModel.currentCanvas?.tags ?? [], id: \.name) { tag in
+                ForEach(appModel.tags ?? [], id: \.name) { tag in
                     Button {
                         appModel.toggleTag(tag)
                     } label: {
-                        let isSelected = appModel.selectedTags.contains(tag)
+                        let isSelected = appModel.session.selectedTags.contains(tag)
                         if isSelected {
                             Label(tag.name, systemImage: "checkmark")
                         } else {
@@ -61,7 +61,7 @@ struct ImmersiveMapToolbar: View {
                     Text("Show All")
                 }
             } label: {
-                Label("Tag Filter", systemImage: appModel.selectedTags.isEmpty ? "tag" : "tag.fill")
+                Label("Tag Filter", systemImage: appModel.session.selectedTags.isEmpty ? "tag" : "tag.fill")
             }
             
             Toggle(isOn: Binding(
@@ -100,9 +100,9 @@ struct ImmersiveMapToolbar: View {
                     .combined(with: .opacity)
                 )
             } else {
-                if !appModel.selectedNodeIds.isEmpty {
+                if !appModel.session.selectedNodeIds.isEmpty {
                     SelectedNodesPanel {
-                        appModel.deleteSelectedNodes()
+                        appModel.removeSelectedNodes()
                     } onAiEdit: {
                         appModel.aiEditorOpen.toggle()
                     } onDuplicate: {
@@ -201,7 +201,7 @@ struct ImmersiveMapToolbar: View {
             }
         }
         .sheet(isPresented: $showNodeForm) {
-            CreateNodeView(position: appModel.pendingNodePosition)
+            CreateNodeView(position: appModel.session.pendingNodePosition)
                 .environment(appModel)
         }
         .sheet(isPresented: Binding(
@@ -251,11 +251,11 @@ struct ImmersiveMapToolbar: View {
             let cameraPosition = deviceAnchor.originFromAnchorTransform.columns.3
             let position = SIMD3(x: cameraPosition.x, y: cameraPosition.y, z: cameraPosition.z - 1.5)
             
-            appModel.pendingNodePosition = GeometryService.iOSPosition(position)
+            appModel.session.pendingNodePosition = GeometryService.iOSPosition(position)
             
             showNodeForm = true
         } else {
-            appModel.pendingNodePosition = GeometryService.iOSPosition(.zero)
+            appModel.session.pendingNodePosition = GeometryService.iOSPosition(.zero)
             
             showNodeForm = true
         }

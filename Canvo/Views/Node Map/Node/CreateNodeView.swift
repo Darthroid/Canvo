@@ -86,23 +86,13 @@ struct CreateNodeView: View {
     }
     
     private func createNode() {
-        let id = UUID().uuidString
-
         let positionValue = position ?? SIMD3<Float>(0, 1.0, -1.5)
-
-        let snapshot = NodeSnapshot(
-            id: id,
+        appModel.createNode(
             name: name,
-            richText: attributedDetail,
-            x: positionValue.x,
-            y: positionValue.y,
-            z: positionValue.z,
-            color: color.toHex(includeAlpha: true),
+            attributedDetail: attributedDetail,
+            position: positionValue,
+            color: color,
             tagsRaw: tagsRaw
         )
-
-        let action = AddNodeAction(node: snapshot)
-
-        appModel.actionService.perform(action)
     }
 }
