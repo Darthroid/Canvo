@@ -20,7 +20,7 @@
 		D1ACB3302ECB560200411AD6 /* Exceptions for "Canvo" folder in "Canvo" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Info.plist,
+				Resources/Info.plist,
 			);
 			platformFiltersByRelativePath = {
 				"Views/Node Map/ImmersiveNodeMapView.swift" = (xros, );
@@ -180,7 +180,7 @@
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "$(TARGET_NAME)/Info.plist";
+				INFOPLIST_FILE = "$(TARGET_NAME)/Resources/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = Canvo;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_UIRequiresFullScreen = NO;
@@ -223,7 +223,7 @@
 				DEVELOPMENT_TEAM = 97A6BHXBQU;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "$(TARGET_NAME)/Info.plist";
+				INFOPLIST_FILE = "$(TARGET_NAME)/Resources/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = Canvo;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_UIRequiresFullScreen = NO;

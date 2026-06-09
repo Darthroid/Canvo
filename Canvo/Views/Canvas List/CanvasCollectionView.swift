@@ -188,7 +188,7 @@ struct CanvasCollectionView: View {
                     title: Text("Replace \(canvas.name)?"),
                     message: Text("This cannot be undone."),
                     primaryButton: .destructive(Text("Replace")) {
-                        appModel.replaceCanvasAction(canvas)
+                        appModel.replaceCanvas(canvas)
                     },
                     secondaryButton: .cancel()
                 )
@@ -198,7 +198,7 @@ struct CanvasCollectionView: View {
                     title: Text("Delete Canvas"),
                     message: Text("Are you sure you want to delete \(canvas.name)?"),
                     primaryButton: .destructive(Text("Delete")) {
-                        appModel.deleteCanvasIdAction(canvas.id)
+                        appModel.deleteCanvas(canvas.id)
                     },
                     secondaryButton: .cancel()
                 )
@@ -332,7 +332,7 @@ struct CanvasCollectionView: View {
         .buttonStyle(.plain)
         .contextMenu {
             Button {
-                appModel.toggleCanvasPinAction(canvas)
+                appModel.toggleCanvasPin(canvas)
             } label: {
                 Label(canvas.isPined ? "Remove from Favorites" : "Favorite", systemImage: canvas.isPined ? "star.slash" : "star")
             }
@@ -356,7 +356,7 @@ struct CanvasCollectionView: View {
                 if !appModel.canvases.contains(where: {
                     $0.id == canvas.id
                 }) {
-                    appModel.importCanvasAction(canvas)
+                    appModel.importCanvas(canvas)
                 } else {
                     self.activeAlert = .replace(canvas)
                 }

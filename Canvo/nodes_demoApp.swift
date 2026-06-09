@@ -100,7 +100,7 @@ struct nodes_demoApp: App {
                 } label: {
                     Label("Zoom In", systemImage: "plus.magnifyingglass")
                 }
-                .disabled(appModel.currentCanvas == nil)
+                .disabled(appModel.session.currentCanvas == nil)
                 .keyboardShortcut("=", modifiers: [.command])
                 
                 Button {
@@ -108,13 +108,13 @@ struct nodes_demoApp: App {
                 }  label: {
                     Label("Zoom Out", systemImage: "minus.magnifyingglass")
                 }
-                .disabled(appModel.currentCanvas == nil)
+                .disabled(appModel.session.currentCanvas == nil)
                 .keyboardShortcut("-", modifiers: [.command])
                 
                 Button ("Real Size"){
                     NotificationCenter.default.post(name: .init(rawValue: "resetzoom"), object: nil)
                 }
-                .disabled(appModel.currentCanvas == nil)
+                .disabled(appModel.session.currentCanvas == nil)
                 .keyboardShortcut("0", modifiers: [.command])
             }
             
@@ -126,7 +126,7 @@ struct nodes_demoApp: App {
                           systemImage: "squareshape.split.2x2.dotted.inside.and.outside"
                     )
                 }
-                .disabled(appModel.currentCanvas == nil)
+                .disabled(appModel.session.currentCanvas == nil)
                 
                 Button {
                     NotificationCenter.default.post(name: .init(rawValue: "outline"), object: nil)
@@ -135,7 +135,7 @@ struct nodes_demoApp: App {
                           systemImage: "list.bullet.indent"
                     )
                 }
-                .disabled(appModel.currentCanvas == nil)
+                .disabled(appModel.session.currentCanvas == nil)
                 .keyboardShortcut("m", modifiers: [.command, .shift])
             }
         }

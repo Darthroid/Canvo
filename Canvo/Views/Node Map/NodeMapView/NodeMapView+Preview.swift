@@ -12,7 +12,7 @@ extension NodeMapView {
     
     @MainActor
     func generatePreview() {
-        guard let canvas = appModel.currentCanvas else { return }
+        guard let canvas = appModel.session.currentCanvas else { return }
 
         appModel.previewService.generatePreview(
             for: canvas,

@@ -10,7 +10,7 @@ import Foundation
 extension NodeMapView {
     @MainActor
     func exportAsImage(format: ExportFormat) {
-        guard let canvas = appModel.currentCanvas else { return }
+        guard let canvas = appModel.session.currentCanvas else { return }
         
         let image = appModel.previewService.previewImage(
             nodes: canvas.nodes ?? [],
@@ -26,7 +26,7 @@ extension NodeMapView {
     
     @MainActor
     func exportJSON() {
-        guard let canvas = appModel.currentCanvas else { return }
+        guard let canvas = appModel.session.currentCanvas else { return }
         
         do {
             let data = try appModel.exportService.exportJSONCanvas(canvas)

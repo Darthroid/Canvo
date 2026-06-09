@@ -80,24 +80,11 @@ struct LinkEditorView: View {
     
     private func createLink() {
         guard !selectedNodeIds.isEmpty else { return }
+        appModel.addConnections(
+            fromNodeId: fromNode.id,
+            toIds: selectedNodeIds
+        )
         
-        appModel.actionService.beginBatch()
-        selectedNodeIds.forEach { toNodeId in
-            guard !appModel.connections.contains(where: {
-                ($0.fromNodeId == fromNode.id && $0.toNodeId == toNodeId) ||
-                ($0.fromNodeId == toNodeId && $0.toNodeId == fromNode.id)
-            }) else { return }
-            
-            let snapshot = ConnectionSnapshot(
-                id: UUID().uuidString,
-                fromNodeId: fromNode.id,
-                toNodeId: toNodeId
-            )
-            
-            let action = AddConnectionAction(connection: snapshot)
-            appModel.actionService.perform(action)
-        }
-        appModel.actionService.endBatch()
     }
 }
 
