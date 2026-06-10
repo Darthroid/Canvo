@@ -95,7 +95,7 @@ struct AIEditCanvasView: View {
     private var modeSection: some View {
         VStack(alignment: .leading, spacing: 14) {
 
-            sectionTitle("Mode")
+            sectionTitle(String(localized: "Mode"))
 
             ScrollView(.horizontal) {
                 HStack(spacing: 14) {
@@ -131,7 +131,7 @@ struct AIEditCanvasView: View {
     private var scopeSection: some View {
         VStack(alignment: .leading, spacing: 10) {
 
-            sectionTitle("Scope")
+            sectionTitle(String(localized: "Scope"))
 
             HStack(spacing: 10) {
 

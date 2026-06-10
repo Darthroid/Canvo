@@ -14,6 +14,16 @@ enum CanvasFilter: String, CaseIterable, Identifiable {
     case favorites = "Favorites"
     
     var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .all:
+            return String(localized: "All")
+        case .recent:
+            return String(localized: "Recent")
+        case .favorites:
+            return String(localized: "Favorites")
+        }
+    }
 }
 
 
@@ -30,7 +40,7 @@ struct CanvasTabsView: View {
                 } label: {
                     HStack(spacing: 6) {
                         
-                        Text(filter.rawValue)
+                        Text(filter.title)
                             .font(.system(size: 15, weight: .medium))
                     }
                     .foregroundStyle(selectedFilter == filter ? .white : .primary)

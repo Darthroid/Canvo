@@ -6,6 +6,7 @@
 //
 
 
+import Foundation
 enum AIMode: String, CaseIterable, Identifiable {
     case extend
     case summarize
@@ -15,20 +16,20 @@ enum AIMode: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .extend: "Expand"
-        case .summarize: "Summarize"
-        case .explain: "Explain"
+        case .extend: String(localized: "Expand")
+        case .summarize: String(localized: "Summarize")
+        case .explain: String(localized: "Explain")
         }
     }
 
     var subtitle: String {
         switch self {
         case .extend:
-            "Generate related ideas"
+            String(localized: "Generate related ideas")
         case .summarize:
-            "Compress selected content"
+            String(localized: "Compress selected content")
         case .explain:
-            "Explains concepts and key points"
+            String(localized: "Explains concepts and key points")
         }
     }
 
@@ -46,44 +47,44 @@ enum AIMode: String, CaseIterable, Identifiable {
     var actionTitle: String {
         switch self {
         case .extend:
-            "Generate Nodes"
+            String(localized: "Generate Nodes")
         case .summarize:
-            "Create Summary"
+            String(localized: "Create Summary")
         case .explain:
-            "Explain Canvas"
+            String(localized: "Explain Canvas")
         }
     }
 
     var loadingTitle: String {
         switch self {
         case .extend:
-            "Generating Nodes"
+            String(localized: "Generating Nodes")
         case .summarize:
-            "Creating Summary"
+            String(localized: "Creating Summary")
         case .explain:
-            "Generating Explanation"
+            String(localized: "Generating Explanation")
         }
     }
 
     var promptTitle: String {
         switch self {
         case .extend:
-            "What should AI add?"
+            String(localized: "What should AI add?")
         case .summarize:
-            "What should AI focus on?"
+            String(localized: "What should AI focus on?")
         case .explain:
-            "What do you want explained?"
+            String(localized: "What do you want explained?")
         }
     }
 
     var placeholder: String {
         switch self {
         case .extend:
-            "Add onboarding flow and monetization ideas..."
+            String(localized: "Add onboarding flow and monetization ideas...")
         case .summarize:
-            "Summarize into concise product requirements..."
+            String(localized: "Summarize into concise product requirements...")
         case .explain:
-            "Explain how these systems interact..."
+            String(localized: "Explain how these systems interact...")
         }
     }
 }

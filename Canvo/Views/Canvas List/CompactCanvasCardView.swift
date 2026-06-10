@@ -19,11 +19,11 @@ struct CompactCanvasCardView: View {
         let date = canvas.updatedAt
 
         if Calendar.current.isDateInToday(date) {
-            return "Today, " + date.formatted(
+            return String(localized: "Today, ") + date.formatted(
                 .dateTime.hour().minute()
             )
         } else if Calendar.current.isDateInYesterday(date) {
-            return "Yesterday, " + date.formatted(
+            return String(localized: "Yesterday, ") + date.formatted(
                 .dateTime.hour().minute()
             )
         } else {

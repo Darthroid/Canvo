@@ -64,13 +64,13 @@ struct NodeMapView: View {
         guard let date = appModel.session.currentCanvas?.updatedAt else { return nil }
         
         if Calendar.current.isDateInToday(date) {
-            return "Today, " + date.formatted(
+            return String(localized: "Today, ") + date.formatted(
                 .dateTime
                     .hour()
                     .minute()
             )
         } else if Calendar.current.isDateInYesterday(date) {
-            return "Yesterday, " + date.formatted(
+            return String(localized: "Yesterday, ") + date.formatted(
                 .dateTime
                     .hour()
                     .minute()
@@ -173,7 +173,7 @@ struct NodeMapView: View {
     
     var selectedNodesFloatingPanel: some View {
         HStack(spacing: 24) {
-            Text(String(format: appModel.session.selectedNodeIds.count > 1 ? "%d items" : "%d item", appModel.session.selectedNodeIds.count))
+            Text(String(format: appModel.session.selectedNodeIds.count > 1 ? String(localized: "%d items") : String(localized: "%d item"), appModel.session.selectedNodeIds.count))
             
             Button {
                 appModel.removeSelectedNodes()
@@ -417,7 +417,7 @@ struct NodeMapView: View {
                     ShareSheet(
                         item: ShareImageItem(
                             image: generatedPreview,
-                            title: appModel.session.currentCanvas?.name ?? "Map Export",
+                            title: appModel.session.currentCanvas?.name ?? String(localized: "Canvas Export"),
                             format: selectedFormat
                         )
                     )
@@ -425,7 +425,7 @@ struct NodeMapView: View {
                     ShareSheet(
                         item: ShareJSONItem(
                             jsonData: generatedJSON,
-                            filename: appModel.session.currentCanvas?.name ?? "Map Export"
+                            filename: appModel.session.currentCanvas?.name ?? String(localized: "Canvas Export")
                         )
                     )
                 }

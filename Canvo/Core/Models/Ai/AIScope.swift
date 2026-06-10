@@ -6,6 +6,7 @@
 //
 
 
+import Foundation
 enum AIScope: String, CaseIterable, Identifiable {
     case selection
     case visible
@@ -16,11 +17,11 @@ enum AIScope: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .selection:
-            "Selection"
+            String(localized: "Selection")
         case .visible:
-            "Visible"
+            String(localized:"Visible")
         case .canvas:
-            "Entire Canvas"
+            String(localized:"Entire Canvas")
         }
     }
 
