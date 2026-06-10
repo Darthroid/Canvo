@@ -14,15 +14,15 @@ enum EditCanvasMode: String, CaseIterable, Identifiable {
     
     var navTitle: String {
         switch self {
-        case .create, .aiCreate: return "Create Canvas"
-        case .edit: return "Edit Canvas"
+        case .create, .aiCreate: return String(localized: "Create Canvas")
+        case .edit: return String(localized:"Edit Canvas")
         }
     }
     
     var confirmActionTitle: String {
         switch self {
-        case .create, .aiCreate: return "Create"
-        case .edit: return "Rename"
+        case .create, .aiCreate: return String(localized:"Create")
+        case .edit: return String(localized:"Rename")
         }
     }
 }
@@ -66,17 +66,17 @@ struct EditCanvasView: View {
                         if mode != .edit {
                             VStack(spacing: 12) {
                                 modeCard(
-                                    title: "Create manually",
-                                    subtitle: "Start with an empty canvas",
+                                    title: String(localized: "Create manually"),
+                                    subtitle: String(localized: "Start with an empty canvas"),
                                     icon: "pencil",
                                     current: .create
                                 )
 
                                 modeCard(
-                                    title: "Generate with AI",
+                                    title: String(localized: "Generate with AI"),
                                     subtitle: appModel.aiGenerationService.isAvailable
-                                        ? "Describe a topic and AI will build a canvas"
-                                        : "Currently not available",
+                                        ? String(localized: "Describe a topic and AI will build a canvas")
+                                        : String(localized: "Currently not available"),
                                     icon: "sparkles",
                                     current: .aiCreate
                                 )

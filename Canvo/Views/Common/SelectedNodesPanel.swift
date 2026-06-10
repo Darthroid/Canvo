@@ -17,7 +17,7 @@ struct SelectedNodesPanel: View {
     
     var body: some View {
         HStack(spacing: 24) {
-            Text(String(format: appModel.session.selectedNodeIds.count > 1 ? "%d items" : "%d item", appModel.session.selectedNodeIds.count))
+            Text(String(format: appModel.session.selectedNodeIds.count > 1 ? String(localized: "%d items") : String(localized: "%d item"), appModel.session.selectedNodeIds.count))
             
             panelButton(systemImage: "trash") {
                 onDelete()

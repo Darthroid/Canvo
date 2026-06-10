@@ -17,18 +17,18 @@ enum CanvasGenerationStyle: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .radial:
-            return "Radial"
+            return String(localized: "Radial")
         case .tree:
-            return "Tree"
+            return String(localized: "Tree")
         }
     }
 
     var subtitle: String {
         switch self {
         case .radial:
-            return "One idea in the center with connected topics around it"
+            return String(localized: "One idea in the center with connected topics around it")
         case .tree:
-            return "Hierarchical structure with branches and subtopics"
+            return String(localized: "Hierarchical structure with branches and subtopics")
         }
     }
 }
@@ -81,7 +81,7 @@ class AIGenerationService: Sendable {
 
                     try Task.checkCancellation()
 
-                    runningStage = "Creating canvas"
+                    runningStage = String(localized: "Creating canvas")
 
                     let session = LanguageModelSession(
                         model: model,
@@ -97,7 +97,7 @@ class AIGenerationService: Sendable {
 
                     // MAIN NODE
 
-                    runningStage = "Creating main idea"
+                    runningStage = String(localized: "Creating main idea")
 
                     var mainIdea = try await generateMainNode(
                         session: session,
@@ -118,7 +118,7 @@ class AIGenerationService: Sendable {
 
                     try Task.checkCancellation()
                     
-                    runningStage = "Extending main idea"
+                    runningStage = String(localized: "Extending main idea")
 
                     let generated = try await generateNodes(
                         style: style,
@@ -133,7 +133,7 @@ class AIGenerationService: Sendable {
 
                     continuation.yield(canvas)
 
-                    runningStage = "Finalizing"
+                    runningStage = String(localized: "Finalizing")
 
                     continuation.yield(canvas)
 
@@ -564,7 +564,7 @@ extension AIGenerationService {
                     var newConnections = [NodeConnectionSchema]()
                     
                     continuation.yield(([], []))
-                    runningStage = "Reading Canvas"
+                    runningStage = String(localized: "Reading Canvas")
                     
                     let session = LanguageModelSession(
                         model: model,
@@ -581,7 +581,7 @@ extension AIGenerationService {
                     for node in nodes {
                         try Task.checkCancellation()
                         
-                        runningStage = "Extending '\(node.name)'"
+                        runningStage = String(localized: "Extending '\(node.name)'")
                         
                         let schema = node.toSchema()
 
@@ -663,7 +663,7 @@ extension AIGenerationService {
             
             self.currentTask = Task {
                 do {
-                    runningStage = "Creating Summary"
+                    runningStage = String(localized: "Creating Summary")
                     
                     try Task.checkCancellation()
                     
@@ -764,7 +764,7 @@ extension AIGenerationService {
             
             self.currentTask = Task {
                 do {
-                    runningStage = "Explainig"
+                    runningStage = String(localized: "Explainig")
                     
                     try Task.checkCancellation()
                     

@@ -105,7 +105,7 @@ struct AIGenerationSnackbar: View {
     .frame(maxWidth: .infinity)
     .overlay(alignment: .bottom) {
         AIGenerationSnackbar(
-            title: "Generating Canvas",
+            title: String(localized: "Generating Canvas"),
             onCancel: {
                 //
             }

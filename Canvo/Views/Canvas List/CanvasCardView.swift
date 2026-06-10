@@ -18,13 +18,13 @@ struct CanvasCardView: View {
         let date = canvas.updatedAt
 
         if Calendar.current.isDateInToday(date) {
-            return "Today, " + date.formatted(
+            return String(localized: "Today, ") + date.formatted(
                 .dateTime
                     .hour()
                     .minute()
             )
         } else if Calendar.current.isDateInYesterday(date) {
-            return "Yesterday, " + date.formatted(
+            return String(localized: "Yesterday, ") + date.formatted(
                 .dateTime
                     .hour()
                     .minute()
@@ -115,7 +115,7 @@ struct CanvasCardView: View {
 
                     Spacer()
 
-                    Text("\(canvas.nodes?.count ?? 0) nodes")
+                    Text(String(localized: "\(canvas.nodes?.count ?? 0) nodes"))
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }

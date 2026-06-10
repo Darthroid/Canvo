@@ -171,14 +171,14 @@ struct CanvasCollectionView: View {
                 .environment(appModel)
         }
         .alert(
-            "Error",
+            String(localized: "Error"),
             isPresented: $showError
         ) {
             Button("OK") {
                 // Handle the acknowledgement.
             }
         } message: {
-            Text(errorMessage ?? "Something went wrong")
+            Text(errorMessage ?? String(localized: "Something went wrong"))
         }
         .alert(item: $activeAlert) { alert in
             switch alert {
@@ -214,23 +214,23 @@ struct CanvasCollectionView: View {
         switch selectedFilter {
         case .all:
             return (
-                searchQuery.isEmpty ? "No Canvases Yet" : "No Results",
+                searchQuery.isEmpty ? String(localized: "No Canvases Yet") : String(localized: "No Results"),
                 searchQuery.isEmpty ? "rectangle.3.group" : "magnifyingglass",
-                searchQuery.isEmpty ? "Create a canvas manually or generate one with AI" : "Try adjusting your search"
+                searchQuery.isEmpty ? String(localized: "Create a canvas manually or generate one with AI") : String(localized: "Try adjusting your search")
             )
 
         case .recent:
             return (
-                "No Recent Canvases",
+                String(localized: "No Recent Canvases"),
                 "clock",
-                "Your recently edited canvases will show up here automatically"
+                String(localized: "Your recently edited canvases will show up here automatically")
             )
 
         case .favorites:
             return (
-                "No Favorites",
+                String(localized: "No Favorites"),
                 "star",
-                "Save important canvases for quick access anytime"
+                String(localized: "Save important canvases for quick access anytime")
             )
         }
     }
@@ -364,7 +364,7 @@ struct CanvasCollectionView: View {
             
         } catch {
             showError.toggle()
-            errorMessage = "Import Failed" + "\n" + error.localizedDescription
+            errorMessage = String(localized: "Import Failed") + "\n" + error.localizedDescription
         }
     }
 }
