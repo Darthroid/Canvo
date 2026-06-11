@@ -7,40 +7,48 @@
 
 import SwiftUI
 
+@Observable
+fileprivate final class EditNodeModel {
+    let nodeId: String
+
+    var name: String
+    var attributedDetail: AttributedString
+    var color: Color
+    var tagsRaw: String
+
+    init(node: Node) {
+        nodeId = node.id
+        name = node.name
+        attributedDetail = node.richText
+        color = Color(hex: node.colorRaw ?? "") ?? .white
+        tagsRaw = node.tagsRaw ?? ""
+    }
+}
+
 struct EditNodeView: View {
     @Environment(AppModel.self) private var appModel
     @Environment(\.dismiss) private var dismiss
 
     let nodeId: String
-
-    @State var name: String
-    @State var detail: String
-    @State var color: Color
-    @State var tagsRaw: String
     
-    @State private var attributedDetail: AttributedString
+    @State private var model: EditNodeModel
         
     @FocusState private var isNameFocused: Bool
     
     init(node: Node) {
-        self.nodeId = node.id
-
-        _name = State(initialValue: node.name)
-        _detail = State(initialValue: node.detail)
-        _color = State(initialValue: Color(hex: node.colorRaw ?? "") ?? .white)
-        _tagsRaw = State(initialValue: node.tagsRaw ?? "")
-        _attributedDetail = State(initialValue: node.richText)
+        nodeId = node.id
+        _model = State(initialValue: EditNodeModel(node: node))
     }
-
+    
     var body: some View {
         NavigationStack {
             Form {
                 Section {
                     
-                    TextField("Name", text: $name)
+                    TextField("Name", text: $model.name)
                         .focused($isNameFocused)
                         .textInputAutocapitalization(.sentences)
-                    ColorPicker("Color", selection: $color, supportsOpacity: true)
+                    ColorPicker("Color", selection: $model.color, supportsOpacity: true)
                 } header: {
                     Text("Name")
                 }
@@ -53,7 +61,7 @@ struct EditNodeView: View {
 //                    )
 //                    .lineLimit(3...6)
 
-                    TextEditor(text: $attributedDetail)
+                    TextEditor(text: $model.attributedDetail)
                         .frame(minHeight: 200)
                     
                 } header: {
@@ -67,7 +75,7 @@ struct EditNodeView: View {
                 Section {
                     TextField(
                         "Tags (separate with commas)",
-                        text: $tagsRaw,
+                        text: $model.tagsRaw,
                         axis: .horizontal
                     )
                     .textInputAutocapitalization(.never)
@@ -91,7 +99,7 @@ struct EditNodeView: View {
                         dismiss()
                     }
                     .disabled(
-                        name.trimmingCharacters(
+                        model.name.trimmingCharacters(
                             in: .whitespacesAndNewlines
                         ).isEmpty
                     )
@@ -108,10 +116,10 @@ struct EditNodeView: View {
     private func submit() {
         appModel.editNode(
             nodeId: nodeId,
-            name: name,
-            attributedDetail: attributedDetail,
-            color: color,
-            tagsRaw: tagsRaw
+            name: model.name,
+            attributedDetail: model.attributedDetail,
+            color: model.color,
+            tagsRaw: model.tagsRaw
         )
 
         dismiss()

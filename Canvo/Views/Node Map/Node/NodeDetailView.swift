@@ -12,8 +12,8 @@ struct NodeDetailView: View {
     @Environment(AppModel.self) private var appModel
 
     @State private var showDeleteConfirmation = false
-    @State private var showEditor = false
-    @State private var showLinkEditor = false
+    @State private var editingNode: Node?
+    @State private var linkNode: Node?
 
     let node: Node
 
@@ -137,13 +137,13 @@ struct NodeDetailView: View {
                 ToolbarItem(placement: .primaryAction) {
                     Menu {
                         Button {
-                            showEditor = true
+                            editingNode = node
                         } label: {
                             Label("Edit", systemImage: "pencil")
                         }
 
                         Button {
-                            showLinkEditor = true
+                            linkNode = node
                         } label: {
                             Label("Link", systemImage: "link")
                         }
@@ -162,11 +162,11 @@ struct NodeDetailView: View {
                     .labelStyle(.iconOnly)
                 }
             }
-            .sheet(isPresented: $showEditor) {
+            .sheet(item: $editingNode) { node in
                 EditNodeView(node: node)
                     .interactiveDismissDisabled()
             }
-            .sheet(isPresented: $showLinkEditor) {
+            .sheet(item: $linkNode) { node in
                 LinkEditorView(fromNode: node)
                     .interactiveDismissDisabled()
             }
