@@ -24,27 +24,18 @@ struct OnboardingView: View {
 
                 // LOGO + TITLE
                 VStack(alignment: .leading, spacing: 12) {
-
+                    
                     Image("appIcon")
                         .resizable()
                         .frame(width: 80, height: 80)
                         .cornerRadius(12)
                         .opacity(showLogo ? 1 : 0)
                         .offset(y: showLogo ? 0 : 8)
-
-                    VStack(alignment: .leading, spacing: 8) {
-
-                        Text("Welcome to Canvo")
-                            .font(.largeTitle.bold())
-                            .opacity(showTitle ? 1 : 0)
-                            .offset(y: showTitle ? 0 : 10)
-
-                        Text("Visual thinking, structured ideas")
-                            .font(.body)
-                            .foregroundStyle(.secondary)
-                            .opacity(showTitle ? 1 : 0)
-                            .offset(y: showTitle ? 0 : 10)
-                    }
+                    
+                    Text("Welcome to Canvo")
+                        .font(.largeTitle.bold())
+                        .opacity(showTitle ? 1 : 0)
+                        .offset(y: showTitle ? 0 : 10)
                 }
 
                 // FEATURES
@@ -52,32 +43,20 @@ struct OnboardingView: View {
 
                     FeatureRow(
                         icon: "sparkles",
-                        title: "AI Generation",
-                        detail: "Turn a single idea into a structured mind-map instantly"
+                        title: String(localized: "Start with an Idea"),
+                        detail: String(localized: "AI turns a single thought into a structured mind map in seconds")
                     )
 
                     FeatureRow(
-                        icon: "point.topleft.down.curvedto.point.bottomright.up",
-                        title: "Node-Based Editing",
-                        detail: "Connect ideas freely and build non-linear structures"
+                        icon: "point.3.connected.trianglepath.dotted",
+                        title: String(localized: "Think Visually"),
+                        detail: String(localized: "Explore ideas through connections instead of endless notes")
                     )
 
                     FeatureRow(
                         icon: "rectangle.3.group",
-                        title: "Visual Organization",
-                        detail: "Keep complex ideas structured and easy to navigate"
-                    )
-
-                    FeatureRow(
-                        icon: "star",
-                        title: "Favorites",
-                        detail: "Pin important canvases for quick access anytime"
-                    )
-
-                    FeatureRow(
-                        icon: "clock",
-                        title: "Recent Activity",
-                        detail: "Your work is automatically tracked and organized"
+                        title: String(localized: "Bring Order to Complexity"),
+                        detail: String(localized: "Transform scattered information into clear structure")
                     )
                 }
                 .opacity(showFeatures ? 1 : 0)
