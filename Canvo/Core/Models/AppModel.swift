@@ -113,6 +113,7 @@ final class AppModel: Sendable {
         
         do {
             canvases = try repository.fetchCanvases()
+            SpotlightService.index(canvases: canvases)
         } catch {
             print("Failed to fetch canvases: \(error)")
             canvases = []
@@ -125,7 +126,17 @@ final class AppModel: Sendable {
     }
     
     func switchToCanvas(_ canvas: Canvas?) {
+        immersiveMapToolbarOpen = false
+        immersiveMapOpen = false
+        outlineOpen = false
+        aiEditorOpen = false
+        
         session.switchTo(canvas, actionService: actionService)
+    }
+    
+    func switchToCanvas(_ id: String) {
+        guard let canvas = repository.canvas(id: id) else { return }
+        switchToCanvas(canvas)
     }
 }
 
@@ -215,6 +226,8 @@ extension AppModel {
         
         if let canvas = repository.canvas(id: id) {
             switchToCanvas(canvas)
+            
+            SpotlightService.index(canvas: canvas)
         }
     }
     
@@ -228,6 +241,8 @@ extension AppModel {
         save()
         
         reviewRequestService.handle(event: .canvasCreated)
+        
+        SpotlightService.index(canvas: canvas)
     }
     
     func replaceCanvas(_ canvas: Canvas) {
@@ -244,6 +259,9 @@ extension AppModel {
         tagsService.recomputeCanvasTags(canvasId: canvas.id)
         
         save()
+        
+        SpotlightService.removeFromIndexing(canvas: canvas)
+        SpotlightService.index(canvas: canvas)
     }
     
     func addCanvasFromAI(_ canvas: Canvas) {
@@ -259,6 +277,8 @@ extension AppModel {
         reviewRequestService.handle(event: .aiGenerationAccepted)
         
         switchToCanvas(canvas)
+        
+        SpotlightService.index(canvas: canvas)
     }
     
     func renameCanvas(id: String, newName: String) {
@@ -273,6 +293,8 @@ extension AppModel {
         actionService.perform(action)
         
         save()
+        
+        SpotlightService.removeFromIndexing(canvas: canvas)
     }
     
     func deleteCanvas(_ id: String) {
@@ -284,6 +306,8 @@ extension AppModel {
         actionService.perform(action)
         
         save()
+        
+        SpotlightService.removeFromIndexing(canvas: canvas)
     }
     
     func toggleCanvasPin(_ canvas: Canvas) {

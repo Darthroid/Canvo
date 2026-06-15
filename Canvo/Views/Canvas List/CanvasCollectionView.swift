@@ -12,6 +12,8 @@ import RealityKit
 import RealityKitContent
 #endif
 
+import CoreSpotlight
+
 private enum ActiveAlert: Identifiable {
     case delete(Canvas)
     case replace(Canvas)
@@ -89,6 +91,11 @@ struct CanvasCollectionView: View {
                 .navigationDestination(item: $navigationCanvas) { canvas in
                     NodeMapView()
                         .environment(appModel)
+                }
+                .onContinueUserActivity(CSSearchableItemActionType) { userActivity in
+                    if let identifier = userActivity.userInfo?[CSSearchableItemActivityIdentifier] as? String {
+                        appModel.switchToCanvas(identifier)
+                    }
                 }
                 .toolbar {
                     #if !os(visionOS)
