@@ -70,7 +70,7 @@ struct ImmersiveNodeMapView: View {
 
             ForEach(appModel.visibleNodes) { node in
                 Attachment(id: node.id) {
-                    EmptyView()
+                    let isFocused = !appModel.session.focusNodeIds.isEmpty
                     NodeView(
                         node: node,
                         isSelected: appModel.session.selectedNodeIds.contains(node.id),
@@ -102,6 +102,7 @@ struct ImmersiveNodeMapView: View {
                         }
                     )
                     .frame(maxWidth: 400)
+                    .opacity(!isFocused ? 1 : (appModel.session.focusNodeIds.contains(node.id) ? 1 : 0.1))
                 }
             }
         }

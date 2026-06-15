@@ -174,10 +174,40 @@ struct NodeMapView: View {
         }
     }
     
+    private var focusPanel: some View {
+        HStack(spacing: 24) {
+            
+            Text("Focus mode")
+
+            Button {
+                appModel.session.focusNodeIds.removeAll()
+            } label: {
+                Image(systemName: "xmark")
+                    .frame(width: 36, height: 36)
+                    .contentShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .labelsHidden()
+            #if os(visionOS)
+            .clipShape(Circle())
+            #endif
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 8)
+        #if !os(visionOS)
+        .glassEffect()
+        #else
+        .glassBackgroundEffect()
+        #endif
+
+    }
+    
     var canvas: some View {
         ZStack {
             
             ZStack {
+                let isFocused = !appModel.session.focusNodeIds.isEmpty
+                
                 // Canvas grid
                 if showGrid {
                     GridLayer()
@@ -188,11 +218,14 @@ struct NodeMapView: View {
                     if let a = appModel.node(forId: c.fromNodeId),
                        let b = appModel.node(forId: c.toNodeId),
                        !a.isHidden && !b.isHidden {
+                        
+                        let shouldFocus = appModel.session.focusNodeIds.contains(c.fromNodeId) && appModel.session.focusNodeIds.contains(c.toNodeId)
                         ConnectionView(
                             from: a.position.position2D,
                             to: b.position.position2D
                         )
                         .stroke(.secondary, lineWidth: 2)
+                        .opacity(!isFocused ? 1 : (shouldFocus ? 1 : 0.1))
                     }
                 }
                 
@@ -208,6 +241,7 @@ struct NodeMapView: View {
                         onLink: { showLinkToNode = node },
                         onDelete: { showDeleteNode = node }
                     )
+                    .opacity(!isFocused ? 1 : (appModel.session.focusNodeIds.contains(node.id) ? 1 : 0.1))
                     .position(node.position.position2D)
                     .gesture(nodeDrag(node))
                     .onTapGesture(count: 1) {
@@ -268,6 +302,11 @@ struct NodeMapView: View {
                             #else
                             .glassBackgroundEffect()
                             #endif
+                    }
+                    
+                    // Focus mode
+                    if appModel.session.focusNodeIds.count > 0 {
+                        focusPanel
                     }
                     
                     // This spacer pushes content below nav bar

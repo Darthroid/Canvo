@@ -79,6 +79,34 @@ struct ImmersiveMapToolbar: View {
         .labelStyle(.iconOnly)
         .clipShape(Circle())
     }
+    
+    private var focusPanel: some View {
+        HStack(spacing: 24) {
+            
+            Text("Focus mode")
+
+            Button {
+                appModel.session.focusNodeIds.removeAll()
+            } label: {
+                Image(systemName: "xmark")
+                    .frame(width: 36, height: 36)
+                    .contentShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .labelsHidden()
+            #if os(visionOS)
+            .clipShape(Circle())
+            #endif
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 8)
+        #if !os(visionOS)
+        .glassEffect()
+        #else
+        .glassBackgroundEffect()
+        #endif
+
+    }
 
     var body: some View {
         
@@ -100,6 +128,9 @@ struct ImmersiveMapToolbar: View {
                     .combined(with: .opacity)
                 )
             } else {
+                if !appModel.session.focusNodeIds.isEmpty {
+                    focusPanel
+                }
                 if !appModel.session.selectedNodeIds.isEmpty {
                     SelectedNodesPanel {
                         appModel.removeSelectedNodes()

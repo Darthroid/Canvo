@@ -39,13 +39,35 @@ struct SelectedNodesPanel: View {
                         .map(\.id)
                         .forEach { appModel.session.selectedNodeIds.insert($0) }
                 } label: {
-                    Text("Select All")
+                    Label {
+                        Text("Select All")
+                    } icon: {
+                        Image(systemName: "selection.pin.in.out")
+                    }
                 }
                 
                 Button {
                     onDuplicate()
                 } label: {
-                    Text("Duplicate")
+                    Label {
+                        Text("Duplicate")
+                    } icon: {
+                        Image(systemName: "plus.square.on.square")
+                    }
+                }
+                
+                Divider()
+                
+                Button {
+                    for id in appModel.session.selectedNodeIds {
+                        appModel.session.focusNodeIds.insert(id)
+                    }
+                } label: {
+                    Label {
+                        Text("Focus")
+                    } icon: {
+                        Image(systemName: "dot.viewfinder")
+                    }
                 }
             } label: {
                 Image(systemName: "ellipsis")

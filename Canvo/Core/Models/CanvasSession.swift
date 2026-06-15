@@ -14,6 +14,7 @@ final class CanvasSession {
 
     var currentCanvas: Canvas?
 
+    var focusNodeIds: Set<String> = []
     var selectedNodeIds: Set<String> = []
     var expandedNodeIds: Set<String> = []
 
@@ -22,6 +23,9 @@ final class CanvasSession {
     var centerOnNodeId: String?
     var pendingNodePosition: SIMD3<Float>?
     
+    func cleareFocused() {
+        focusNodeIds.removeAll()
+    }
     
     func clearSelection() {
         selectedNodeIds.removeAll()
@@ -36,6 +40,7 @@ final class CanvasSession {
     }
 
     func reset() {
+        cleareFocused()
         clearSelection()
         clearExpanded()
         clearFilters()
