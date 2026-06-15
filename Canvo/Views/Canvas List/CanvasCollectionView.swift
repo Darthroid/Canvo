@@ -44,6 +44,9 @@ struct CanvasCollectionView: View {
     
     @State private var activeAlert: ActiveAlert?
     
+    // used when canvas created to open it immedeately
+    @State private var navigationCanvas: Canvas?
+    
     private let minCardWidth: CGFloat = 320
     private let listSpacing: CGFloat = 18
     private let gridSpacing: CGFloat = 24
@@ -83,6 +86,10 @@ struct CanvasCollectionView: View {
                     text: $searchQuery,
                 )
                 .searchToolbarBehavior(.minimize)
+                .navigationDestination(item: $navigationCanvas) { canvas in
+                    NodeMapView()
+                        .environment(appModel)
+                }
                 .toolbar {
                     #if !os(visionOS)
                     DefaultToolbarItem(kind: .search, placement: .bottomBar)
@@ -204,6 +211,9 @@ struct CanvasCollectionView: View {
                 )
             }
         }
+        .onChange(of: appModel.session.currentCanvas) { _, newValue in
+            navigationCanvas = newValue
+        }
         .onDisappear {
             appModel.aiGenerationService.cancelCurrentTask()
         }
@@ -311,12 +321,8 @@ struct CanvasCollectionView: View {
     }
     
     @ViewBuilder func canvasCard(for canvas: Canvas) -> some View {
-        NavigationLink {
-            NodeMapView()
-                .environment(appModel)
-                .onAppear {
-                    appModel.switchToCanvas(canvas)
-                }
+        Button {
+            appModel.switchToCanvas(canvas)
         } label: {
             if isCompactPresentation {
                 CompactCanvasCardView(canvas: canvas)

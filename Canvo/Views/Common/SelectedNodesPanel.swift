@@ -10,6 +10,7 @@ import SwiftUI
 struct SelectedNodesPanel: View {
     @Environment(AppModel.self) private var appModel
     
+    var isDemo: Bool = false
     var onDelete: () -> Void
     var onAiEdit: () -> Void
     var onDuplicate: () -> Void
@@ -17,7 +18,12 @@ struct SelectedNodesPanel: View {
     
     var body: some View {
         HStack(spacing: 24) {
-            Text(String(format: appModel.session.selectedNodeIds.count > 1 ? String(localized: "%d items") : String(localized: "%d item"), appModel.session.selectedNodeIds.count))
+            if isDemo { // used for onboarding screen
+                Text(String(format: String(localized: "%d items"), 3))
+            } else {
+                Text(String(format: appModel.session.selectedNodeIds.count > 1 ? String(localized: "%d items") : String(localized: "%d item"), appModel.session.selectedNodeIds.count))
+            }
+            
             
             panelButton(systemImage: "trash") {
                 onDelete()

@@ -32,6 +32,8 @@ final class AppModel: Sendable {
     var tagsService: TagService
     var mutationService: CanvasMutationService
     
+    var reviewRequestService = ReviewPromptService()
+    
     private let repository: CanvasRepository
     
     var session = CanvasSession()
@@ -210,6 +212,10 @@ extension AppModel {
         actionService.perform(action)
         
         save()
+        
+        if let canvas = repository.canvas(id: id) {
+            switchToCanvas(canvas)
+        }
     }
     
     func importCanvas(_ canvas: Canvas) {
@@ -220,6 +226,8 @@ extension AppModel {
         tagsService.recomputeCanvasTags(canvasId: canvas.id)
         
         save()
+        
+        reviewRequestService.handle(event: .canvasCreated)
     }
     
     func replaceCanvas(_ canvas: Canvas) {
@@ -247,6 +255,10 @@ extension AppModel {
         tagsService.recomputeCanvasTags(canvasId: canvas.id)
         
         save()
+        
+        reviewRequestService.handle(event: .aiGenerationAccepted)
+        
+        switchToCanvas(canvas)
     }
     
     func renameCanvas(id: String, newName: String) {
@@ -312,6 +324,10 @@ extension AppModel {
         let action = AddNodeAction(canvas: canvas, node: snapshot)
         
         actionService.perform(action)
+        
+        if (canvas.nodes ?? []).isEmpty {
+            reviewRequestService.handle(event: .canvasFirstNodeAdded)
+        }
     }
     
     func addNodesFromAIAction(_ nodes: [Node], connections: [NodeConnection]) {

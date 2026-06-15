@@ -70,6 +70,9 @@ struct nodes_demoApp: App {
                 .opacity(appModel.immersiveMapOpen ? 0 : 1)
             // Focus: We can also hide the window drag bar and controls
                 .persistentSystemOverlays(appModel.immersiveMapOpen ? .hidden : .visible)
+                .onAppear {
+                    appModel.reviewRequestService.registerAppLaunch()
+                }
         }
 //        #if os(visionOS)
 //        .windowStyle(.plain)

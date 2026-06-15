@@ -4,6 +4,9 @@ import StoreKit
 
 struct NodeMapView: View {
     @Environment(AppModel.self) var appModel
+    
+    @AppStorage("hasSeenCanvasOnboarding") var hasSeenCanvasOnboarding: Bool = false
+    
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     @Environment(\.verticalSizeClass) var verticalSizeClass
     @Environment(\.openWindow) private var openWindow
@@ -169,65 +172,6 @@ struct NodeMapView: View {
         if let node = searchResults[safe: selectedSearchResultIndex] {
             centerOnNode(node)
         }
-    }
-    
-    var selectedNodesFloatingPanel: some View {
-        HStack(spacing: 24) {
-            Text(String(format: appModel.session.selectedNodeIds.count > 1 ? String(localized: "%d items") : String(localized: "%d item"), appModel.session.selectedNodeIds.count))
-            
-            Button {
-                appModel.removeSelectedNodes()
-            } label: {
-                Image(systemName: "trash")
-            }
-            .buttonStyle(.plain)
-            .labelsHidden()
-            
-            Button {
-                appModel.aiEditorOpen.toggle()
-            } label: {
-                Image(systemName: "sparkles")
-            }
-            .buttonStyle(.plain)
-            .labelsHidden()
-            
-            Menu {
-                Button {
-                    appModel.nodes
-                        .map(\.id)
-                        .forEach { appModel.session.selectedNodeIds.insert($0) }
-                } label: {
-                    Text("Select All")
-                }
-                
-                Button {
-                    appModel.duplicateSelectedNodes()
-                } label: {
-                    Text("Duplicate")
-                }
-            } label: {
-                Image(systemName: "ellipsis")
-            }
-            .buttonStyle(.plain)
-            .labelsHidden()
-            
-            Button {
-                withAnimation {
-                    appModel.session.clearSelection()
-                }
-            } label: {
-                Image(systemName: "xmark")
-            }
-            .buttonStyle(.plain)
-            .labelsHidden()
-        }
-        .padding(.horizontal, 20)
-        .padding(.vertical)
-        #if !os(visionOS)
-        .glassEffect()
-        #else
-        .glassBackgroundEffect()
-        #endif
     }
     
     var canvas: some View {
@@ -478,6 +422,16 @@ struct NodeMapView: View {
                             .presentationBackground(Color(.secondarySystemBackground))
                     }
                 }
+            }
+            .sheet(isPresented: Binding(get: {
+                !hasSeenCanvasOnboarding
+            }, set: { val in
+                hasSeenCanvasOnboarding = !val
+            })) {
+                CanvasOnboardingView()
+                    .onDisappear {
+                        hasSeenCanvasOnboarding = true
+                    }
             }
             .alert(
                 "Delete Node",
@@ -730,18 +684,10 @@ struct NodeMapView: View {
             }
         })
         .onDisappear {
-            handleReviewRequest()
+            appModel.reviewRequestService.handle(event: .canvasCompleted)
             generatePreview()
             appModel.aiGenerationService.cancelCurrentTask()
             appModel.switchToCanvas(nil)
-        }
-    }
-    
-    private func handleReviewRequest() {
-        screenDismissCount += 1
-
-        if screenDismissCount.isMultiple(of: 5) {
-            requestReview()
         }
     }
 }
