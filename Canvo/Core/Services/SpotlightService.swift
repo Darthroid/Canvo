@@ -14,6 +14,7 @@ class SpotlightService {
             let attributeSet = CSSearchableItemAttributeSet(contentType: .text)
             attributeSet.title = canvas.name
             attributeSet.thumbnailURL = CanvasPreviewService().getPreviewURL(for: canvas)
+            attributeSet.keywords = canvas.tags?.compactMap { $0.name }
             attributeSet.lastUsedDate = canvas.updatedAt
             attributeSet.addedDate = canvas.createdAt
             attributeSet.contentDescription = canvas.nodes?.count ?? 0 > 0
@@ -39,7 +40,13 @@ class SpotlightService {
     static func index(canvas: Canvas) {
         let attributeSet = CSSearchableItemAttributeSet(contentType: .text)
         attributeSet.title = canvas.name
-        attributeSet.contentDescription = canvas.nodes?.count ?? 0 > 0 ? "\(canvas.nodes?.count ?? 0) nodes" : "Empty"
+        attributeSet.thumbnailURL = CanvasPreviewService().getPreviewURL(for: canvas)
+        attributeSet.keywords = canvas.tags?.compactMap { $0.name }
+        attributeSet.lastUsedDate = canvas.updatedAt
+        attributeSet.addedDate = canvas.createdAt
+        attributeSet.contentDescription = canvas.nodes?.count ?? 0 > 0
+            ? String(localized: "\(canvas.nodes?.count ?? 0) nodes")
+            : String(localized: "0 nodes")
         
         let item = CSSearchableItem(uniqueIdentifier: canvas.id,
                                     domainIdentifier: "com.darthroid.nodes",
