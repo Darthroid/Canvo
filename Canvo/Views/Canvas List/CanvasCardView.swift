@@ -14,6 +14,10 @@ struct CanvasCardView: View {
     let canvas: Canvas
 
     @State private var previewImage: UIImage?
+    
+    private var shouldHidePreview: Bool {
+        canvas.isSecured
+    }
 
     var updatedAt: String {
         let date = canvas.updatedAt
@@ -45,7 +49,17 @@ struct CanvasCardView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             ZStack {
-                if let previewImage {
+                if shouldHidePreview {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(
+                            theme.background
+                        )
+                        .frame(height: 160)
+                    
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 28, weight: .semibold))
+                        .foregroundStyle(theme.connector)
+                } else if let previewImage {
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
 //                        #if os(visionOS)
 //                        .fill(Color("MapBackground").opacity(0.8))
@@ -65,11 +79,7 @@ struct CanvasCardView: View {
                 } else {
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
                         .fill(
-                            LinearGradient(
-                                colors: [.accentColorSecondary.opacity(0.3), .accent.opacity(0.2)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
+                            theme.background
                         )
                         .frame(height: 160)
 
@@ -78,11 +88,7 @@ struct CanvasCardView: View {
                         .frame(maxWidth: 80, maxHeight: 80)
                         .opacity(0.5)
                         .foregroundStyle(
-                            .linearGradient(
-                                colors: [.accentColorSecondary, .accent],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
+                            theme.selection
                         )
                         .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
                 }

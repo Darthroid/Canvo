@@ -13,6 +13,7 @@ import RealityKitContent
 #endif
 
 import CoreSpotlight
+import LocalAuthentication
 
 private enum ActiveAlert: Identifiable {
     case delete(Canvas)
@@ -99,7 +100,8 @@ struct CanvasCollectionView: View {
                 }
                 .onContinueUserActivity(CSSearchableItemActionType) { userActivity in
                     if let identifier = userActivity.userInfo?[CSSearchableItemActivityIdentifier] as? String {
-                        appModel.switchToCanvas(identifier)
+//                        appModel.switchToCanvas(identifier)
+                        openCanvas(identifier)
                     }
                 }
                 .toolbar {
@@ -335,7 +337,8 @@ struct CanvasCollectionView: View {
     
     @ViewBuilder func canvasCard(for canvas: Canvas) -> some View {
         Button {
-            appModel.switchToCanvas(canvas)
+//            appModel.switchToCanvas(canvas)
+            openCanvas(canvas)
         } label: {
             if viewStyle == .list {
                 CompactCanvasCardView(canvas: canvas)
@@ -361,6 +364,19 @@ struct CanvasCollectionView: View {
                 Label("Rename", systemImage: "pencil")
             }
             
+            Button {
+                authenticateForCanvas { success in
+                    if success {
+                        appModel.toggleCanvasSecured(canvas)
+                    }
+                }
+            } label: {
+                Label(
+                    canvas.isSecured ? "Disable Protection" : "Protect",
+                    systemImage: canvas.isSecured ? "lock.open" : "lock"
+                )
+            }
+            
             Button(role: .destructive) {
                 self.activeAlert = .delete(canvas)
             } label: {
@@ -384,6 +400,42 @@ struct CanvasCollectionView: View {
         } catch {
             showError.toggle()
             errorMessage = String(localized: "Import Failed") + "\n" + error.localizedDescription
+        }
+    }
+    
+    private func authenticateForCanvas(completion: @escaping (Bool) -> Void) {
+        let context = LAContext()
+        var error: NSError?
+
+        guard context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) else {
+            completion(false)
+            return
+        }
+
+        context.evaluatePolicy(
+            .deviceOwnerAuthenticationWithBiometrics,
+            localizedReason: "Access to protected canvas"
+        ) { success, _ in
+            DispatchQueue.main.async {
+                completion(success)
+            }
+        }
+    }
+    
+    private func openCanvas(_ id: String) {
+        guard let canvas = appModel.canvas(forId: id) else { return }
+        openCanvas(canvas)
+    }
+    
+    private func openCanvas(_ canvas: Canvas) {
+        if canvas.isSecured {
+            authenticateForCanvas { success in
+                if success {
+                    appModel.switchToCanvas(canvas)
+                }
+            }
+        } else {
+            appModel.switchToCanvas(canvas)
         }
     }
 }
