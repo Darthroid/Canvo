@@ -130,14 +130,14 @@ extension UIColor {
     }
 
     /// Контрастный цвет текста
-    func readableTextColor(isDarkMode: Bool) -> UIColor {
+    func readableTextColor() -> UIColor {
         let luminance = relativeLuminance
 
         // Порог можно тюнить
-        if isDarkMode {
+//        if isDarkMode {
             return luminance < 0.35 ? .white : .black
-        } else {
-            return luminance < 0.55 ? .white : .black
-        }
+//        } else {
+//            return luminance < 0.55 ? .white : .black
+//        }
     }
 }

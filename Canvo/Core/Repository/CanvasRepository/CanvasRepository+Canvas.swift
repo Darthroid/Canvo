@@ -65,4 +65,13 @@ public extension CanvasRepository {
 
         canvas.isPined = value
     }
+    
+    func setSecured(
+        canvasId: String,
+        value: Bool
+    ) {
+        guard let canvas = canvas(id: canvasId) else { return }
+
+        canvas.isSecured = value
+    }
 }

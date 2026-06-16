@@ -18,6 +18,8 @@ public class Canvas: Identifiable, Codable {
     
     var isPined: Bool = false
     
+    var isSecured: Bool = false
+    
     @Relationship(deleteRule: .cascade, inverse: \Node.canvas)
     var nodes: [Node]? = []
     
@@ -27,12 +29,13 @@ public class Canvas: Identifiable, Codable {
     @Relationship(deleteRule: .cascade, inverse: \NodeConnection.canvas)
     var connections: [NodeConnection]? = []
     
-    init(id: String = UUID().uuidString, name: String, isPined: Bool = false, nodes: [Node] = [], connections: [NodeConnection] = []) {
+    init(id: String = UUID().uuidString, name: String, isPined: Bool = false, isSecured: Bool = false, nodes: [Node] = [], connections: [NodeConnection] = []) {
         self.id = id
         self.name = name
         self.createdAt = Date()
         self.updatedAt = Date()
         self.isPined = isPined
+        self.isSecured = isSecured
         self.nodes = nodes
         self.connections = connections
     }
@@ -44,6 +47,7 @@ public class Canvas: Identifiable, Codable {
         createdAt = try container.decode(Date.self, forKey: .createdAt)
         updatedAt = try container.decode(Date.self, forKey: .updatedAt)
         isPined = try container.decode(Bool.self, forKey: .isPined)
+        isSecured = try container.decode(Bool.self, forKey: .isSecured)
         nodes = try container.decode([Node].self, forKey: .nodes)
         connections = try container.decode([NodeConnection].self, forKey: .connections)
     }
@@ -55,12 +59,13 @@ public class Canvas: Identifiable, Codable {
         try container.encode(createdAt, forKey: .createdAt)
         try container.encode(updatedAt, forKey: .updatedAt)
         try container.encode(isPined, forKey: .isPined)
+        try container.encode(isSecured, forKey: .isSecured)
         try container.encode(nodes, forKey: .nodes)
         try container.encode(connections, forKey: .connections)
     }
     
     private enum CodingKeys: String, CodingKey {
-        case id, name, createdAt, updatedAt, isPined, connections, nodes
+        case id, name, createdAt, updatedAt, isPined, isSecured, connections, nodes
     }
 }
 
@@ -81,6 +86,7 @@ extension Canvas {
             id: schema.id,
             name: schema.name,
             isPined: false,
+            isSecured: false,
             nodes: schema.nodes.map { Node(from: $0) },
             connections: schema.connections.map { NodeConnection(from: $0) }
         )

@@ -13,6 +13,7 @@ import RealityKitContent
 #endif
 
 import CoreSpotlight
+import LocalAuthentication
 
 private enum ActiveAlert: Identifiable {
     case delete(Canvas)
@@ -29,9 +30,12 @@ private enum ActiveAlert: Identifiable {
 }
 
 struct CanvasCollectionView: View {
-    @AppStorage("isCompactPresentation") var isCompactPresentation: Bool = false
+    @AppStorage("libraryViewStyle")
+    private var viewStyle: LibraryViewStyle = .grid
     
     @Environment(AppModel.self) var appModel
+    @EnvironmentObject private var themeStore: ThemeStore
+    
     @State var showCreateCanvas: Bool = false
     @State var renameCanvas: Canvas?
     
@@ -45,6 +49,8 @@ struct CanvasCollectionView: View {
     @State private var isShowingPicker = false
     
     @State private var activeAlert: ActiveAlert?
+    
+    @State private var showSettings: Bool = false
     
     // used when canvas created to open it immedeately
     @State private var navigationCanvas: Canvas?
@@ -94,7 +100,8 @@ struct CanvasCollectionView: View {
                 }
                 .onContinueUserActivity(CSSearchableItemActionType) { userActivity in
                     if let identifier = userActivity.userInfo?[CSSearchableItemActivityIdentifier] as? String {
-                        appModel.switchToCanvas(identifier)
+//                        appModel.switchToCanvas(identifier)
+                        openCanvas(identifier)
                     }
                 }
                 .toolbar {
@@ -120,36 +127,18 @@ struct CanvasCollectionView: View {
                     
                     ToolbarItem(placement: .topBarTrailing) {
                         Menu {
-                            Menu {
-                                Button {
-                                    isCompactPresentation = false
-                                } label: {
-                                    if !isCompactPresentation {
-                                        Label("Grid", systemImage: "checkmark")
-                                    } else {
-                                        Text("Grid")
-                                    }
-                                }
-                                
-                                Button {
-                                    isCompactPresentation = true
-                                } label: {
-                                    if isCompactPresentation {
-                                        Label("List", systemImage: "checkmark")
-                                    } else {
-                                        Text("List")
-                                    }
-                                }
+                            Button {
+                                isShowingPicker.toggle()
                             } label: {
-                                Label("Display mode", systemImage: isCompactPresentation ? "list.bullet" : "square.grid.2x2" )
+                                Label("Import Canvas", systemImage: "square.and.arrow.down")
                             }
                             
                             Divider()
                             
                             Button {
-                                isShowingPicker.toggle()
+                                showSettings.toggle()
                             } label: {
-                                Label("Import Canvas", systemImage: "square.and.arrow.down")
+                                Label("Settings", systemImage: "gearshape")
                             }
                             
                         } label: {
@@ -174,6 +163,19 @@ struct CanvasCollectionView: View {
             case .failure(let failure):
                 showError.toggle()
                 errorMessage = "Import failed" + "\n" + failure.localizedDescription
+            }
+        }
+        .sheet(isPresented: $showSettings) {
+            NavigationStack {
+                SettingsView()
+                    .environment(appModel)
+                    .environment(
+                        \.canvasTheme,
+                         themeStore.theme.canvasTheme
+                    )
+                    .preferredColorScheme(
+                        themeStore.theme.colorScheme
+                    )
             }
         }
         .sheet(isPresented: $showCreateCanvas) {
@@ -224,7 +226,13 @@ struct CanvasCollectionView: View {
         .onDisappear {
             appModel.aiGenerationService.cancelCurrentTask()
         }
-        
+        .environment(
+            \.canvasTheme,
+             themeStore.theme.canvasTheme
+        )
+        .preferredColorScheme(
+            themeStore.theme.colorScheme
+        )
     }
     
     private var emptyStateConfig: (title: String, systemImage: String, description: String) {
@@ -284,7 +292,7 @@ struct CanvasCollectionView: View {
                     ScrollView {
                         CanvasTabsView(selectedFilter: $selectedFilter)
                         
-                        if isCompactPresentation {
+                        if viewStyle == .list {
                             LazyVStack(spacing: listSpacing) {
                                 ForEach(displayedCanvases) { canvas in
                                     canvasCard(for: canvas)
@@ -329,9 +337,10 @@ struct CanvasCollectionView: View {
     
     @ViewBuilder func canvasCard(for canvas: Canvas) -> some View {
         Button {
-            appModel.switchToCanvas(canvas)
+//            appModel.switchToCanvas(canvas)
+            openCanvas(canvas)
         } label: {
-            if isCompactPresentation {
+            if viewStyle == .list {
                 CompactCanvasCardView(canvas: canvas)
                     .environment(appModel)
                     .hoverEffect(.lift)
@@ -353,6 +362,19 @@ struct CanvasCollectionView: View {
                 self.renameCanvas = canvas
             } label: {
                 Label("Rename", systemImage: "pencil")
+            }
+            
+            Button {
+                authenticateForCanvas { success in
+                    if success {
+                        appModel.toggleCanvasSecured(canvas)
+                    }
+                }
+            } label: {
+                Label(
+                    canvas.isSecured ? "Disable Protection" : "Protect",
+                    systemImage: canvas.isSecured ? "lock.open" : "lock"
+                )
             }
             
             Button(role: .destructive) {
@@ -378,6 +400,42 @@ struct CanvasCollectionView: View {
         } catch {
             showError.toggle()
             errorMessage = String(localized: "Import Failed") + "\n" + error.localizedDescription
+        }
+    }
+    
+    private func authenticateForCanvas(completion: @escaping (Bool) -> Void) {
+        let context = LAContext()
+        var error: NSError?
+
+        guard context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) else {
+            completion(false)
+            return
+        }
+
+        context.evaluatePolicy(
+            .deviceOwnerAuthenticationWithBiometrics,
+            localizedReason: "Access to protected canvas"
+        ) { success, _ in
+            DispatchQueue.main.async {
+                completion(success)
+            }
+        }
+    }
+    
+    private func openCanvas(_ id: String) {
+        guard let canvas = appModel.canvas(forId: id) else { return }
+        openCanvas(canvas)
+    }
+    
+    private func openCanvas(_ canvas: Canvas) {
+        if canvas.isSecured {
+            authenticateForCanvas { success in
+                if success {
+                    appModel.switchToCanvas(canvas)
+                }
+            }
+        } else {
+            appModel.switchToCanvas(canvas)
         }
     }
 }

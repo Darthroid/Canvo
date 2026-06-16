@@ -10,13 +10,15 @@ import SwiftUI
 @main
 struct nodes_demoApp: App {
     @State private var appModel: AppModel = AppModel()
-    
+    @StateObject private var themeStore = ThemeStore()
+
     @AppStorage("hasSeenOnboarding") var hasSeenOnboarding: Bool = false
     
     @ViewBuilder var mainContent: some View {
         if hasSeenOnboarding {
             CanvasCollectionView()
                 .environment(appModel)
+                .environmentObject(themeStore)
                 .alert(
                     "Generation failed",
                     isPresented: Binding(

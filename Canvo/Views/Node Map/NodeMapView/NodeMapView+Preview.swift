@@ -18,6 +18,8 @@ extension NodeMapView {
             for: canvas,
             nodes: canvas.nodes ?? [],
             connections: canvas.connections ?? [],
+            theme: theme,
+            removeBackground: true
         )
     }
     

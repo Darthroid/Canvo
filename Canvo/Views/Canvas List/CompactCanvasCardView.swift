@@ -10,10 +10,15 @@ import SwiftUI
 
 struct CompactCanvasCardView: View {
     @Environment(AppModel.self) private var appModel
+    @Environment(\.canvasTheme) private var theme
     
     let canvas: Canvas
 
     @State private var previewImage: UIImage?
+    
+    private var shouldHidePreview: Bool {
+        canvas.isSecured
+    }
 
     var updatedAt: String {
         let date = canvas.updatedAt
@@ -101,13 +106,23 @@ struct CompactCanvasCardView: View {
     @ViewBuilder
     private var preview: some View {
         ZStack {
-            if let previewImage {
+            if shouldHidePreview {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(
+                        theme.background
+                    )
+                
+                Image(systemName: "lock.fill")
+                    .font(.system(size: 28, weight: .semibold))
+                    .foregroundStyle(theme.connector)
+            } else if let previewImage {
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    #if os(visionOS)
-                    .fill(Color("MapBackground").opacity(0.8))
-                    #else
-                    .fill(.background)
-                    #endif
+//                    #if os(visionOS)
+//                    .fill(Color("MapBackground").opacity(0.8))
+//                    #else
+//                    .fill(.background)
+//                    #endif
+                    .fill(theme.background)
 
                 Image(uiImage: previewImage)
                     .resizable()

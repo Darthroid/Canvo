@@ -7,6 +7,8 @@
 
 import SwiftUI
 
+import SwiftUI
+
 struct NodeView: View {
     let node: Node
     let isSelected: Bool
@@ -15,28 +17,36 @@ struct NodeView: View {
     let toolbarEnabled: Bool
     var onSizeChange: ((CGSize) -> Void)?
 
-    @Environment(\.colorScheme) private var colorScheme
-    
+    @Environment(\.canvasTheme) private var theme
+
     var onDetail: (() -> Void)?
     var onLink: (() -> Void)?
     var onDelete: (() -> Void)?
-    
+
     @State private var dashPhase: CGFloat = 0
 
     private var backgroundUIColor: UIColor {
-        node.color ?? UIColor.systemBackground
+        if let color = node.color {
+            return color
+        }
+
+        return UIColor(theme.nodeBackground)
     }
 
     private var titleColor: Color {
-        Color(
-            uiColor: backgroundUIColor.readableTextColor(
-                isDarkMode: colorScheme == .dark
-            )
-        )
+        Color(uiColor: backgroundUIColor.readableTextColor())
     }
 
     private var secondaryColor: Color {
         titleColor.opacity(0.75)
+    }
+
+    private var borderColor: Color {
+        if node.color != nil {
+            return titleColor.opacity(0.2)
+        }
+
+        return theme.nodeBorder.opacity(0.2)
     }
 
     var body: some View {
@@ -48,10 +58,6 @@ struct NodeView: View {
                     .multilineTextAlignment(.center)
 
                 if isExpanded {
-//                    Text(node.detail.isEmpty ? "No description" : node.detail)
-//                        .font(.system(size: 14))
-//                        .foregroundColor(secondaryColor)
-//                        .multilineTextAlignment(.leading)
                     if node.richText.characters.isEmpty {
                         Text("No description")
                             .font(.system(size: 14))
@@ -60,8 +66,6 @@ struct NodeView: View {
                         Text(node.richText)
                             .foregroundStyle(titleColor)
                             .multilineTextAlignment(.leading)
-//                            .frame(idealHeight: 100)
-//                            .frame(maxHeight: 400)
                     }
                 }
             }
@@ -72,46 +76,42 @@ struct NodeView: View {
         .background(
             RoundedRectangle(cornerRadius: 25)
                 .fill(Color(uiColor: backgroundUIColor))
-                .overlay(
-                    Group {
-                        if isMatchingSearch {
-                            RoundedRectangle(cornerRadius: 28)
-                                .stroke(
-                                    Color.blue,
-                                    style: StrokeStyle(
-                                        lineWidth: 3,
-                                        lineCap: .round,
-                                        lineJoin: .round,
-                                        dash: [6, 6],
-                                        dashPhase: dashPhase
-                                    )
+                .overlay {
+                    if isMatchingSearch {
+                        RoundedRectangle(cornerRadius: 28)
+                            .stroke(
+                                theme.selection,
+                                style: StrokeStyle(
+                                    lineWidth: 3,
+                                    lineCap: .round,
+                                    lineJoin: .round,
+                                    dash: [6, 6],
+                                    dashPhase: dashPhase
                                 )
-                                .onAppear {
-                                    dashPhase = 0
+                            )
+                            .onAppear {
+                                dashPhase = 0
 
-                                    withAnimation(
-                                        .linear(duration: 1.2)
-                                        .repeatForever(autoreverses: false)
-                                    ) {
-                                        dashPhase = -24
-                                    }
+                                withAnimation(
+                                    .linear(duration: 1.2)
+                                    .repeatForever(autoreverses: false)
+                                ) {
+                                    dashPhase = -24
                                 }
-                                .onDisappear {
-                                    dashPhase = 0
-                                }
-                        } else {
-                            if isSelected {
-                                RoundedRectangle(cornerRadius: 25)
-                                    .stroke(.accent, lineWidth: 2)
-                            } else {
-                                RoundedRectangle(cornerRadius: 25)
-                                    .stroke(titleColor.opacity(0.2), lineWidth: 1)
                             }
-                        }
+                            .onDisappear {
+                                dashPhase = 0
+                            }
+                    } else {
+                        RoundedRectangle(cornerRadius: 25)
+                            .stroke(
+                                isSelected ? theme.selection : borderColor,
+                                lineWidth: isSelected ? 2 : 1
+                            )
                     }
-                )
+                }
         )
-        .background(
+        .background {
             GeometryReader { proxy in
                 Color.clear
                     .onAppear {
@@ -121,15 +121,16 @@ struct NodeView: View {
                         onSizeChange?(newSize)
                     }
             }
-        )
+        }
         .overlay(alignment: .bottom) {
             if isExpanded, toolbarEnabled {
                 floatingToolbar
                     .padding(.horizontal, 20)
                     .offset(y: 22)
-                    #if os(visionOS)
+
+                #if os(visionOS)
                     .frame(minWidth: 400)
-                    #endif
+                #endif
             }
         }
         .frame(maxWidth: 400, maxHeight: 600)
@@ -165,7 +166,6 @@ struct NodeView: View {
         .padding(8)
         .background(.ultraThinMaterial)
         .clipShape(Capsule())
-//        .shadow(radius: 8, y: 4)
     }
 
     @ViewBuilder
@@ -185,7 +185,6 @@ struct NodeView: View {
         .buttonStyle(.plain)
     }
 }
-
 
 #Preview {
     NodeView(

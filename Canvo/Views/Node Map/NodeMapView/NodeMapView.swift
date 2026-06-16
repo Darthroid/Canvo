@@ -5,15 +5,30 @@ import StoreKit
 struct NodeMapView: View {
     @Environment(AppModel.self) var appModel
     
-    @AppStorage("hasSeenCanvasOnboarding") var hasSeenCanvasOnboarding: Bool = false
+    @AppStorage("hasSeenCanvasOnboarding")
+    private var hasSeenCanvasOnboarding: Bool = false
     
-    @Environment(\.horizontalSizeClass) var horizontalSizeClass
-    @Environment(\.verticalSizeClass) var verticalSizeClass
-    @Environment(\.openWindow) private var openWindow
+    @AppStorage("applyThemeToExports")
+    var applyThemeToExports = true
+    
+    @Environment(\.horizontalSizeClass)
+    private var horizontalSizeClass
+    
+    @Environment(\.verticalSizeClass)
+    private var verticalSizeClass
+    
+    @Environment(\.openWindow)
+    private var openWindow
+    
+    @Environment(\.canvasTheme)
+    var theme
+    
     #if os(visionOS)
-    @Environment(\.pushWindow) private var pushWindow
+    @Environment(\.pushWindow)
+    private var pushWindow
     #endif
-    @Environment(\.dismissWindow) private var dismissWindow
+    @Environment(\.dismissWindow)
+    private var dismissWindow
     
     var isCompact: Bool {
         return horizontalSizeClass == .compact || verticalSizeClass == .compact
@@ -224,7 +239,7 @@ struct NodeMapView: View {
                             from: a.position.position2D,
                             to: b.position.position2D
                         )
-                        .stroke(.secondary, lineWidth: 2)
+                        .stroke(theme.connector, lineWidth: 2)
                         .opacity(!isFocused ? 1 : (shouldFocus ? 1 : 0.1))
                     }
                 }
@@ -279,7 +294,11 @@ struct NodeMapView: View {
             .offset(offset)
             .coordinateSpace(name: "canvas")
         }
-        .background(Color(uiColor: .secondarySystemFill))
+//        .background(Color(uiColor: .secondarySystemFill))
+        .background(
+            theme.background
+                .ignoresSafeArea()
+        )
     }
     
     var body: some View {
@@ -560,6 +579,12 @@ struct NodeMapView: View {
                             
                         } label: {
                             Label("Export As", systemImage: "square.and.arrow.up")
+                        }
+                        
+                        Button {
+                            printCanvas()
+                        } label: {
+                            Label("Print", systemImage: "printer")
                         }
                         
                         Divider()

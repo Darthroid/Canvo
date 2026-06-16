@@ -76,6 +76,16 @@ final class CanvasMutationService {
             value: value
         )
     }
+    
+    func setSecured(
+        canvasId: String,
+        value: Bool
+    ) {
+        repository.setSecured(
+            canvasId: canvasId,
+            value: value
+        )
+    }
 
     func renameCanvas(
         id: String,

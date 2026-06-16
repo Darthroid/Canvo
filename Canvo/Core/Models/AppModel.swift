@@ -134,6 +134,10 @@ final class AppModel: Sendable {
         session.switchTo(canvas, actionService: actionService)
     }
     
+    func canvas(forId id: String) -> Canvas? {
+        repository.canvas(id: id)
+    }
+    
     func switchToCanvas(_ id: String) {
         guard let canvas = repository.canvas(id: id) else { return }
         switchToCanvas(canvas)
@@ -315,6 +319,18 @@ extension AppModel {
             canvasId: canvas.id,
             oldValue: canvas.isPined,
             newValue: !canvas.isPined
+        )
+        
+        actionService.perform(action)
+        
+        save()
+    }
+    
+    func toggleCanvasSecured(_ canvas: Canvas) {
+        let action = ToggleSecureCanvasAction(
+            canvasId: canvas.id,
+            oldValue: canvas.isSecured,
+            newValue: !canvas.isSecured
         )
         
         actionService.perform(action)
