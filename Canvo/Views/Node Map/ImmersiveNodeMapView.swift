@@ -31,6 +31,8 @@ struct ImmersiveNodeMapView: View {
     }
     
     @Environment(AppModel.self) var appModel
+    @Environment(\.canvasTheme) private var theme
+    
     @State private var draggedEntity: Entity?
     @State private var sceneCache = SceneCache()
     @State private var layoutCache = NodeLayoutCache()

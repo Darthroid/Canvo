@@ -9,7 +9,8 @@ import SwiftUI
 
 struct CanvasCardView: View {
     @Environment(AppModel.self) private var appModel
-    
+    @Environment(\.canvasTheme) private var theme
+
     let canvas: Canvas
 
     @State private var previewImage: UIImage?
@@ -46,11 +47,12 @@ struct CanvasCardView: View {
             ZStack {
                 if let previewImage {
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        #if os(visionOS)
-                        .fill(Color("MapBackground").opacity(0.8))
-                        #else
-                        .fill(.background)
-                        #endif
+//                        #if os(visionOS)
+//                        .fill(Color("MapBackground").opacity(0.8))
+//                        #else
+//                        .fill(.background)
+//                        #endif
+                        .fill(theme.background)
                         .frame(height: 160)
 
                     Image(uiImage: previewImage)

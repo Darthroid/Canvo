@@ -10,6 +10,7 @@ import SwiftUI
 
 struct CompactCanvasCardView: View {
     @Environment(AppModel.self) private var appModel
+    @Environment(\.canvasTheme) private var theme
     
     let canvas: Canvas
 
@@ -103,11 +104,12 @@ struct CompactCanvasCardView: View {
         ZStack {
             if let previewImage {
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    #if os(visionOS)
-                    .fill(Color("MapBackground").opacity(0.8))
-                    #else
-                    .fill(.background)
-                    #endif
+//                    #if os(visionOS)
+//                    .fill(Color("MapBackground").opacity(0.8))
+//                    #else
+//                    .fill(.background)
+//                    #endif
+                    .fill(theme.background)
 
                 Image(uiImage: previewImage)
                     .resizable()

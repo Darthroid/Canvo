@@ -10,6 +10,8 @@ import SwiftUI
 struct GridLayer: View {
     private let spacing: CGFloat = 60
     private let dotSize: CGFloat = 2
+    
+    @Environment(\.canvasTheme) private var theme
 
     var body: some View {
         GeometryReader { geo in
@@ -26,7 +28,7 @@ struct GridLayer: View {
                     }
                 }
             }
-            .fill(Color.gray.opacity(0.6))
+            .fill(theme.grid)
         }
         .allowsHitTesting(false)
     }

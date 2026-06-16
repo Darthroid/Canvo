@@ -27,6 +27,7 @@ extension View {
         } else {
             content = AnyView(
                 self.frame(width: size.width, height: size.height)
+                    .background(.background)
             )
         }
 

@@ -9,37 +9,31 @@ import UIKit
 import SwiftUI
 
 final class CanvasPreviewService {
+
     public static var watermarkImage: UIImage? {
         UIImage(named: "watermark")
     }
-    
+
     private weak var model: AppModel?
-    
+
     private let fileManager = FileManager.default
     private let tempDirectory = FileManager.default.temporaryDirectory
 
-    /// Serial queue — важен порядок и отсутствие гонок
     private let renderQueue = DispatchQueue(
         label: "canvas.preview.render.queue",
         qos: .utility
     )
 
-    /// Чтобы не генерировать превью одного канваса параллельно
     private var pendingCanvasIds = Set<String>()
     private let lock = NSLock()
 
-    // MARK: - Public API
-    
-    public init() {
-        
-    }
-    
+    public init() {}
+
     func set(model: AppModel) {
         self.model = model
     }
 
-    /// Асинхронная генерация превью
-    public func generatePreview(
+    func generatePreview(
         image: UIImage,
         for canvasId: String
     ) {
@@ -60,12 +54,9 @@ final class CanvasPreviewService {
                 self.lock.unlock()
             }
 
-            guard let data = image.pngData(), !data.isEmpty else {
-                return
-            }
+            guard let data = image.pngData(), !data.isEmpty else { return }
 
-            let url = self.tempDirectory
-                .appendingPathComponent("\(canvasId).png")
+            let url = self.tempDirectory.appendingPathComponent("\(canvasId).png")
 
             do {
                 try data.write(to: url, options: [.atomic])
@@ -83,7 +74,25 @@ final class CanvasPreviewService {
         }
     }
 
-    // MARK: - Utilities
+    func generatePreview(
+        for canvas: Canvas,
+        nodes: [Node],
+        connections: [NodeConnection],
+        theme: CanvasTheme,
+        removeBackground: Bool
+    ) {
+        let image = previewImage(
+            nodes: nodes,
+            connections: connections,
+            theme: theme,
+            removeBackground: removeBackground
+        )
+
+        generatePreview(
+            image: image,
+            for: canvas.id
+        )
+    }
 
     func getPreviewURL(for canvas: Canvas) -> URL {
         tempDirectory.appendingPathComponent("\(canvas.id).png")
@@ -91,7 +100,7 @@ final class CanvasPreviewService {
 
     func hasPreview(for canvas: Canvas) -> Bool {
         let url = getPreviewURL(for: canvas)
-        return fileManager.fileExists(atPath: url.path())
+        return fileManager.fileExists(atPath: url.path)
     }
 
     func removePreview(for canvas: Canvas) {
@@ -107,11 +116,9 @@ extension CanvasPreviewService {
         let offset: CGSize
         let size: CGSize
     }
-    
+
     func previewLayout(nodes: [Node]) -> PreviewLayout? {
-
         let padding: CGFloat = 100
-
         let points = nodes.map(\.position.position2D)
         guard !points.isEmpty else { return nil }
 
@@ -128,57 +135,10 @@ extension CanvasPreviewService {
             height: height + padding * 2
         )
 
-        let scale: CGFloat = 1.0
-
-        let offset = CGSize(
-            width: -minX + padding,
-            height: -minY + padding
-        )
-
         return PreviewLayout(
-            scale: scale,
-            offset: offset,
+            scale: 1.0,
+            offset: CGSize(width: -minX + padding, height: -minY + padding),
             size: size
-        )
-    }
-    
-    private func contentBounds(nodes: [Node]) -> (min: CGPoint, max: CGPoint)? {
-        let points = nodes.map(\.position.position2D)
-        guard let first = points.first else { return nil }
-
-        var minX = first.x
-        var maxX = first.x
-        var minY = first.y
-        var maxY = first.y
-
-        for p in points {
-            minX = min(minX, p.x)
-            maxX = max(maxX, p.x)
-            minY = min(minY, p.y)
-            maxY = max(maxY, p.y)
-        }
-
-        return (CGPoint(x: minX, y: minY),
-                CGPoint(x: maxX, y: maxY))
-    }
-}
-
-extension CanvasPreviewService {
-
-    func generatePreview(
-        for canvas: Canvas,
-        nodes: [Node],
-        connections: [NodeConnection]
-    ) {
-
-        let image = previewImage(
-            nodes: nodes,
-            connections: connections
-        )
-
-        generatePreview(
-            image: image,
-            for: canvas.id
         )
     }
 }
@@ -188,6 +148,7 @@ extension CanvasPreviewService {
     func previewImage(
         nodes: [Node],
         connections: [NodeConnection],
+        theme: CanvasTheme,
         removeBackground: Bool = true,
         watermark: UIImage? = nil
     ) -> UIImage {
@@ -205,10 +166,11 @@ extension CanvasPreviewService {
             CanvasPreviewView(
                 nodes: nodes,
                 connections: connections,
-                layout: layout
+                layout: layout,
+                theme: theme
             )
-            .frame(width: layout.size.width,
-                   height: layout.size.height)
+            .frame(width: layout.size.width, height: layout.size.height)
+            .background(removeBackground ? .clear : theme.background)
         )
 
         let image = view.asImage(
@@ -217,51 +179,31 @@ extension CanvasPreviewService {
             removeBackground: removeBackground
         )
 
-        guard let watermark else {
-            return image
-        }
+        guard let watermark else { return image }
 
-        return addWatermark(
-            watermark,
-            to: image
-        )
+        return addWatermark(watermark, to: image)
     }
-    
-    private func addWatermark(
-        _ watermark: UIImage,
-        to image: UIImage
-    ) -> UIImage {
 
+    private func addWatermark(_ watermark: UIImage, to image: UIImage) -> UIImage {
         let renderer = UIGraphicsImageRenderer(size: image.size)
 
-        return renderer.image { context in
-
+        return renderer.image { _ in
             image.draw(in: CGRect(origin: .zero, size: image.size))
 
             let margin: CGFloat = 24
-
-            // размер вотермарки = 15% ширины изображения
             let targetWidth = image.size.width * 0.15
+            let aspect = watermark.size.height / watermark.size.width
 
-            let aspectRatio = watermark.size.height / watermark.size.width
-
-            let targetSize = CGSize(
-                width: targetWidth,
-                height: targetWidth * aspectRatio
-            )
+            let size = CGSize(width: targetWidth, height: targetWidth * aspect)
 
             let rect = CGRect(
-                x: image.size.width - targetSize.width - margin,
-                y: image.size.height - targetSize.height - margin,
-                width: targetSize.width,
-                height: targetSize.height
+                x: image.size.width - size.width - margin,
+                y: image.size.height - size.height - margin,
+                width: size.width,
+                height: size.height
             )
 
-            watermark.draw(
-                in: rect,
-                blendMode: .normal,
-                alpha: 0.9
-            )
+            watermark.draw(in: rect, blendMode: .normal, alpha: 0.9)
         }
     }
 }
@@ -271,6 +213,7 @@ private struct CanvasPreviewView: View {
     let nodes: [Node]
     let connections: [NodeConnection]
     let layout: CanvasPreviewService.PreviewLayout
+    let theme: CanvasTheme
 
     var body: some View {
         ZStack {
@@ -283,21 +226,43 @@ private struct CanvasPreviewView: View {
                         from: from.position.position2D,
                         to: to.position.position2D
                     )
-                    .stroke(.secondary, lineWidth: 1.25)
+                    .stroke(theme.connector, lineWidth: 3)
                 }
             }
 
             ForEach(nodes) { node in
-                NodeView(
-                    node: node,
-                    isSelected: false,
-                    isExpanded: false,
-                    isMatchingSearch: false,
-                    toolbarEnabled: true
-                )
-                .position(node.position.position2D)
+                previewNode(node)
+                    .position(node.position.position2D)
             }
         }
         .offset(layout.offset)
+    }
+
+    @ViewBuilder
+    private func previewNode(_ node: Node) -> some View {
+        let bg: Color = {
+            if let color = node.color {
+                return Color(uiColor: color)
+            }
+            return theme.nodeBackground
+        }()
+
+        let text: Color = {
+            let ui = UIColor(bg)
+            return Color(uiColor: ui.readableTextColor())
+        }()
+
+        VStack {
+            Text(node.name)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(text)
+        }
+        .padding(8)
+        .background(bg)
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(theme.nodeBorder, lineWidth: 1)
+        )
     }
 }

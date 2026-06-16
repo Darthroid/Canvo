@@ -15,6 +15,7 @@ extension NodeMapView {
         let image = appModel.previewService.previewImage(
             nodes: canvas.nodes ?? [],
             connections: canvas.connections ?? [],
+            theme: applyThemeToExports ? theme : CanvasTheme.systemLight,
             removeBackground: false,
             watermark: CanvasPreviewService.watermarkImage
         )
