@@ -136,7 +136,7 @@ struct CanvasCollectionView: View {
                             Button {
                                 showSettings.toggle()
                             } label: {
-                                Label("Settings", systemImage: "gear")
+                                Label("Settings", systemImage: "gearshape")
                             }
                             
                         } label: {

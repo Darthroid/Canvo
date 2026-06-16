@@ -581,6 +581,12 @@ struct NodeMapView: View {
                             Label("Export As", systemImage: "square.and.arrow.up")
                         }
                         
+                        Button {
+                            printCanvas()
+                        } label: {
+                            Label("Print", systemImage: "printer")
+                        }
+                        
                         Divider()
                         
 #if os(visionOS)

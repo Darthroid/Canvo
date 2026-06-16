@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import UIKit
 
 extension NodeMapView {
     @MainActor
@@ -38,5 +39,29 @@ extension NodeMapView {
         } catch {
             print("error encoding json on export: \(error)")
         }
+    }
+    
+    @MainActor
+    func printCanvas() {
+        guard let canvas = appModel.session.currentCanvas else { return }
+        
+        let image = appModel.previewService.previewImage(
+            nodes: canvas.nodes ?? [],
+            connections: canvas.connections ?? [],
+            theme: applyThemeToExports ? theme : CanvasTheme.systemLight,
+            removeBackground: false,
+            watermark: CanvasPreviewService.watermarkImage
+        )
+        
+        let printInfo = UIPrintInfo.printInfo()
+        printInfo.outputType = .general
+        printInfo.jobName = canvas.name
+        
+        let printController = UIPrintInteractionController.shared
+        printController.printInfo = printInfo
+        printController.showsNumberOfCopies = true
+        printController.printingItem = image
+        
+        printController.present(animated: true, completionHandler: nil)
     }
 }
