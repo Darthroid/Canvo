@@ -12,6 +12,8 @@ import FoundationModels
 struct AIEditCanvasView: View {
 
     @Environment(AppModel.self) private var appModel
+    @EnvironmentObject private var themeStore: ThemeStore
+    
     @Binding var showEditor: Bool
 
     @State private var aiResponse: String = ""
@@ -153,7 +155,7 @@ struct AIEditCanvasView: View {
                                 RoundedRectangle(cornerRadius: 22)
                                     .strokeBorder(
                                         selectedScope == scope
-                                        ? Color.accentColor
+                                        ? themeStore.theme.canvasTheme.selection
                                         : Color.clear,
                                         lineWidth: 1.5
                                     )
@@ -219,7 +221,7 @@ struct AIEditCanvasView: View {
                 .padding(.vertical, 8)
         }
         .buttonStyle(.borderedProminent)
-        .tint(.accentColor)
+        .tint(themeStore.theme.canvasTheme.selection)
         .disabled(appModel.aiGenerationService.isRunning || scopeNodesCount == 0)
         .sheet(isPresented: $showAiResponse) {
             NavigationStack {

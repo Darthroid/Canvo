@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-
 import Foundation
 
 struct CanvasTheme: Equatable {
@@ -46,13 +45,31 @@ extension CanvasTheme {
         grid: Color(hex: "#CBBBA3")!.opacity(0.55)
     )
 
-    static let graphite = CanvasTheme(
-        background: Color(hex: "#F2F3F5")!,
+    static let ocean = CanvasTheme(
+        background: Color(hex: "#EDF6FA")!,
         nodeBackground: .white,
-        nodeBorder: Color(hex: "#D5D9E0")!,
-        connector: Color(hex: "#B8BEC8")!,
-        selection: Color(hex: "#5B6472")!,
-        grid: Color(hex: "#B8BEC8")!.opacity(0.6)
+        nodeBorder: Color(hex: "#B8D5E3")!,
+        connector: Color(hex: "#7DB8D8")!,
+        selection: Color(hex: "#0077B6")!,
+        grid: Color(hex: "#8CC5E3")!.opacity(0.45)
+    )
+
+    static let nord = CanvasTheme(
+        background: Color(hex: "#2E3440")!,
+        nodeBackground: Color(hex: "#3B4252")!,
+        nodeBorder: Color(hex: "#4C566A")!,
+        connector: Color(hex: "#81A1C1")!,
+        selection: Color(hex: "#88C0D0")!,
+        grid: Color(hex: "#5E81AC")!.opacity(0.4)
+    )
+
+    static let retrowave = CanvasTheme(
+        background: Color(hex: "#1C1833")!,
+        nodeBackground: Color(hex: "#2A2348")!,
+        nodeBorder: Color(hex: "#C86BFF")!,
+        connector: Color(hex: "#7D8CFF")!,
+        selection: Color(hex: "#4DEAFF")!,
+        grid: Color(hex: "#B05CFF")!.opacity(0.3)
     )
 
     static let midnight = CanvasTheme(
@@ -65,17 +82,17 @@ extension CanvasTheme {
     )
 
     static let blueprint = CanvasTheme(
-        background: Color(hex: "#0E2A47")!,
-        nodeBackground: Color(hex: "#163A60")!,
-        nodeBorder: Color(hex: "#3D6A94")!,
-        connector: Color(hex: "#5F8CB6")!,
-        selection: Color(hex: "#9ED0FF")!,
-        grid: Color(hex: "#7FA9D1")!.opacity(0.6)
+        background: Color(hex: "#0B3C5D")!,
+        nodeBackground: Color(hex: "#114D76")!,
+        nodeBorder: Color(hex: "#3E78A3")!,
+        connector: Color(hex: "#82CFFF")!,
+        selection: Color(hex: "#00BFFF")!,
+        grid: Color(hex: "#6DB7E8")!.opacity(0.45)
     )
 
     static let forest = CanvasTheme(
         background: Color(hex: "#EAF4E6")!,
-        nodeBackground: Color(hex: "#FFFFFF")!,
+        nodeBackground: .white,
         nodeBorder: Color(hex: "#AFC8AA")!,
         connector: Color(hex: "#7FAF82")!,
         selection: Color(hex: "#2F6B3F")!,

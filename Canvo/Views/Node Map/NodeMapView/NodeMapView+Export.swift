@@ -16,7 +16,7 @@ extension NodeMapView {
         let image = appModel.previewService.previewImage(
             nodes: canvas.nodes ?? [],
             connections: canvas.connections ?? [],
-            theme: applyThemeToExports ? theme : CanvasTheme.systemLight,
+            theme: applyThemeToExports ? themeStore.theme.canvasTheme : CanvasTheme.systemLight,
             removeBackground: false,
             watermark: CanvasPreviewService.watermarkImage
         )
@@ -48,7 +48,7 @@ extension NodeMapView {
         let image = appModel.previewService.previewImage(
             nodes: canvas.nodes ?? [],
             connections: canvas.connections ?? [],
-            theme: applyThemeToExports ? theme : CanvasTheme.systemLight,
+            theme: applyThemeToExports ? themeStore.theme.canvasTheme : CanvasTheme.systemLight,
             removeBackground: false,
             watermark: CanvasPreviewService.watermarkImage
         )
