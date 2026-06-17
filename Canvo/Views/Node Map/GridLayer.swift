@@ -8,24 +8,40 @@
 import SwiftUI
 
 struct GridLayer: View {
+    let offset: CGSize
+    let scale: CGFloat
+
     private let spacing: CGFloat = 60
     private let dotSize: CGFloat = 2
-    
+
     @Environment(\.canvasTheme) private var theme
 
     var body: some View {
         GeometryReader { geo in
-            Path { p in
-                for x in stride(from: -geo.size.width,
-                                to: geo.size.width * 2,
-                                by: spacing) {
-                    for y in stride(from: -geo.size.height,
-                                    to: geo.size.height * 2,
-                                    by: spacing) {
-                        p.addEllipse(
-                            in: CGRect(x: x, y: y, width: dotSize, height: dotSize)
-                        )
+            Path { path in
+
+                let step = spacing * scale
+
+                // важно: учитываем anchor .topLeading
+                let offsetX = offset.width.truncatingRemainder(dividingBy: step)
+                let offsetY = offset.height.truncatingRemainder(dividingBy: step)
+
+                let width = geo.size.width
+                let height = geo.size.height
+
+                var x = -step + offsetX
+                while x < width + step {
+                    var y = -step + offsetY
+                    while y < height + step {
+                        path.addEllipse(in: CGRect(
+                            x: x,
+                            y: y,
+                            width: dotSize,
+                            height: dotSize
+                        ))
+                        y += step
                     }
+                    x += step
                 }
             }
             .fill(theme.grid)

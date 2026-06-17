@@ -224,75 +224,78 @@ struct NodeMapView: View {
                 
                 // Canvas grid
                 if showGrid {
-                    GridLayer()
+                    GridLayer(offset: offset, scale: scale)
                 }
                 
-                // Connections
-                ForEach(appModel.visibleConnections) { c in
-                    if let a = appModel.node(forId: c.fromNodeId),
-                       let b = appModel.node(forId: c.toNodeId),
-                       !a.isHidden && !b.isHidden {
-                        
-                        let shouldFocus = appModel.session.focusNodeIds.contains(c.fromNodeId) && appModel.session.focusNodeIds.contains(c.toNodeId)
-                        ConnectionView(
-                            from: a.position.position2D,
-                            to: b.position.position2D
+                ZStack {
+                    // Connections
+                    ForEach(appModel.visibleConnections) { c in
+                        if let a = appModel.node(forId: c.fromNodeId),
+                           let b = appModel.node(forId: c.toNodeId),
+                           !a.isHidden && !b.isHidden {
+                            
+                            let shouldFocus = appModel.session.focusNodeIds.contains(c.fromNodeId) && appModel.session.focusNodeIds.contains(c.toNodeId)
+                            ConnectionView(
+                                from: a.position.position2D,
+                                to: b.position.position2D
+                            )
+                            .stroke(themeStore.theme.canvasTheme.connector, lineWidth: 2)
+                            .opacity(!isFocused ? 1 : (shouldFocus ? 1 : 0.1))
+                        }
+                    }
+                    
+                    // Nodes
+                    ForEach(appModel.visibleNodes) { node in
+                        NodeView(
+                            node: node,
+                            isSelected: appModel.session.selectedNodeIds.contains(node.id),
+                            isExpanded: appModel.session.expandedNodeIds.contains(node.id),
+                            isMatchingSearch: searchResults.contains(where: { $0.id == node.id }),
+                            toolbarEnabled: true,
+                            onDetail: { showDetailNode = node },
+                            onLink: { showLinkToNode = node },
+                            onDelete: { showDeleteNode = node }
                         )
-                        .stroke(themeStore.theme.canvasTheme.connector, lineWidth: 2)
-                        .opacity(!isFocused ? 1 : (shouldFocus ? 1 : 0.1))
-                    }
-                }
-                
-                // Nodes
-                ForEach(appModel.visibleNodes) { node in
-                    NodeView(
-                        node: node,
-                        isSelected: appModel.session.selectedNodeIds.contains(node.id),
-                        isExpanded: appModel.session.expandedNodeIds.contains(node.id),
-                        isMatchingSearch: searchResults.contains(where: { $0.id == node.id }),
-                        toolbarEnabled: true,
-                        onDetail: { showDetailNode = node },
-                        onLink: { showLinkToNode = node },
-                        onDelete: { showDeleteNode = node }
-                    )
-                    .opacity(!isFocused ? 1 : (appModel.session.focusNodeIds.contains(node.id) ? 1 : 0.1))
-                    .position(node.position.position2D)
-                    .gesture(nodeDrag(node))
-                    .onTapGesture(count: 1) {
-                        withAnimation {
-                            if appModel.session.selectedNodeIds.contains(node.id) {
-                                appModel.session.selectedNodeIds.remove(node.id)
-                            } else {
-                                appModel.session.selectedNodeIds.insert(node.id)
+                        .opacity(!isFocused ? 1 : (appModel.session.focusNodeIds.contains(node.id) ? 1 : 0.1))
+                        .position(node.position.position2D)
+                        .gesture(nodeDrag(node))
+                        .onTapGesture(count: 1) {
+                            withAnimation {
+                                if appModel.session.selectedNodeIds.contains(node.id) {
+                                    appModel.session.selectedNodeIds.remove(node.id)
+                                } else {
+                                    appModel.session.selectedNodeIds.insert(node.id)
+                                }
                             }
+                            
                         }
-                        
-                    }
-                    .onTapGesture(count: 2) {
-                        withAnimation(.bouncy(duration: 0.2)) {
-                            if appModel.session.expandedNodeIds.contains(node.id) {
-                                appModel.session.expandedNodeIds.remove(node.id)
-                            } else {
-                                appModel.session.expandedNodeIds.insert(node.id)
+                        .onTapGesture(count: 2) {
+                            withAnimation(.bouncy(duration: 0.2)) {
+                                if appModel.session.expandedNodeIds.contains(node.id) {
+                                    appModel.session.expandedNodeIds.remove(node.id)
+                                } else {
+                                    appModel.session.expandedNodeIds.insert(node.id)
+                                }
                             }
                         }
                     }
+                    
+                    // Debug marker for node creation (DO NOT REMOVE!)
+                    Circle()
+                        .fill(Color.clear)
+                        .frame(width: 12, height: 12)
+                        .position(
+                            x: CGFloat(appModel.session.pendingNodePosition?.x ?? 0),
+                            y: CGFloat(appModel.session.pendingNodePosition?.y ?? 0)
+                        )
+                        .opacity(appModel.session.pendingNodePosition == nil ? 0 : 0.7)
                 }
-                
-                // Debug marker for node creation (DO NOT REMOVE!)
-                Circle()
-                    .fill(Color.clear)
-                    .frame(width: 12, height: 12)
-                    .position(
-                        x: CGFloat(appModel.session.pendingNodePosition?.x ?? 0),
-                        y: CGFloat(appModel.session.pendingNodePosition?.y ?? 0)
-                    )
-                    .opacity(appModel.session.pendingNodePosition == nil ? 0 : 0.7)
+                .scaleEffect(scale)
+                .offset(offset)
+                .coordinateSpace(name: "canvas")
             }
-            .scaleEffect(scale)
-            .offset(offset)
-            .coordinateSpace(name: "canvas")
         }
+        .coordinateSpace(name: "canvas")
 //        .background(Color(uiColor: .secondarySystemFill))
         .background(
             themeStore.theme.canvasTheme.background

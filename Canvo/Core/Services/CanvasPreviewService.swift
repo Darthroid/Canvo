@@ -154,7 +154,7 @@ extension CanvasPreviewService {
     ) -> UIImage {
 
         guard let layout = previewLayout(nodes: nodes) else {
-            let fallback = AnyView(GridLayer())
+            let fallback = AnyView(GridLayer(offset: .zero, scale: .zero))
             return fallback.asImage(
                 size: CGSize(width: 200, height: 200),
                 scale: 2,
