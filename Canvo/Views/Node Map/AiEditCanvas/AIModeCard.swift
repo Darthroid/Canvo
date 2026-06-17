@@ -11,6 +11,8 @@ import SwiftUI
 
 @available(iOS 26.0, macOS 26.0, visionOS 26.0, *)
 struct AIModeCard: View {
+    
+    @EnvironmentObject private var themeStore: ThemeStore
 
     let title: String
     let subtitle: String
@@ -53,7 +55,7 @@ struct AIModeCard: View {
                         RoundedRectangle(cornerRadius: 22)
                             .strokeBorder(
                                 isSelected
-                                ? Color.accentColor
+                                ? themeStore.theme.canvasTheme.selection
                                 : Color.clear,
                                 lineWidth: 1.5
                             )

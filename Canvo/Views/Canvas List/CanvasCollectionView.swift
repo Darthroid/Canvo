@@ -97,6 +97,9 @@ struct CanvasCollectionView: View {
                 .navigationDestination(item: $navigationCanvas) { canvas in
                     NodeMapView()
                         .environment(appModel)
+                        .environmentObject(themeStore)
+                        .tint(themeStore.theme.canvasTheme.selection)
+                        .id(themeStore.theme)
                 }
                 .onContinueUserActivity(CSSearchableItemActionType) { userActivity in
                     if let identifier = userActivity.userInfo?[CSSearchableItemActivityIdentifier] as? String {
@@ -118,7 +121,8 @@ struct CanvasCollectionView: View {
                         .buttonStyle(.borderedProminent)
                         .controlSize(.large)
                         .clipShape(Capsule())
-                        .tint(.accent)
+                        .tint(themeStore.theme.canvasTheme.selection)
+                        .id(themeStore.theme)
                     }
                     #else
                     DefaultToolbarItem(kind: .search, placement: .topBarTrailing)
@@ -146,9 +150,11 @@ struct CanvasCollectionView: View {
                         }
                         .menuStyle(.button)
                         .labelStyle(.iconOnly)
+                        .tint(themeStore.theme.canvasTheme.selection)
                     }
                 }
         }
+        .id(themeStore.theme)
         .fileImporter(
             isPresented: $isShowingPicker,
             allowedContentTypes: [.json],
@@ -169,13 +175,12 @@ struct CanvasCollectionView: View {
             NavigationStack {
                 SettingsView()
                     .environment(appModel)
-                    .environment(
-                        \.canvasTheme,
-                         themeStore.theme.canvasTheme
-                    )
+                    .environmentObject(themeStore)
                     .preferredColorScheme(
                         themeStore.theme.colorScheme
                     )
+                    .tint(themeStore.theme.canvasTheme.selection)
+                    .id(themeStore.theme)
             }
         }
         .sheet(isPresented: $showCreateCanvas) {
@@ -326,7 +331,7 @@ struct CanvasCollectionView: View {
                 } label: {
                     Image(systemName: "plus")
                 }
-                .tint(.accent)
+                .tint(themeStore.theme.canvasTheme.selection)
                 .clipShape(Circle())
             }
             .safeAreaPadding()
@@ -382,6 +387,7 @@ struct CanvasCollectionView: View {
             } label: {
                 Label("Delete", systemImage: "trash")
             }
+            .tint(.red)
         }
     }
     

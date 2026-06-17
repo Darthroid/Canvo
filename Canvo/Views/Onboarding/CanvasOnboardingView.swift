@@ -9,6 +9,7 @@ import SwiftUI
 
 struct CanvasOnboardingView: View {
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var themeStore: ThemeStore
 
     @State private var currentPage = 0
 
@@ -53,11 +54,12 @@ struct CanvasOnboardingView: View {
                     .padding(.vertical, 8)
             }
             .buttonStyle(.borderedProminent)
-            .tint(.accentColor)
+            .tint(themeStore.theme.canvasTheme.selection)
             .padding(.horizontal, 20)
             .padding(.bottom, 20)
             .padding(.top, 12)
         }
+        .id(themeStore.theme)
         .background(Color("MapBackground"))
     }
 }

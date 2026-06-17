@@ -9,6 +9,8 @@ import SwiftUI
 
 struct OnboardingView: View {
     let onFinish: () -> Void
+    
+    @EnvironmentObject private var themeStore: ThemeStore
 
     @State private var showLogo = false
     @State private var showTitle = false
@@ -67,7 +69,7 @@ struct OnboardingView: View {
             .frame(maxWidth: .infinity)
 
             Spacer()
-
+            
             Button {
                 onFinish()
             } label: {
@@ -75,6 +77,7 @@ struct OnboardingView: View {
                     .frame(maxWidth: contentMaxWidth)
             }
             .buttonStyle(.borderedProminent)
+            .tint(themeStore.theme.canvasTheme.selection)
             .controlSize(.large)
             .opacity(showCTA ? 1 : 0)
             .offset(y: showCTA ? 0 : 10)

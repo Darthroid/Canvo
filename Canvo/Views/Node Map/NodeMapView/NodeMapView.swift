@@ -20,8 +20,7 @@ struct NodeMapView: View {
     @Environment(\.openWindow)
     private var openWindow
     
-    @Environment(\.canvasTheme)
-    var theme
+    @EnvironmentObject var themeStore: ThemeStore
     
     #if os(visionOS)
     @Environment(\.pushWindow)
@@ -239,7 +238,7 @@ struct NodeMapView: View {
                             from: a.position.position2D,
                             to: b.position.position2D
                         )
-                        .stroke(theme.connector, lineWidth: 2)
+                        .stroke(themeStore.theme.canvasTheme.connector, lineWidth: 2)
                         .opacity(!isFocused ? 1 : (shouldFocus ? 1 : 0.1))
                     }
                 }
@@ -296,7 +295,7 @@ struct NodeMapView: View {
         }
 //        .background(Color(uiColor: .secondarySystemFill))
         .background(
-            theme.background
+            themeStore.theme.canvasTheme.background
                 .ignoresSafeArea()
         )
     }
@@ -378,7 +377,7 @@ struct NodeMapView: View {
                         .buttonStyle(.borderedProminent)
                         .controlSize(.large)
                         .clipShape(Circle())
-                        .tint(.accent)
+                        .tint(themeStore.theme.canvasTheme.selection)
                     }
                     .safeAreaPadding()
                     #endif
@@ -700,7 +699,7 @@ struct NodeMapView: View {
                     .buttonStyle(.borderedProminent)
                     .controlSize(.large)
                     .clipShape(Capsule())
-                    .tint(.accent)
+                    .tint(themeStore.theme.canvasTheme.selection)
                 }
                 #endif
             }

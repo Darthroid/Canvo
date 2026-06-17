@@ -30,6 +30,8 @@ enum CanvasFilter: String, CaseIterable, Identifiable {
 struct CanvasTabsView: View {
     @Binding var selectedFilter: CanvasFilter
     
+    @EnvironmentObject private var themeStore: ThemeStore
+    
     var body: some View {
         HStack {
             ForEach(CanvasFilter.allCases) { filter in
@@ -50,7 +52,7 @@ struct CanvasTabsView: View {
                         ZStack {
                             if selectedFilter == filter {
                                 RoundedRectangle(cornerRadius: 10)
-                                    .fill(Color.accentColor)
+                                    .fill(themeStore.theme.canvasTheme.selection)
                             } else {
                                 RoundedRectangle(cornerRadius: 10)
                                     .fill(Color(.secondarySystemBackground))

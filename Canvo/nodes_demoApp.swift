@@ -61,6 +61,7 @@ struct nodes_demoApp: App {
             OnboardingView(onFinish: {
                 hasSeenOnboarding = true
             })
+            .environmentObject(themeStore)
             .environment(appModel)
         }
     }
@@ -68,6 +69,7 @@ struct nodes_demoApp: App {
     var body: some Scene {
         WindowGroup(id: "MainWindow") {
             mainContent
+                .tint(themeStore.theme.canvasTheme.selection)
             // Focus: When the immersive space is showing, hide the content.
                 .opacity(appModel.immersiveMapOpen ? 0 : 1)
             // Focus: We can also hide the window drag bar and controls
@@ -148,6 +150,7 @@ struct nodes_demoApp: App {
         WindowGroup(id: "ImmersiveMapToolbar") {
             ImmersiveMapToolbar()
                 .environment(appModel)
+                .environmentObject(themeStore)
         }
         .defaultSize(CGSize(width: 500, height: 1200))
         .windowStyle(.plain)
@@ -161,10 +164,12 @@ struct nodes_demoApp: App {
         ImmersiveSpace(id: "ImmersiveNodeMapView") {
             ImmersiveNodeMapView()
                 .environment(appModel)
+                .environmentObject(themeStore)
         }
         Window("Outline", id: "outline") {
             OutlineView(preferredWidth: nil, style: .sheet)
                 .environment(appModel)
+                .environmentObject(themeStore)
         }
         .defaultSize(width: 400, height: 800)
         .defaultWindowPlacement { _, context in

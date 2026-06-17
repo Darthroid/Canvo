@@ -16,6 +16,8 @@ struct ImmersiveMapToolbar: View {
     @Environment(\.openWindow) private var openWindow
     @Environment(\.dismissWindow) private var dismissWindow
     
+    @EnvironmentObject private var themeStore: ThemeStore
+    
     @State var showNodeForm = false
     
     @State private var showDetailNode: Node?
@@ -169,7 +171,7 @@ struct ImmersiveMapToolbar: View {
                     .keyboardShortcut("n", modifiers: [.command])
                     .buttonStyle(.borderedProminent)
                     .clipShape(Circle())
-                    .tint(.accent)
+                    .tint(themeStore.theme.canvasTheme.selection)
                     
                     Spacer()
                     

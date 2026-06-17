@@ -8,7 +8,7 @@
 
 import SwiftUI
 
-enum AppTheme: String, CaseIterable, Identifiable {
+enum AppTheme: String, CaseIterable, Identifiable, Hashable {
     case light
     case dark
     case paper

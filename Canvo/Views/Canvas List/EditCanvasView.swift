@@ -31,6 +31,8 @@ struct EditCanvasView: View {
     @Environment(AppModel.self) private var appModel
     @Environment(\.dismiss) private var dismiss
     
+    @EnvironmentObject private var themeStore: ThemeStore
+    
     @State private var mode: EditCanvasMode
     var editCanvas: Canvas?
     
@@ -212,12 +214,12 @@ private extension EditCanvasView {
                 Image(systemName: icon)
                     .font(.system(size: 20, weight: .medium))
                     .frame(width: 36, height: 36)
-                    .background(Color.accentColor.opacity(0.15))
+                    .background(themeStore.theme.canvasTheme.selection.opacity(0.15))
                     #if os(visionOS)
                     .foregroundStyle(.primary)
                     .background(.thinMaterial)
                     #else
-                    .foregroundStyle(.accent)
+                    .foregroundStyle(themeStore.theme.canvasTheme.selection)
                     #endif
                     .clipShape(RoundedRectangle(cornerRadius: 10))
                 
@@ -237,11 +239,7 @@ private extension EditCanvasView {
                 
                 if mode == current {
                     Image(systemName: "checkmark.circle.fill")
-                        #if os(visionOS)
-                        .foregroundStyle(.primary)
-                        #else
-                        .foregroundStyle(.blue)
-                        #endif
+                        .foregroundStyle(themeStore.theme.canvasTheme.selection)
                 }
             }
             .padding()
@@ -263,7 +261,6 @@ private extension EditCanvasView {
         Button {
             generationStyle = style
         } label: {
-
             VStack(alignment: .center, spacing: 12) {
 
                 Image(imageName)
@@ -273,26 +270,29 @@ private extension EditCanvasView {
                     .clipShape(
                         RoundedRectangle(cornerRadius: 12)
                     )
-                    .foregroundStyle(.accent)
 
                 VStack(alignment: .leading) {
                     Text(style.title)
                         .font(.headline)
+                        .lineLimit(2)
 
                     Text(style.subtitle)
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                        .lineLimit(2)
+                        .lineLimit(3)
                 }
+
+                Spacer(minLength: 0)
             }
-            .frame(width: 160, alignment: .leading)
+            .frame(width: 160)
+            .frame(maxHeight: .infinity)
             .padding(12)
             .background(.thinMaterial)
             .overlay {
                 RoundedRectangle(cornerRadius: 20)
                     .stroke(
                         generationStyle == style
-                        ? Color.accentColor
+                        ? themeStore.theme.canvasTheme.selection
                         : .clear,
                         lineWidth: 2
                     )
