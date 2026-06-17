@@ -10,7 +10,7 @@ import SwiftUI
 
 struct CompactCanvasCardView: View {
     @Environment(AppModel.self) private var appModel
-    @Environment(\.canvasTheme) private var theme
+    @EnvironmentObject private var themeStore: ThemeStore
     
     let canvas: Canvas
 
@@ -51,7 +51,7 @@ struct CompactCanvasCardView: View {
                     if canvas.isPined {
                         Image(systemName: "star.fill")
                             .font(.caption)
-                            .foregroundStyle(.blue)
+                            .foregroundStyle(themeStore.theme.canvasTheme.selection)
                     }
 
                     Text(canvas.name)
@@ -109,12 +109,12 @@ struct CompactCanvasCardView: View {
             if shouldHidePreview {
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .fill(
-                        theme.background
+                        themeStore.theme.canvasTheme.background
                     )
                 
                 Image(systemName: "lock.fill")
                     .font(.system(size: 28, weight: .semibold))
-                    .foregroundStyle(theme.connector)
+                    .foregroundStyle(themeStore.theme.canvasTheme.connector)
             } else if let previewImage {
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
 //                    #if os(visionOS)
@@ -122,7 +122,7 @@ struct CompactCanvasCardView: View {
 //                    #else
 //                    .fill(.background)
 //                    #endif
-                    .fill(theme.background)
+                    .fill(themeStore.theme.canvasTheme.background)
 
                 Image(uiImage: previewImage)
                     .resizable()
