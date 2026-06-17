@@ -12,7 +12,9 @@ enum AppTheme: String, CaseIterable, Identifiable, Hashable {
     case light
     case dark
     case paper
-    case graphite
+    case ocean
+    case nord
+    case retrowave
     case midnight
     case blueprint
     case forest
@@ -27,8 +29,12 @@ enum AppTheme: String, CaseIterable, Identifiable, Hashable {
             return String(localized: "Dark")
         case .paper:
             return String(localized: "Paper")
-        case .graphite:
-            return String(localized: "Graphite")
+        case .ocean:
+            return String(localized: "Ocean")
+        case .nord:
+            return String(localized: "Nord")
+        case .retrowave:
+            return String(localized: "Retrowave")
         case .midnight:
             return String(localized: "Midnight")
         case .blueprint:
@@ -40,10 +46,10 @@ enum AppTheme: String, CaseIterable, Identifiable, Hashable {
 
     var colorScheme: ColorScheme {
         switch self {
-        case .light, .paper, .graphite, .forest:
+        case .light, .paper, .ocean, .forest:
             return .light
 
-        case .dark, .midnight, .blueprint:
+        case .dark, .nord, .retrowave, .midnight, .blueprint:
             return .dark
         }
     }
@@ -59,8 +65,14 @@ enum AppTheme: String, CaseIterable, Identifiable, Hashable {
         case .paper:
             return .paper
 
-        case .graphite:
-            return .graphite
+        case .ocean:
+            return .ocean
+
+        case .nord:
+            return .nord
+
+        case .retrowave:
+            return .retrowave
 
         case .midnight:
             return .midnight

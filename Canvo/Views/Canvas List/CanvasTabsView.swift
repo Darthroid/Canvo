@@ -32,6 +32,14 @@ struct CanvasTabsView: View {
     
     @EnvironmentObject private var themeStore: ThemeStore
     
+    private var backgroundUIColor: UIColor {
+        return UIColor(themeStore.theme.canvasTheme.selection)
+    }
+
+    private var titleColor: Color {
+        Color(uiColor: backgroundUIColor.readableTextColor())
+    }
+    
     var body: some View {
         HStack {
             ForEach(CanvasFilter.allCases) { filter in
@@ -44,6 +52,7 @@ struct CanvasTabsView: View {
                         
                         Text(filter.title)
                             .font(.system(size: 15, weight: .medium))
+                            .foregroundColor(selectedFilter == filter ? titleColor : .primary)
                     }
                     .foregroundStyle(selectedFilter == filter ? .white : .primary)
                     .padding(.horizontal, 12)
@@ -52,7 +61,7 @@ struct CanvasTabsView: View {
                         ZStack {
                             if selectedFilter == filter {
                                 RoundedRectangle(cornerRadius: 10)
-                                    .fill(themeStore.theme.canvasTheme.selection)
+                                    .fill(Color(backgroundUIColor))
                             } else {
                                 RoundedRectangle(cornerRadius: 10)
                                     .fill(Color(.secondarySystemBackground))
