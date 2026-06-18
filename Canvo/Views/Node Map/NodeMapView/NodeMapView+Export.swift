@@ -7,18 +7,27 @@
 
 import Foundation
 import UIKit
+import SwiftUI
 
 extension NodeMapView {
     @MainActor
     func exportAsImage(format: ExportFormat) {
         guard let canvas = appModel.session.currentCanvas else { return }
         
+        let watermark: UIImage?
+        
+        if applyThemeToExports {
+            watermark = themeStore.theme.colorScheme == .dark ? CanvasPreviewService.watermarkWhiteImage : CanvasPreviewService.watermarkBlackImage
+        } else {
+            watermark = CanvasPreviewService.watermarkBlackImage
+        }
+        
         let image = appModel.previewService.previewImage(
             nodes: canvas.nodes ?? [],
             connections: canvas.connections ?? [],
             theme: applyThemeToExports ? themeStore.theme.canvasTheme : CanvasTheme.systemLight,
             removeBackground: false,
-            watermark: CanvasPreviewService.watermarkImage
+            watermark: watermark
         )
         self.generatedPreview = image
         self.selectedFormat = format
@@ -45,12 +54,20 @@ extension NodeMapView {
     func printCanvas() {
         guard let canvas = appModel.session.currentCanvas else { return }
         
+        let watermark: UIImage?
+        
+        if applyThemeToExports {
+            watermark = themeStore.theme.colorScheme == .dark ? CanvasPreviewService.watermarkWhiteImage : CanvasPreviewService.watermarkBlackImage
+        } else {
+            watermark = CanvasPreviewService.watermarkBlackImage
+        }
+        
         let image = appModel.previewService.previewImage(
             nodes: canvas.nodes ?? [],
             connections: canvas.connections ?? [],
             theme: applyThemeToExports ? themeStore.theme.canvasTheme : CanvasTheme.systemLight,
             removeBackground: false,
-            watermark: CanvasPreviewService.watermarkImage
+            watermark: watermark
         )
         
         let printInfo = UIPrintInfo.printInfo()

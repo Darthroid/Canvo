@@ -10,8 +10,12 @@ import SwiftUI
 
 final class CanvasPreviewService {
 
-    public static var watermarkImage: UIImage? {
-        UIImage(named: "watermark")
+    public static var watermarkWhiteImage: UIImage? {
+        UIImage(named: "watermark_white")
+    }
+    
+    public static var watermarkBlackImage: UIImage? {
+        UIImage(named: "watermark_black")
     }
 
     private weak var model: AppModel?
