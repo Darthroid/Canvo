@@ -15,7 +15,7 @@ struct NodeView: View {
     let toolbarEnabled: Bool
     var onSizeChange: ((CGSize) -> Void)?
 
-    @Environment(\.canvasTheme) private var theme
+    @EnvironmentObject var themeStore: ThemeStore
 
     var onDetail: (() -> Void)?
     var onLink: (() -> Void)?
@@ -28,7 +28,7 @@ struct NodeView: View {
             return color
         }
 
-        return UIColor(theme.nodeBackground)
+        return UIColor(themeStore.theme.canvasTheme.nodeBackground)
     }
 
     private var titleColor: Color {
@@ -44,7 +44,7 @@ struct NodeView: View {
             return titleColor.opacity(0.2)
         }
 
-        return theme.nodeBorder.opacity(0.2)
+        return themeStore.theme.canvasTheme.nodeBorder.opacity(0.2)
     }
 
     var body: some View {
@@ -91,7 +91,7 @@ struct NodeView: View {
                     if isMatchingSearch {
                         RoundedRectangle(cornerRadius: 28)
                             .stroke(
-                                theme.selection,
+                                themeStore.theme.canvasTheme.selection,
                                 style: StrokeStyle(
                                     lineWidth: 3,
                                     lineCap: .round,
@@ -116,7 +116,7 @@ struct NodeView: View {
                     } else {
                         RoundedRectangle(cornerRadius: 25)
                             .stroke(
-                                isSelected ? theme.selection : borderColor,
+                                isSelected ? themeStore.theme.canvasTheme.selection : borderColor,
                                 lineWidth: isSelected ? 2 : 1
                             )
                     }

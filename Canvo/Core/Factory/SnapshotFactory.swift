@@ -91,7 +91,7 @@ enum SnapshotFactory {
         name: String,
         attributedDetail: AttributedString,
         position: SIMD3<Float>,
-        color: Color,
+        color: Color?,
         tagsRaw: String,
         images: [Data]
     ) -> NodeSnapshot {
@@ -102,7 +102,7 @@ enum SnapshotFactory {
             x: position.x,
             y: position.y,
             z: position.z,
-            color: color.toHex(includeAlpha: true),
+            color: color?.toHex(includeAlpha: true),
             tagsRaw: tagsRaw,
             images: images
         )
@@ -113,7 +113,7 @@ enum SnapshotFactory {
         name: String,
         attributedDetail: AttributedString,
         oldNode: NodeSnapshot,
-        color: Color,
+        color: Color?,
         tagsRaw: String,
         images: [Data]
     ) -> NodeSnapshot {
@@ -124,7 +124,7 @@ enum SnapshotFactory {
             x: oldNode.x,
             y: oldNode.y,
             z: oldNode.z,
-            color: color.toHex(includeAlpha: true),
+            color: color?.toHex(includeAlpha: true),
             tagsRaw: tagsRaw,
             images: images
         )

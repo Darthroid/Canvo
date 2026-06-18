@@ -347,7 +347,7 @@ extension AppModel {
         name: String,
         attributedDetail: AttributedString,
         position: SIMD3<Float>,
-        color: Color,
+        color: Color?,
         tagsRaw: String,
         images: [Data]
     ) {
@@ -400,7 +400,7 @@ extension AppModel {
         nodeId: String,
         name: String,
         attributedDetail: AttributedString,
-        color: Color,
+        color: Color?,
         tagsRaw: String,
         images: [Data]
     ) {

@@ -3,6 +3,11 @@
 //  nodes-demo
 //
 
+//
+//  NodeEditorView.swift
+//  nodes-demo
+//
+
 import SwiftUI
 import PhotosUI
 
@@ -21,7 +26,7 @@ fileprivate final class NodeEditorModel {
 
     var name: String
     var attributedDetail: AttributedString
-    var color: Color
+    var color: Color?
     var tagsRaw: String
     var images: [Data]
 
@@ -35,7 +40,7 @@ fileprivate final class NodeEditorModel {
 
             self.name = ""
             self.attributedDetail = AttributedString()
-            self.color = .white
+            self.color = nil
             self.tagsRaw = ""
             self.images = []
 
@@ -45,7 +50,7 @@ fileprivate final class NodeEditorModel {
 
             self.name = node.name
             self.attributedDetail = node.richText
-            self.color = Color(hex: node.colorRaw ?? "") ?? .white
+            self.color = node.colorRaw.flatMap { Color(hex: $0) }
             self.tagsRaw = node.tagsRaw ?? ""
             self.images = node.images
         }
@@ -63,6 +68,7 @@ fileprivate final class NodeEditorModel {
 struct NodeEditorView: View {
     @Environment(AppModel.self) private var appModel
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var themeStore: ThemeStore
 
     @State private var model: NodeEditorModel
 
@@ -103,8 +109,18 @@ struct NodeEditorView: View {
                         }
 
                         EditorBlock(title: String(localized: "Color")) {
-                            ColorPicker("", selection: $model.color)
-                                .labelsHidden()
+                            ColorPicker(
+                                "",
+                                selection: Binding(
+                                    get: {
+                                        model.color ?? themeStore.theme.canvasTheme.nodeBackground
+                                    },
+                                    set: { newValue in
+                                        model.color = newValue
+                                    }
+                                )
+                            )
+                            .labelsHidden()
                         }
                         .frame(maxWidth: 80)
                     }
@@ -145,9 +161,7 @@ struct NodeEditorView: View {
                     }
                     .disabled(
                         model.name
-                            .trimmingCharacters(
-                                in: .whitespacesAndNewlines
-                            )
+                            .trimmingCharacters(in: .whitespacesAndNewlines)
                             .isEmpty
                     )
                 }
@@ -160,6 +174,8 @@ struct NodeEditorView: View {
         }
     }
 }
+
+// MARK: - Cover
 
 private extension NodeEditorView {
 
@@ -201,10 +217,7 @@ private extension NodeEditorView {
                             Image(systemName: "xmark")
                                 .font(.system(size: 14, weight: .bold))
                                 .frame(width: 36, height: 36)
-                                .background(
-                                    Circle()
-                                        .fill(.black.opacity(0.6))
-                                )
+                                .background(Circle().fill(.black.opacity(0.6)))
                                 .foregroundStyle(.white)
                         }
                         .buttonStyle(.plain)
