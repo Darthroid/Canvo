@@ -94,7 +94,7 @@ struct NodeDetailView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
 #endif
-                    EditorBlock(title: "Danger zone") {
+                    EditorBlock(title: String(localized: "Danger zone")) {
                         Button(role: .destructive) {
                             showDeleteConfirmation.toggle()
                         } label: {
