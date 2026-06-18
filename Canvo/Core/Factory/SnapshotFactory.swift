@@ -22,7 +22,8 @@ enum SnapshotFactory {
             y: node.y,
             z: node.z,
             color: node.colorRaw,
-            tagsRaw: node.tagsRaw
+            tagsRaw: node.tagsRaw,
+            images: node.images
         )
     }
 
@@ -69,7 +70,8 @@ enum SnapshotFactory {
         detail: String,
         position: SIMD3<Float>,
         color: String?,
-        tagsRaw: String
+        tagsRaw: String,
+        images: [Data]
     ) -> NodeSnapshot {
         NodeSnapshot(
             id: id,
@@ -79,7 +81,8 @@ enum SnapshotFactory {
             y: position.y,
             z: position.z,
             color: color,
-            tagsRaw: tagsRaw
+            tagsRaw: tagsRaw,
+            images: images
         )
     }
     
@@ -89,7 +92,8 @@ enum SnapshotFactory {
         attributedDetail: AttributedString,
         position: SIMD3<Float>,
         color: Color,
-        tagsRaw: String
+        tagsRaw: String,
+        images: [Data]
     ) -> NodeSnapshot {
         NodeSnapshot(
             id: id,
@@ -99,7 +103,8 @@ enum SnapshotFactory {
             y: position.y,
             z: position.z,
             color: color.toHex(includeAlpha: true),
-            tagsRaw: tagsRaw
+            tagsRaw: tagsRaw,
+            images: images
         )
     }
     
@@ -109,7 +114,8 @@ enum SnapshotFactory {
         attributedDetail: AttributedString,
         oldNode: NodeSnapshot,
         color: Color,
-        tagsRaw: String
+        tagsRaw: String,
+        images: [Data]
     ) -> NodeSnapshot {
         NodeSnapshot(
             id: id,
@@ -119,7 +125,8 @@ enum SnapshotFactory {
             y: oldNode.y,
             z: oldNode.z,
             color: color.toHex(includeAlpha: true),
-            tagsRaw: tagsRaw
+            tagsRaw: tagsRaw,
+            images: images
         )
     }
 
@@ -158,7 +165,8 @@ enum SnapshotFactory {
             y: node.y + offsetY,
             z: node.z,
             color: node.colorRaw,
-            tagsRaw: node.tagsRaw
+            tagsRaw: node.tagsRaw,
+            images: node.images
         )
     }
 }

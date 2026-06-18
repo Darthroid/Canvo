@@ -33,7 +33,8 @@ public extension CanvasRepository {
             z: snapshot.z,
             color: snapshot.color,
             canvas: canvas,
-            tagsRaw: snapshot.tagsRaw
+            tagsRaw: snapshot.tagsRaw,
+            images: snapshot.images
         )
 
         node.detailRichText = snapshot.detailRichText
@@ -67,6 +68,7 @@ public extension CanvasRepository {
         node.z = snapshot.z
         node.colorRaw = snapshot.color
         node.tagsRaw = snapshot.tagsRaw
+        node.images = snapshot.images
         
         node.canvas?.updatedAt = Date()
     }

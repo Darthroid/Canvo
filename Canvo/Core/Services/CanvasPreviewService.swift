@@ -252,10 +252,24 @@ private struct CanvasPreviewView: View {
             return Color(uiColor: ui.readableTextColor())
         }()
 
-        VStack {
+        VStack(spacing: 6) {
+
+            if let data = node.coverImageData,
+               let uiImage = UIImage(data: data) {
+
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 36, height: 36)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .clipped()
+            }
+
             Text(node.name)
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundColor(text)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(8)
         .background(bg)

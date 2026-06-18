@@ -17,119 +17,100 @@ struct NodeDetailView: View {
 
     let node: Node
 
-    private var connectionlist: some View {
-        ForEach(appModel.nodesConnectedWith(node: node)) { connectedNode in
-            let isOutgoing = appModel.connections.first(where: {
-                $0.fromNodeId == connectedNode.id ||
-                $0.toNodeId == connectedNode.id
-            })?.fromNodeId == connectedNode.id
-            
-            HStack(spacing: 16) {
-                Image(systemName: isOutgoing ?  "arrow.left" : "arrow.right")
-                VStack(alignment: .leading) {
-                    Text(connectedNode.name)
-                        .font(.body)
-                    Text(connectedNode.positionDescription)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer()
-                
-                Button {
-                    let nodeId = connectedNode.id
-                    
-                    dismiss()
-                    
-                    DispatchQueue.main.async {
-                        appModel.session.centerOnNodeId = nodeId
-                        appModel.session.selectedNodeIds = [nodeId]
-                    }
-                } label: {
-                    Image(systemName: "chevron.right")
-                }
-                .buttonStyle(.borderless)
-                .foregroundColor(.primary)
-                .padding(12)
-                .background(.primary.opacity(0.04))
-                .clipShape(Circle())
-                
-
-                Button {
-                    
-                    guard let connection = appModel.connections.first(where: {
-                        ($0.fromNodeId == connectedNode.id && $0.toNodeId == node.id) ||
-                        ($0.fromNodeId == node.id && $0.toNodeId == connectedNode.id)
-                    }) else { return }
-                    
-                    appModel.removeConnection(connection)
-                    
-                } label: {
-                    Image(systemName: "xmark")
-                }
-                .buttonStyle(.borderless)
-                .foregroundColor(.red)
-                .padding(12)
-                .background(.primary.opacity(0.04))
-                .clipShape(Circle())
-                
-            }
-            .contentShape(Rectangle())
-        }
-    }
-    
     var body: some View {
         NavigationStack {
-            Form {
-                #if DEBUG
-                Section {
-                    Text(node.id)
-                } header: {
-                    Text("ID")
-                }
-                #endif
-                
-                Section {
-                    if node.detail.isEmpty {
-                        Text("No description")
-                            .foregroundStyle(.secondary)
-                    } else {
-//                        Text(node.detail)
-                        TextEditor(text: .constant(node.richText))
-                            .disabled(true)
-                            .frame(minHeight: 300)
-                    }
-                } header: {
-                    Text("Description")
-                }
+            ScrollView {
+                VStack(spacing: 16) {
 
-                Section {
-                    Text(node.positionDescription)
-                } header: {
-                    Text("Position")
-                }
-                
-                if !(node.tagsRaw ?? "").isEmpty {
-                    Section {
-                        Text(node.tagsRaw ?? "")
-                    } header: {
-                        Text("Tags")
-                    }
-                }
+                    cover
 
-                if appModel.hasConnection(nodeId: node.id) {
-                    Section {
-                        connectionlist
-                    } header: {
-                        Text("Connected Nodes")
+                    HStack {
+
+                        EditorBlock(title: String(localized: "Name")) {
+                            Text(node.name.isEmpty ? String(localized: "Untitled node") : node.name)
+                                .font(.system(size: 20, weight: .medium))
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+
+                        EditorBlock(title: String(localized: "Color")) {
+                            Circle()
+                                .fill(
+                                    Color(hex: node.colorRaw ?? "")
+                                    ?? .white
+                                )
+                                .frame(width: 28, height: 28)
+                        }
                     }
+
+                    EditorBlock(title: String(localized: "Detail")) {
+                        if node.richText.characters.isEmpty {
+                            Text("No description")
+                                .foregroundStyle(.secondary)
+                                .frame(
+                                    maxWidth: .infinity,
+                                    alignment: .leading
+                                )
+                        } else {
+                            Text(node.richText)
+                                .frame(
+                                    maxWidth: .infinity,
+                                    alignment: .leading
+                                )
+                        }
+                    }
+
+                    if let tags = node.tagsRaw,
+                       !tags.trimmingCharacters(
+                        in: .whitespacesAndNewlines
+                       ).isEmpty {
+
+                        EditorBlock(title: String(localized: "Tags")) {
+                            Text(tags)
+                                .frame(
+                                    maxWidth: .infinity,
+                                    alignment: .leading
+                                )
+                        }
+                    }
+
+                    if appModel.hasConnection(nodeId: node.id) {
+
+                        EditorBlock(title: String(localized: "Connected Nodes")) {
+                            VStack(spacing: 12) {
+                                connectionList
+                            }
+                        }
+                    }
+                    
+                    EditorBlock(title: String(localized: "Position")) {
+                        Text(node.positionDescription)
+                            .frame(
+                                maxWidth: .infinity,
+                                alignment: .leading
+                            )
+                    }
+
+                    #if DEBUG
+
+                    EditorBlock(title: String(localized: "ID")) {
+                        Text(node.id)
+                            .font(.caption.monospaced())
+                            .textSelection(.enabled)
+                            .frame(
+                                maxWidth: .infinity,
+                                alignment: .leading
+                            )
+                    }
+                    #endif
                 }
+                .padding(.horizontal)
+                .padding(.top, 16)
             }
-            .navigationTitle(node.name)
+//            .navigationTitle("Node")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(role: .cancel) {
+                    Button(role: .close) {
                         dismiss()
                     }
                 }
@@ -155,15 +136,14 @@ struct NodeDetailView: View {
                         } label: {
                             Label("Delete", systemImage: "trash")
                         }
+
                     } label: {
-                        Label("", systemImage: "ellipsis")
+                        Image(systemName: "ellipsis")
                     }
-                    .menuStyle(.button)
-                    .labelStyle(.iconOnly)
                 }
             }
             .sheet(item: $editingNode) { node in
-                EditNodeView(node: node)
+                NodeEditorView(node: node)
                     .interactiveDismissDisabled()
             }
             .sheet(item: $linkNode) { node in
@@ -176,15 +156,113 @@ struct NodeDetailView: View {
             ) {
                 Button("Delete", role: .destructive) {
                     dismiss()
-                    
                     appModel.removeNode(node)
                 }
 
-                Button(role: .cancel) {}
+                Button("Cancel", role: .cancel) { }
+
             } message: {
                 Text("Are you sure you want to delete this node?")
             }
         }
+    }
+}
+
+private extension NodeDetailView {
+
+    var cover: some View {
+        Group {
+            if let data = node.images.first,
+               let uiImage = UIImage(data: data) {
+
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(height: 240)
+                    .frame(maxWidth: .infinity)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .clipped()
+            }
+        }
+    }
+
+    var connectionList: some View {
+        ForEach(appModel.nodesConnectedWith(node: node)) { connectedNode in
+
+            let isOutgoing = appModel.connections.first(where: {
+                $0.fromNodeId == connectedNode.id ||
+                $0.toNodeId == connectedNode.id
+            })?.fromNodeId == connectedNode.id
+
+            HStack(spacing: 12) {
+                
+                Image(
+                    systemName: isOutgoing
+                    ? "arrow.left"
+                    : "arrow.right"
+                )
+                .foregroundStyle(.secondary)
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    
+                    Text(connectedNode.name)
+                        .foregroundStyle(.primary)
+                    
+                    Text(connectedNode.positionDescription)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                
+                Spacer()
+                
+                Button {
+                    focusOnNode(connectedNode)
+                } label: {
+                    Image(systemName: "chevron.right")
+                }
+                .buttonStyle(.borderless)
+                .foregroundColor(.primary)
+                .padding(12)
+                .background(.primary.opacity(0.04))
+                .clipShape(Circle())
+                
+                Button {
+                    removeConnection(for: connectedNode)
+                } label: {
+                    Image(systemName: "xmark")
+                }
+                .buttonStyle(.borderless)
+                .foregroundColor(.red)
+                .padding(12)
+                .background(.primary.opacity(0.04))
+                .clipShape(Circle())
+                
+            }
+            .contentShape(Rectangle())
+        }
+    }
+    
+    func focusOnNode(_ connectedNode: Node) {
+        let nodeId = connectedNode.id
+
+        dismiss()
+
+        DispatchQueue.main.async {
+            appModel.session.centerOnNodeId = nodeId
+            appModel.session.selectedNodeIds = [nodeId]
+        }
+    }
+    
+    func removeConnection(for connectedNode: Node) {
+        guard let connection = appModel.connections.first(where: {
+            ($0.fromNodeId == connectedNode.id && $0.toNodeId == node.id)
+            || ($0.fromNodeId == node.id && $0.toNodeId == connectedNode.id)
+        }) else {
+            return
+        }
+
+        appModel.removeConnection(connection)
+
     }
 }
 

@@ -113,7 +113,8 @@ extension AppModel {
                     detail: summary.detail,
                     position: scope.first?.position ?? summary.position.toSIMD3(),
                     color: summary.color,
-                    tagsRaw: ""
+                    tagsRaw: "",
+                    images: []
                 )
                 
                 let connectionsSnapshots = newConnections.map {

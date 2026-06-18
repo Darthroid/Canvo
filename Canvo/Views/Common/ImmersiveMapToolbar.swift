@@ -224,9 +224,7 @@ struct ImmersiveMapToolbar: View {
             }
         }
         .sheet(item: $showDetailNode) { node in
-            NavigationStack {
-                NodeDetailView(node: node)
-            }
+            NodeDetailView(node: node)
         }
         .sheet(item: $showLinkToNode) { node in
             NavigationStack {
@@ -234,7 +232,7 @@ struct ImmersiveMapToolbar: View {
             }
         }
         .sheet(isPresented: $showNodeForm) {
-            CreateNodeView(position: appModel.session.pendingNodePosition)
+            NodeEditorView(position: appModel.session.pendingNodePosition)
                 .environment(appModel)
         }
         .sheet(isPresented: Binding(
