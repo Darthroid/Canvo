@@ -348,7 +348,8 @@ extension AppModel {
         attributedDetail: AttributedString,
         position: SIMD3<Float>,
         color: Color,
-        tagsRaw: String
+        tagsRaw: String,
+        images: [Data]
     ) {
         guard let canvas = session.currentCanvas else { return }
 
@@ -358,7 +359,8 @@ extension AppModel {
             attributedDetail: attributedDetail,
             position: position,
             color: color,
-            tagsRaw: tagsRaw
+            tagsRaw: tagsRaw,
+            images: images
         )
         
         let action = AddNodeAction(canvas: canvas, node: snapshot)
@@ -399,7 +401,8 @@ extension AppModel {
         name: String,
         attributedDetail: AttributedString,
         color: Color,
-        tagsRaw: String
+        tagsRaw: String,
+        images: [Data]
     ) {
         guard let node = node(forId: nodeId) else { return }
 
@@ -418,7 +421,8 @@ extension AppModel {
             attributedDetail: attributedDetail,
             oldNode: oldNode,
             color: color,
-            tagsRaw: tagsRaw
+            tagsRaw: tagsRaw,
+            images: images
         )
 
         let action = UpdateNodeContentAction(

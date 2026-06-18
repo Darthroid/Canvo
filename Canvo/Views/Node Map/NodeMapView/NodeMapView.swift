@@ -450,18 +450,18 @@ struct NodeMapView: View {
             }
             #endif
             .sheet(isPresented: $showNodeForm) {
-                CreateNodeView(position: appModel.session.pendingNodePosition)
+                NodeEditorView(position: appModel.session.pendingNodePosition)
                     .environment(appModel)
             }
             .sheet(item: $showDetailNode) { node in
-                NavigationStack {
-                    NodeDetailView(node: node)
-                }
+                NodeDetailView(node: node)
+                    .environment(appModel)
             }
             .sheet(item: $showLinkToNode) { node in
                 NavigationStack {
                     LinkEditorView(fromNode: node)
                         .interactiveDismissDisabled()
+                        .presentationDetents([.medium, .large]) 
                 }
             }
             .sheet(isPresented: Binding(

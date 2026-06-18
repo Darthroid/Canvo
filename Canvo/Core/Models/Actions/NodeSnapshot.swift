@@ -17,6 +17,7 @@ public struct NodeSnapshot: Sendable {
     let z: Float
     let color: String?
     let tagsRaw: String?
+    let images: [Data]
 }
 
 
@@ -44,7 +45,8 @@ public extension NodeSnapshot {
         y: Float,
         z: Float,
         color: String?,
-        tagsRaw: String?
+        tagsRaw: String?,
+        images: [Data]
     ) {
         self.init(
             id: id,
@@ -55,7 +57,8 @@ public extension NodeSnapshot {
             y: y,
             z: z,
             color: color,
-            tagsRaw: tagsRaw
+            tagsRaw: tagsRaw,
+            images: images
         )
     }
 }

@@ -4,6 +4,7 @@
 //
 //  Created by Олег Комаристый on 18.11.2025.
 //
+
 import Foundation
 #if os(visionOS)
 import RealityKit
@@ -22,6 +23,9 @@ public class Node: Identifiable, Codable {
     @Attribute(.externalStorage)
     var detailRichText: Data?
 
+    /// Images stored as raw Data blobs (PNG/JPEG/etc)
+    @Attribute(.externalStorage)
+    var imagesData: Data?
     
     var x: Float = 0
     var y: Float = 0
@@ -42,6 +46,16 @@ public class Node: Identifiable, Codable {
     var positionDescription: String { "(\(x), \(y), \(z))" }
     
     var tagsRaw: String? = ""
+    
+    var images: [Data] {
+        get {
+            guard let imagesData else { return [] }
+            return (try? JSONDecoder().decode([Data].self, from: imagesData)) ?? []
+        }
+        set {
+            imagesData = try? JSONEncoder().encode(newValue)
+        }
+    }
     
     var richText: AttributedString {
         get {
@@ -76,7 +90,7 @@ public class Node: Identifiable, Codable {
     }
     
     init(id: String = UUID().uuidString, name: String, detail: String,
-         x: Float, y: Float, z: Float, color: String? = nil, canvas: Canvas? = nil, tagsRaw: String? = nil) {
+         x: Float, y: Float, z: Float, color: String? = nil, canvas: Canvas? = nil, tagsRaw: String? = nil, images: [Data] = []) {
         self.id = id
         self.name = name
         self.detail = detail
@@ -86,6 +100,7 @@ public class Node: Identifiable, Codable {
         self.colorRaw = color
         self.canvas = canvas
         self.tagsRaw = tagsRaw
+        self.images = images
     }
     
     public func encode(to encoder: any Encoder) throws {
@@ -143,10 +158,14 @@ extension Node: NSCopying {
     }
 }
 
-
 #if os(visionOS)
 public struct NodeDataComponent: Component {
     let node: Node
 }
-
 #endif
+
+extension Node {
+    var coverImageData: Data? {
+        images.first
+    }
+}

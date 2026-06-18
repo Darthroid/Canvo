@@ -7,8 +7,6 @@
 
 import SwiftUI
 
-import SwiftUI
-
 struct NodeView: View {
     let node: Node
     let isSelected: Bool
@@ -52,6 +50,19 @@ struct NodeView: View {
     var body: some View {
         VStack(spacing: 0) {
             VStack(spacing: 8) {
+
+                if let data = node.coverImageData,
+                   let uiImage = decodeCover(data) {
+
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 100, height: 100)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .clipped()
+                        .padding(.top, 4)
+                }
+
                 Text(node.name)
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(titleColor)
@@ -189,8 +200,11 @@ struct NodeView: View {
 #Preview {
     NodeView(
         node: .init(
-            name: "Title",
-            detail: "Detail information about the title node goes here. it can be a long text that should wrap and continue to the next line if needed. this is just an example. you can add as much detail as you need. and it will automatically wrap. also you can add images and other nodes here.",
+            name: "Project Roadmap",
+            detail: """
+            Detail information about the title node goes here.
+            It can contain several lines of text and is shown only when expanded.
+            """,
             x: 0,
             y: 0,
             z: 0,
