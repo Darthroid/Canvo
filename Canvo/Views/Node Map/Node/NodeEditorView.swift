@@ -106,6 +106,7 @@ struct NodeEditorView: View {
                             ColorPicker("", selection: $model.color)
                                 .labelsHidden()
                         }
+                        .frame(maxWidth: 80)
                     }
 
                     EditorBlock(title: String(localized: "Detail")) {
@@ -183,6 +184,8 @@ private extension NodeEditorView {
                     .overlay {
                         Text(String(localized: "Tap to add cover (optional)"))
                             .foregroundStyle(.secondary)
+                            .padding(30)
+                            .multilineTextAlignment(.center)
                     }
             }
 

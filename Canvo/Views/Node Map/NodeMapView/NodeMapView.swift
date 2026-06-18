@@ -461,6 +461,7 @@ struct NodeMapView: View {
                 NavigationStack {
                     LinkEditorView(fromNode: node)
                         .interactiveDismissDisabled()
+                        .presentationDetents([.medium, .large]) 
                 }
             }
             .sheet(isPresented: Binding(

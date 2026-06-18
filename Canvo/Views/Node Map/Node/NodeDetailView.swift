@@ -15,6 +15,8 @@ struct NodeDetailView: View {
     @State private var editingNode: Node?
     @State private var linkNode: Node?
 
+    @State private var showImageViewer = false
+
     let node: Node
 
     var body: some View {
@@ -34,79 +36,77 @@ struct NodeDetailView: View {
 
                         EditorBlock(title: String(localized: "Color")) {
                             Circle()
-                                .fill(
-                                    Color(hex: node.colorRaw ?? "")
-                                    ?? .white
-                                )
+                                .fill(Color(hex: node.colorRaw ?? "") ?? .white)
                                 .frame(width: 28, height: 28)
                         }
+                        .frame(maxWidth: 80)
                     }
 
                     EditorBlock(title: String(localized: "Detail")) {
                         if node.richText.characters.isEmpty {
                             Text("No description")
                                 .foregroundStyle(.secondary)
-                                .frame(
-                                    maxWidth: .infinity,
-                                    alignment: .leading
-                                )
+                                .frame(maxWidth: .infinity, alignment: .leading)
                         } else {
                             Text(node.richText)
-                                .frame(
-                                    maxWidth: .infinity,
-                                    alignment: .leading
-                                )
+                                .frame(maxWidth: .infinity, alignment: .leading)
                         }
                     }
 
                     if let tags = node.tagsRaw,
-                       !tags.trimmingCharacters(
-                        in: .whitespacesAndNewlines
-                       ).isEmpty {
+                       !tags.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
 
                         EditorBlock(title: String(localized: "Tags")) {
                             Text(tags)
-                                .frame(
-                                    maxWidth: .infinity,
-                                    alignment: .leading
-                                )
+                                .frame(maxWidth: .infinity, alignment: .leading)
                         }
                     }
 
-                    if appModel.hasConnection(nodeId: node.id) {
-
-                        EditorBlock(title: String(localized: "Connected Nodes")) {
+                    EditorBlock(title: String(localized: "Connected Nodes")) {
+                        if appModel.hasConnection(nodeId: node.id) {
                             VStack(spacing: 12) {
                                 connectionList
                             }
+                        } else {
+                            Text("No connected nodes")
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
                         }
+                    } actions: {
+                        Button {
+                            linkNode = node
+                        } label: {
+                            Text("Add")
+                        }
+                        .buttonStyle(.bordered)
                     }
-                    
+
                     EditorBlock(title: String(localized: "Position")) {
                         Text(node.positionDescription)
-                            .frame(
-                                maxWidth: .infinity,
-                                alignment: .leading
-                            )
+                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
 
-                    #if DEBUG
-
+#if DEBUG
                     EditorBlock(title: String(localized: "ID")) {
                         Text(node.id)
                             .font(.caption.monospaced())
                             .textSelection(.enabled)
-                            .frame(
-                                maxWidth: .infinity,
-                                alignment: .leading
-                            )
+                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    #endif
+#endif
+                    EditorBlock(title: "Danger zone") {
+                        Button(role: .destructive) {
+                            showDeleteConfirmation.toggle()
+                        } label: {
+                            Label("Delete Node", systemImage: "trash")
+                                .foregroundStyle(.red)
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
                 .padding(.horizontal)
                 .padding(.top, 16)
             }
-//            .navigationTitle("Node")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -116,31 +116,16 @@ struct NodeDetailView: View {
                 }
 
                 ToolbarItem(placement: .primaryAction) {
-                    Menu {
-                        Button {
-                            editingNode = node
-                        } label: {
-                            Label("Edit", systemImage: "pencil")
-                        }
-
-                        Button {
-                            linkNode = node
-                        } label: {
-                            Label("Link", systemImage: "link")
-                        }
-
-                        Divider()
-
-                        Button(role: .destructive) {
-                            showDeleteConfirmation = true
-                        } label: {
-                            Label("Delete", systemImage: "trash")
-                        }
-
+                    Button {
+                        editingNode = node
                     } label: {
-                        Image(systemName: "ellipsis")
+                        Label("Edit", systemImage: "pencil")
                     }
                 }
+            }
+            .sheet(isPresented: $showImageViewer) {
+                imageViewer
+                    .interactiveDismissDisabled()
             }
             .sheet(item: $editingNode) { node in
                 NodeEditorView(node: node)
@@ -149,24 +134,22 @@ struct NodeDetailView: View {
             .sheet(item: $linkNode) { node in
                 LinkEditorView(fromNode: node)
                     .interactiveDismissDisabled()
+                    .presentationDetents([.medium, .large])
             }
-            .alert(
-                "Delete Node",
-                isPresented: $showDeleteConfirmation
-            ) {
+            .alert("Delete Node", isPresented: $showDeleteConfirmation) {
                 Button("Delete", role: .destructive) {
                     dismiss()
                     appModel.removeNode(node)
                 }
-
-                Button("Cancel", role: .cancel) { }
-
+                Button("Cancel", role: .cancel) {}
             } message: {
                 Text("Are you sure you want to delete this node?")
             }
         }
     }
 }
+
+// MARK: - Cover
 
 private extension NodeDetailView {
 
@@ -182,10 +165,40 @@ private extension NodeDetailView {
                     .frame(maxWidth: .infinity)
                     .clipShape(RoundedRectangle(cornerRadius: 16))
                     .clipped()
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        showImageViewer = true
+                    }
             }
         }
     }
 
+    var imageViewer: some View {
+        NavigationStack {
+            ZStack {
+                Color.black.ignoresSafeArea()
+
+                if let data = node.images.first,
+                   let uiImage = UIImage(data: data) {
+
+                    ZoomableImage(image: uiImage)
+                        .ignoresSafeArea()
+                }
+            }
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(role: .close) {
+                        showImageViewer = false
+                    }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Connections
+
+private extension NodeDetailView {
     var connectionList: some View {
         ForEach(appModel.nodesConnectedWith(node: node)) { connectedNode in
 
