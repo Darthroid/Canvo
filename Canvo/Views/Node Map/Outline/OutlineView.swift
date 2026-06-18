@@ -26,7 +26,7 @@ struct OutlineView: View {
         let isSheet = style == .sheet
         
         return VStack(alignment: .leading, spacing: 16) {
-            Text("Outline")
+            Text(appModel.session.currentCanvas?.name ?? "Outline")
                 .font(.headline)
                 .padding(.top, 20)
                 #if os(visionOS)
@@ -37,9 +37,12 @@ struct OutlineView: View {
             
             List {
                 ForEach(outline) { tree in
-                    NodeTreeView(tree: tree)
-                        .listRowBackground(Color.clear)
-                        .environment(appModel)
+                    NodeTreeView(
+                        tree: tree,
+                        level: 0
+                    )
+                    .listRowBackground(Color.clear)
+                    .environment(appModel)
                 }
             }
             .listStyle(.plain)
