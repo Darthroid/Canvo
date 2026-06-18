@@ -38,6 +38,8 @@ struct NodeMapView: View {
     @Environment(\.dismissImmersiveSpace) var dismissImmersiveSpace
 #endif
     
+    @State private var nodeSizes: [String: CGSize] = [:]
+    
     @State var dragStartPositions: [String: SIMD3<Float>] = [:]
     @State var draggedNodeIds: Set<String> = []
     
@@ -236,8 +238,10 @@ struct NodeMapView: View {
                             
                             let shouldFocus = appModel.session.focusNodeIds.contains(c.fromNodeId) && appModel.session.focusNodeIds.contains(c.toNodeId)
                             ConnectionView(
-                                from: a.position.position2D,
-                                to: b.position.position2D
+                                fromCenter: a.position.position2D,
+                                fromSize: nodeSizes[a.id] ?? .zero,
+                                toCenter: b.position.position2D,
+                                toSize: nodeSizes[b.id] ?? .zero
                             )
                             .stroke(themeStore.theme.canvasTheme.connector, lineWidth: 2)
                             .opacity(!isFocused ? 1 : (shouldFocus ? 1 : 0.1))
@@ -252,6 +256,9 @@ struct NodeMapView: View {
                             isExpanded: appModel.session.expandedNodeIds.contains(node.id),
                             isMatchingSearch: searchResults.contains(where: { $0.id == node.id }),
                             toolbarEnabled: true,
+                            onSizeChange: { size in
+                                nodeSizes[node.id] = size
+                            },
                             onDetail: { showDetailNode = node },
                             onLink: { showLinkToNode = node },
                             onDelete: { showDeleteNode = node }

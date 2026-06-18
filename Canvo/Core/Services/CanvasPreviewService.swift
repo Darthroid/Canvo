@@ -227,8 +227,10 @@ private struct CanvasPreviewView: View {
                    let to = nodes.first(where: { $0.id == connection.toNodeId }) {
 
                     ConnectionView(
-                        from: from.position.position2D,
-                        to: to.position.position2D
+                        fromCenter: from.position.position2D,
+                        fromSize: .zero,
+                        toCenter: to.position.position2D,
+                        toSize: .zero
                     )
                     .stroke(theme.connector, lineWidth: 3)
                 }
