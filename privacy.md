@@ -15,9 +15,17 @@ The app does not require an account and does not collect information such as:
 - Phone number
 - Location data
 - Contacts
-- Photos
 - Payment information
 
+## Device Permissions
+
+Canvo may request access to your photo library in order to allow you to select images as node covers.
+
+- Photo access is used only for user-selected images.
+- Images are processed locally on your device.
+- Canvo does not upload your photos or media to external servers.
+
+If you choose to save exported images, Canvo may request permission to add images to your photo library. This access is used only for saving content you explicitly export.
 
 ## User Content
 
