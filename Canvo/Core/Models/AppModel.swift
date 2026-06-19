@@ -50,6 +50,12 @@ final class AppModel: Sendable {
         session.currentCanvas?.nodes ?? []
     }
     
+    var nodesById: [String: Node] {
+        Dictionary(
+            uniqueKeysWithValues: nodes.map { ($0.id, $0) }
+        )
+    }
+    
     /// All nodes that match the current tag filter
     var visibleNodes: [Node] {
         graphService.visibleNodes(
@@ -163,10 +169,8 @@ extension AppModel {
 extension AppModel {
     
     func node(forId id: String) -> Node? {
-        graphService.node(
-            id: id,
-            in: nodes
-        )
+        print("lookup")
+        return nodesById[id]
     }
     
     func hasConnection(nodeId: String) -> Bool {
@@ -179,7 +183,7 @@ extension AppModel {
     func nodesConnectedWith(node: Node) -> [Node] {
         graphService.connectedNodes(
             for: node,
-            nodes: nodes,
+            nodesById: nodesById,
             connections: connections
         )
     }

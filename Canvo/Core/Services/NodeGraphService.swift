@@ -10,13 +10,6 @@ import Foundation
 
 final class NodeGraphService {
 
-    func node(
-        id: String,
-        in nodes: [Node]
-    ) -> Node? {
-        nodes.first { $0.id == id }
-    }
-
     func hasConnection(
         nodeId: String,
         connections: [NodeConnection]
@@ -29,7 +22,7 @@ final class NodeGraphService {
 
     func connectedNodes(
         for node: Node,
-        nodes: [Node],
+        nodesById: [String: Node],
         connections: [NodeConnection]
     ) -> [Node] {
 
@@ -44,9 +37,7 @@ final class NodeGraphService {
                 ? connection.toNodeId
                 : connection.fromNodeId
 
-            return nodes.first {
-                $0.id == otherId
-            }
+            return nodesById[otherId]
         }
     }
 
@@ -54,6 +45,8 @@ final class NodeGraphService {
         nodes: [Node],
         selectedTags: Set<Tag>
     ) -> [Node] {
+        
+        print("visibleNodes recalculated")
 
         guard !selectedTags.isEmpty else {
             return nodes
@@ -77,6 +70,8 @@ final class NodeGraphService {
         connections: [NodeConnection],
         selectedTags: Set<Tag>
     ) -> [NodeConnection] {
+        
+        print("visibleConnections recalculated")
 
         let visibleNodes = visibleNodes(
             nodes: nodes,

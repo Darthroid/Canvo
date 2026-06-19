@@ -229,13 +229,18 @@ struct NodeMapView: View {
                     GridLayer(offset: offset, scale: scale)
                 }
                 
+                let visibleNodes = appModel.visibleNodes
+                let nodeMap = Dictionary(
+                    uniqueKeysWithValues: visibleNodes.map { ($0.id, $0) }
+                )
+
+                let visibleConnections = appModel.visibleConnections
+                
                 ZStack {
                     // Connections
-                    ForEach(appModel.visibleConnections) { c in
-                        if let a = appModel.node(forId: c.fromNodeId),
-                           let b = appModel.node(forId: c.toNodeId),
-                           !a.isHidden && !b.isHidden {
-                            
+                    ForEach(visibleConnections) { c in
+                        if let a = nodeMap[c.fromNodeId],
+                           let b = nodeMap[c.toNodeId]  {
                             let shouldFocus = appModel.session.focusNodeIds.contains(c.fromNodeId) && appModel.session.focusNodeIds.contains(c.toNodeId)
                             ConnectionView(
                                 fromCenter: a.position.position2D,
@@ -243,13 +248,17 @@ struct NodeMapView: View {
                                 toCenter: b.position.position2D,
                                 toSize: nodeSizes[b.id] ?? .zero
                             )
-                            .stroke(themeStore.theme.canvasTheme.connector, lineWidth: 2)
+                            .stroke(
+                                themeStore.theme.canvasTheme.connector,
+                                lineWidth: 2
+                            )
                             .opacity(!isFocused ? 1 : (shouldFocus ? 1 : 0.1))
                         }
+
                     }
                     
                     // Nodes
-                    ForEach(appModel.visibleNodes) { node in
+                    ForEach(visibleNodes) { node in
                         NodeView(
                             node: node,
                             isSelected: appModel.session.selectedNodeIds.contains(node.id),
@@ -263,6 +272,7 @@ struct NodeMapView: View {
                             onLink: { showLinkToNode = node },
                             onDelete: { showDeleteNode = node }
                         )
+                        .equatable()
                         .opacity(!isFocused ? 1 : (appModel.session.focusNodeIds.contains(node.id) ? 1 : 0.1))
                         .position(node.position.position2D)
                         .gesture(nodeDrag(node))

@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct NodeView: View {
+    
     let node: Node
     let isSelected: Bool
     let isExpanded: Bool
@@ -49,6 +50,8 @@ struct NodeView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            let _ = print("NodeView:", node.id)
+            let _ = Self._printChanges()
             VStack(spacing: 8) {
 
                 if let data = node.coverImageData,
@@ -215,4 +218,13 @@ struct NodeView: View {
         isMatchingSearch: false,
         toolbarEnabled: true
     )
+}
+
+extension NodeView: Equatable {
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.node.renderHash == rhs.node.renderHash &&
+        lhs.isSelected == rhs.isSelected &&
+        lhs.isExpanded == rhs.isExpanded &&
+        lhs.isMatchingSearch == rhs.isMatchingSearch
+    }
 }

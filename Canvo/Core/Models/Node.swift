@@ -169,3 +169,15 @@ extension Node {
         images.first
     }
 }
+
+extension Node {
+    var renderHash: Int {
+        var hasher = Hasher()
+        hasher.combine(id)
+        hasher.combine(name)
+        hasher.combine(detail)
+        hasher.combine(colorRaw)
+        hasher.combine(imagesData?.count ?? 0)
+        return hasher.finalize()
+    }
+}
