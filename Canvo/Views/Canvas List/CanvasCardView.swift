@@ -14,7 +14,8 @@ struct CanvasCardView: View {
     let canvas: Canvas
 
     @State private var previewImage: UIImage?
-    
+    @State private var isPressed: Bool = false
+
     private var shouldHidePreview: Bool {
         canvas.isSecured
     }
@@ -23,123 +24,130 @@ struct CanvasCardView: View {
         let date = canvas.updatedAt
 
         if Calendar.current.isDateInToday(date) {
-            return String(localized: "Today, ") + date.formatted(
-                .dateTime
-                    .hour()
-                    .minute()
-            )
+            return "Today, " + date.formatted(.dateTime.hour().minute())
         } else if Calendar.current.isDateInYesterday(date) {
-            return String(localized: "Yesterday, ") + date.formatted(
-                .dateTime
-                    .hour()
-                    .minute()
-            )
+            return "Yesterday, " + date.formatted(.dateTime.hour().minute())
         } else {
-            return date.formatted(
-                .dateTime
-                    .day()
-                    .month(.twoDigits)
-                    .year()
-                    .hour()
-                    .minute()
-            )
+            return date.formatted(.dateTime.day().month(.twoDigits).year().hour().minute())
         }
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            ZStack {
-                if shouldHidePreview {
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .fill(
-                            themeStore.theme.canvasTheme.background
-                        )
-                        .frame(height: 160)
-                    
-                    Image(systemName: "lock.fill")
-                        .font(.system(size: 28, weight: .semibold))
-                        .foregroundStyle(themeStore.theme.canvasTheme.connector)
-                } else if let previewImage {
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-//                        #if os(visionOS)
-//                        .fill(Color("MapBackground").opacity(0.8))
-//                        #else
-//                        .fill(.background)
-//                        #endif
-                        .fill(themeStore.theme.canvasTheme.background)
-                        .frame(height: 160)
+        VStack(alignment: .leading, spacing: 12) {
 
+            // MARK: Preview
+            ZStack {
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .fill(themeStore.theme.canvasTheme.background.opacity(0.9))
+                    .overlay {
+                        LinearGradient(
+                            colors: [
+                                .white.opacity(0.08),
+                                .clear,
+                                .black.opacity(0.05)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    }
+
+                if shouldHidePreview {
+                    VStack(spacing: 10) {
+                        Image(systemName: "lock.fill")
+                            .font(.system(size: 22, weight: .semibold))
+                            .foregroundStyle(.secondary)
+
+                        Text("Secured")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                } else if let previewImage {
                     Image(uiImage: previewImage)
                         .resizable()
                         .scaledToFit()
-                        .frame(maxWidth: .infinity, maxHeight: 160)
-                        .clipShape(
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        )
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .clipped()
+                        .opacity(isPressed ? 0.85 : 1.0)
                 } else {
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .fill(
-                            themeStore.theme.canvasTheme.background
-                        )
-                        .frame(height: 160)
-
                     Image("canvas_placeholder")
                         .resizable()
-                        .frame(maxWidth: 80, maxHeight: 80)
-                        .opacity(0.5)
-                        .foregroundStyle(
-                            themeStore.theme.canvasTheme.selection
-                        )
-                        .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
+                        .scaledToFit()
+                        .frame(width: 70, height: 70)
+                        .opacity(0.35)
+                        .foregroundStyle(themeStore.theme.canvasTheme.selection)
                 }
             }
-            .frame(height: 160)
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .frame(height: 170)
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(.white.opacity(0.2), lineWidth: 1)
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .stroke(.white.opacity(0.08), lineWidth: 1)
             )
 
-            VStack(alignment: .leading, spacing: 12) {
-                HStack {
+            // MARK: Meta
+            VStack(alignment: .leading, spacing: 10) {
+
+                HStack(spacing: 8) {
                     if canvas.isPined {
                         Image(systemName: "star.fill")
-                            .font(.callout)
+                            .font(.caption)
                             .foregroundStyle(themeStore.theme.canvasTheme.selection)
                     }
 
                     Text(canvas.name)
-                        .font(.title3)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.primary)
+                        .font(.headline)
+                        .foregroundStyle(.primary)
                         .lineLimit(1)
-                        .fixedSize(horizontal: false, vertical: true)
+
+                    Spacer()
                 }
 
                 HStack {
-                    Label(updatedAt, systemImage: "calendar")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                    Label(updatedAt, systemImage: "clock")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
 
                     Spacer()
 
                     Text(String(localized: "\(canvas.nodes?.count ?? 0) nodes"))
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(.ultraThinMaterial, in: Capsule())
                 }
             }
-            .padding(.horizontal, 4)
+            .padding(.horizontal, 2)
         }
-        .padding(16)
-        .background(
+        .padding(14)
+        .background {
             RoundedRectangle(cornerRadius: 28, style: .continuous)
                 .fill(.ultraThinMaterial)
-                .shadow(color: .black.opacity(0.15), radius: 20, x: 0, y: 10)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .stroke(Color(uiColor: .lightGray).opacity(0.1), lineWidth: 1)
-        )
+                .overlay {
+                    RoundedRectangle(cornerRadius: 28, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    .white.opacity(0.06),
+                                    .clear,
+                                    .black.opacity(0.06)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                }
+        }
+//        .scaleEffect(isPressed ? 0.98 : 1.0)
+//        .animation(.spring(response: 0.25, dampingFraction: 0.85), value: isPressed)
+//        .onTapGesture {}
+//        .onLongPressGesture(
+//            minimumDuration: 0.01,
+//            pressing: { pressing in
+//                isPressed = pressing
+//            },
+//            perform: {}
+//        )
         .onAppear {
             previewImage = loadPreview(for: canvas)
         }

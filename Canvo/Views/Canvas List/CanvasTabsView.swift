@@ -7,13 +7,13 @@
 
 import SwiftUI
 
-
 enum CanvasFilter: String, CaseIterable, Identifiable {
     case all = "All"
     case recent = "Recent"
     case favorites = "Favorites"
-    
+
     var id: String { rawValue }
+
     var title: String {
         switch self {
         case .all:
@@ -26,55 +26,66 @@ enum CanvasFilter: String, CaseIterable, Identifiable {
     }
 }
 
-
 struct CanvasTabsView: View {
     @Binding var selectedFilter: CanvasFilter
-    
     @EnvironmentObject private var themeStore: ThemeStore
-    
-    private var backgroundUIColor: UIColor {
-        return UIColor(themeStore.theme.canvasTheme.selection)
+
+    private var accent: Color {
+        themeStore.theme.canvasTheme.selection
     }
 
-    private var titleColor: Color {
-        Color(uiColor: backgroundUIColor.readableTextColor())
-    }
-    
     var body: some View {
-        HStack {
+        HStack(spacing: 10) {
             ForEach(CanvasFilter.allCases) { filter in
                 Button {
-                    withAnimation(.easeInOut(duration: 0.15)) {
+                    withAnimation(.spring(response: 0.25, dampingFraction: 0.85)) {
                         selectedFilter = filter
                     }
                 } label: {
-                    HStack(spacing: 6) {
-                        
-                        Text(filter.title)
-                            .font(.system(size: 15, weight: .medium))
-                            .foregroundColor(selectedFilter == filter ? titleColor : .primary)
-                    }
-                    .foregroundStyle(selectedFilter == filter ? .white : .primary)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(
-                        ZStack {
-                            if selectedFilter == filter {
-                                RoundedRectangle(cornerRadius: 10)
-                                    .fill(Color(backgroundUIColor))
-                            } else {
-                                RoundedRectangle(cornerRadius: 10)
-                                    .fill(Color(.secondarySystemBackground))
-                            }
-                        }
-                    )
+                    tab(filter)
                 }
                 .buttonStyle(.plain)
-                
             }
+
             Spacer()
         }
-        .padding(.horizontal, 24)
-        .padding(.vertical, 8)
+        .padding(.horizontal, 18)
+        .padding(.vertical, 10)
+    }
+
+    @ViewBuilder
+    private func tab(_ filter: CanvasFilter) -> some View {
+        let isSelected = selectedFilter == filter
+
+        Text(filter.title)
+            .font(.system(size: 14, weight: isSelected ? .semibold : .medium))
+            .foregroundStyle(isSelected ? .primary : .secondary)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .background {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(
+                        isSelected
+                        ? accent.opacity(0.18)
+                        : Color.clear
+                    )
+                    .overlay {
+                        if isSelected {
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .fill(.ultraThinMaterial.opacity(0.6))
+                        }
+                    }
+            }
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(
+                        isSelected
+                        ? accent.opacity(0.35)
+                        : .white.opacity(0.06),
+                        lineWidth: 1
+                    )
+            )
+            .scaleEffect(isSelected ? 1.03 : 1.0)
+            .animation(.spring(response: 0.25, dampingFraction: 0.85), value: selectedFilter)
     }
 }
