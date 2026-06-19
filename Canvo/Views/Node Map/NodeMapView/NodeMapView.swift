@@ -37,7 +37,7 @@ struct NodeMapView: View {
     @Environment(\.openImmersiveSpace) var openImmersiveSpace
     @Environment(\.dismissImmersiveSpace) var dismissImmersiveSpace
 #endif
-    
+        
     @State private var nodeSizes: [String: CGSize] = [:]
     
     @State var dragStartPositions: [String: SIMD3<Float>] = [:]
@@ -73,8 +73,6 @@ struct NodeMapView: View {
     @State var generatedJSON: Data?
     @State var showShareSheet = false
     @State var selectedFormat: ExportFormat = .png
-    
-    @Environment(\.requestReview) private var requestReview
 
     @AppStorage("screenDismissCount")
     private var screenDismissCount = 0
@@ -196,7 +194,7 @@ struct NodeMapView: View {
             Text("Focus mode")
 
             Button {
-                appModel.session.focusNodeIds.removeAll()
+                appModel.session.focusMode = nil
             } label: {
                 Image(systemName: "xmark")
                     .frame(width: 36, height: 36)
@@ -222,7 +220,7 @@ struct NodeMapView: View {
         ZStack {
             
             ZStack {
-                let isFocused = !appModel.session.focusNodeIds.isEmpty
+                let isFocused = appModel.session.focusMode != nil
                 
                 // Canvas grid
                 if showGrid {
@@ -343,7 +341,7 @@ struct NodeMapView: View {
                     }
                     
                     // Focus mode
-                    if appModel.session.focusNodeIds.count > 0 {
+                    if appModel.session.focusMode != nil {
                         focusPanel
                     }
                     

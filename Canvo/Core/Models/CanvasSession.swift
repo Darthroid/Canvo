@@ -11,11 +11,22 @@ import RealityKit
 
 @Observable
 final class CanvasSession {
+    
+    private weak var model: AppModel?
 
     var currentCanvas: Canvas?
 
+    var focusMode: FocusMode? = nil {
+        didSet {
+            setFocusedNodes()
+        }
+    }
     var focusNodeIds: Set<String> = []
-    var selectedNodeIds: Set<String> = []
+    var selectedNodeIds: Set<String> = [] {
+        didSet {
+            setFocusedNodes()
+        }
+    }
     var expandedNodeIds: Set<String> = []
 
     var selectedTags: Set<Tag> = []
@@ -23,7 +34,12 @@ final class CanvasSession {
     var centerOnNodeId: String?
     var pendingNodePosition: SIMD3<Float>?
     
+    func set(model: AppModel) {
+        self.model = model
+    }
+    
     func cleareFocused() {
+        focusMode = nil
         focusNodeIds.removeAll()
     }
     
@@ -66,6 +82,27 @@ final class CanvasSession {
             selectedTags.remove(tag)
         } else {
             selectedTags.insert(tag)
+        }
+    }
+    
+    func setFocusedNodes() {
+        switch self.focusMode {
+        case .selectedOnly:
+            focusNodeIds.removeAll()
+            for id in selectedNodeIds {
+                focusNodeIds.insert(id)
+            }
+        case .context:
+            focusNodeIds.removeAll()
+            for id in selectedNodeIds {
+                let connected = model?.nodeIds(connectedTo: id) ?? []
+                focusNodeIds.insert(id)
+                focusNodeIds.formUnion(connected)
+            }
+//            case .branch:
+//                break
+        default:
+            break
         }
     }
 }

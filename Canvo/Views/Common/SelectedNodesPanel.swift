@@ -58,11 +58,20 @@ struct SelectedNodesPanel: View {
                 
                 Divider()
                 
-                Button {
-                    for id in appModel.session.selectedNodeIds {
-                        appModel.session.focusNodeIds.insert(id)
+                Menu {
+                    ForEach(FocusMode.allCases) { mode in
+                        Button {
+                            appModel.session.focusMode = mode
+                        } label: {
+                            let isSelected = appModel.session.focusMode == mode
+                            if isSelected {
+                                Label(mode.title, systemImage: "checkmark")
+                            } else {
+                                Text(mode.title)
+                            }
+                        }
                     }
-                } label: {
+                } label : {
                     Label {
                         Text("Focus")
                     } icon: {
