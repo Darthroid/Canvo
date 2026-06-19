@@ -19,11 +19,11 @@ struct CanvasTheme: Equatable {
 
 extension CanvasTheme {
     static let systemLight = CanvasTheme(
-        background: Color(uiColor: .systemBackground),
+        background: Color(uiColor: .secondarySystemBackground),
         nodeBackground: .white,
         nodeBorder: Color(uiColor: .opaqueSeparator),
         connector: Color(uiColor: .tertiaryLabel),
-        selection: .accentColor,
+        selection: .accent,
         grid: Color.gray.opacity(0.25)
     )
 
@@ -32,7 +32,7 @@ extension CanvasTheme {
         nodeBackground: Color(uiColor: .darkGray),
         nodeBorder: Color(uiColor: .opaqueSeparator),
         connector: Color(uiColor: .tertiaryLabel),
-        selection: .accentColor,
+        selection: .accent,
         grid: Color.white.opacity(0.3)
     )
 

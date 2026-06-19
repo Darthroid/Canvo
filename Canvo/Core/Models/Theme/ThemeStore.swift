@@ -33,6 +33,7 @@ final class ThemeStore: ObservableObject {
         UIButton.appearance().tintColor = color
         UIView.appearance().tintColor = color
         UISwitch.appearance().onTintColor = color
+        UILabel.appearance().tintColor = color
         UISegmentedControl.appearance().selectedSegmentTintColor = color
         UINavigationBar.appearance().tintColor = color
         UIToolbar.appearance().tintColor = color
