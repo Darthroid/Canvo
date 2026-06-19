@@ -169,7 +169,6 @@ extension AppModel {
 extension AppModel {
     
     func node(forId id: String) -> Node? {
-        print("lookup")
         return nodesById[id]
     }
     

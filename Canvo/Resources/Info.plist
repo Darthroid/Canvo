@@ -2,6 +2,100 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+    <key>MDItemKeywords</key>
+    <array>
+        <string>canvo</string>
+        <string>mind map</string>
+        <string>mind mapping</string>
+        <string>mindmap</string>
+        <string>brainstorm</string>
+        <string>brainstorming</string>
+        <string>notes</string>
+        <string>note taking</string>
+        <string>visual notes</string>
+        <string>knowledge base</string>
+        <string>knowledge graph</string>
+        <string>graph</string>
+        <string>diagram</string>
+        <string>flowchart</string>
+        <string>outline</string>
+        <string>canvas</string>
+        <string>whiteboard</string>
+        <string>workspace</string>
+        <string>ideas</string>
+        <string>planning</string>
+        <string>project planning</string>
+        <string>research</string>
+        <string>organization</string>
+        <string>productivity</string>
+        <string>thinking</string>
+        <string>concept map</string>
+        <string>node</string>
+        <string>nodes</string>
+        <string>connections</string>
+        <string>linked notes</string>
+        <string>zettelkasten</string>
+        <string>заметки</string>
+        <string>майндмэп</string>
+        <string>интеллект карта</string>
+        <string>ментальная карта</string>
+        <string>карта мыслей</string>
+        <string>идея</string>
+        <string>мысли</string>
+        <string>планирование</string>
+        <string>схема</string>
+        <string>диаграмма</string>
+        <string>граф знаний</string>
+        <string>конспект</string>
+        <string>органайзер</string>
+    </array>
+    <key>kMDItemKeywords</key>
+    <array>
+        <string>canvo</string>
+        <string>mind map</string>
+        <string>mind mapping</string>
+        <string>mindmap</string>
+        <string>brainstorm</string>
+        <string>brainstorming</string>
+        <string>notes</string>
+        <string>note taking</string>
+        <string>visual notes</string>
+        <string>knowledge base</string>
+        <string>knowledge graph</string>
+        <string>graph</string>
+        <string>diagram</string>
+        <string>flowchart</string>
+        <string>outline</string>
+        <string>canvas</string>
+        <string>whiteboard</string>
+        <string>workspace</string>
+        <string>ideas</string>
+        <string>planning</string>
+        <string>project planning</string>
+        <string>research</string>
+        <string>organization</string>
+        <string>productivity</string>
+        <string>thinking</string>
+        <string>concept map</string>
+        <string>node</string>
+        <string>nodes</string>
+        <string>connections</string>
+        <string>linked notes</string>
+        <string>zettelkasten</string>
+        <string>заметки</string>
+        <string>майндмэп</string>
+        <string>интеллект карта</string>
+        <string>ментальная карта</string>
+        <string>карта мыслей</string>
+        <string>идея</string>
+        <string>мысли</string>
+        <string>планирование</string>
+        <string>схема</string>
+        <string>диаграмма</string>
+        <string>граф знаний</string>
+        <string>конспект</string>
+        <string>органайзер</string>
+    </array>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>NSPhotoLibraryAddUsageDescription</key>
