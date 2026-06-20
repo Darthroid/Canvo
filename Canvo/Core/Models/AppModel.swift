@@ -106,6 +106,7 @@ final class AppModel: Sendable {
         importService.set(model: self)
         exportService.set(model: self)
         previewService.set(model: self)
+        session.set(model: self)
         
         fetchCanvases()
 //        fetchTags()
@@ -175,6 +176,14 @@ extension AppModel {
     func hasConnection(nodeId: String) -> Bool {
         graphService.hasConnection(
             nodeId: nodeId,
+            connections: connections
+        )
+    }
+    
+    func nodeIds(connectedTo nodeId: String) -> [String] {
+        graphService.connectedNodes(
+            forNodeId: nodeId,
+            nodesById: nodesById,
             connections: connections
         )
     }

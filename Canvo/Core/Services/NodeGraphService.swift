@@ -19,6 +19,27 @@ final class NodeGraphService {
             $0.toNodeId == nodeId
         }
     }
+    
+    func connectedNodes(
+        forNodeId id: String,
+        nodesById: [String: Node],
+        connections: [NodeConnection]
+    ) -> [String] {
+
+        let relatedConnections = connections.filter {
+            $0.fromNodeId == id ||
+            $0.toNodeId == id
+        }
+
+        return relatedConnections.compactMap { connection in
+            let otherId =
+                connection.fromNodeId == id
+                ? connection.toNodeId
+                : connection.fromNodeId
+
+            return nodesById[otherId]?.id
+        }
+    }
 
     func connectedNodes(
         for node: Node,

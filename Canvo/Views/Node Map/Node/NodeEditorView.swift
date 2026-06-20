@@ -3,13 +3,9 @@
 //  nodes-demo
 //
 
-//
-//  NodeEditorView.swift
-//  nodes-demo
-//
-
 import SwiftUI
 import PhotosUI
+import ImagePlayground
 
 @Observable
 fileprivate final class NodeEditorModel {
@@ -73,7 +69,11 @@ struct NodeEditorView: View {
     @State private var model: NodeEditorModel
 
     @State private var selectedItem: PhotosPickerItem?
-    @State private var showPicker = false
+
+    @State private var showPhotoPicker = false
+    @State private var showCamera = false
+    @State private var showImagePlayground = false
+    @State private var showImageSourceDialog = false
 
     @FocusState private var isNameFocused: Bool
 
@@ -166,6 +166,63 @@ struct NodeEditorView: View {
                     )
                 }
             }
+            .confirmationDialog(
+                String(localized: "Add Cover"),
+                isPresented: $showImageSourceDialog
+            ) {
+                Button {
+                    showPhotoPicker = true
+                } label: {
+                    Label(String(localized: "Choose Photo"), systemImage: "photo")
+                }
+
+                Button {
+                    showCamera = true
+                } label: {
+                    Label(String(localized: "Take Photo"), systemImage: "camera")
+                }
+                
+                Button {
+                    showImagePlayground = true
+                } label: {
+                    Label(String(localized: "AI Image"), systemImage: "apple.image.playground")
+                }
+
+                if !model.images.isEmpty {
+                    Button(
+                        String(localized: "Remove Image"),
+                        role: .destructive
+                    ) {
+                        model.images.removeAll()
+                        selectedItem = nil
+                    }
+                }
+            }
+            .photosPicker(
+                isPresented: $showPhotoPicker,
+                selection: $selectedItem,
+                matching: .images
+            )
+            .fullScreenCover(isPresented: $showCamera) {
+                CameraPicker(
+                    imageData: Binding(
+                        get: { nil },
+                        set: { data in
+                            guard let data else { return }
+                            model.images = [data]
+                        }
+                    )
+                )
+            }
+            .imagePlaygroundSheet(isPresented: $showImagePlayground, concept: "", onCompletion: {
+                guard let data = try? Data(contentsOf: $0) else {
+                    return
+                }
+                model.images = [data]
+            })
+            .onChange(of: selectedItem) { _, newValue in
+                loadImage(from: newValue)
+            }
             .onAppear {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                     isNameFocused = true
@@ -232,15 +289,7 @@ private extension NodeEditorView {
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .contentShape(Rectangle())
         .onTapGesture {
-            showPicker = true
-        }
-        .photosPicker(
-            isPresented: $showPicker,
-            selection: $selectedItem,
-            matching: .images
-        )
-        .onChange(of: selectedItem) { _, newValue in
-            loadImage(from: newValue)
+            showImageSourceDialog = true
         }
     }
 
