@@ -25,6 +25,9 @@ final class CanvasSession {
     var selectedNodeIds: Set<String> = [] {
         didSet {
             setFocusedNodes()
+            if focusNodeIds.isEmpty {
+                focusMode = nil
+            }
         }
     }
     var expandedNodeIds: Set<String> = []
