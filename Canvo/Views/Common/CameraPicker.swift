@@ -8,6 +8,7 @@
 import SwiftUI
 import UIKit
 
+#if !os(visionOS)
 struct CameraPicker: UIViewControllerRepresentable {
 
     @Binding var imageData: Data?
@@ -62,3 +63,4 @@ struct CameraPicker: UIViewControllerRepresentable {
         }
     }
 }
+#endif

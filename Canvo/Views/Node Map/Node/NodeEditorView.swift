@@ -176,11 +176,13 @@ struct NodeEditorView: View {
                     Label(String(localized: "Choose Photo"), systemImage: "photo")
                 }
 
+                #if !os(visionOS)
                 Button {
                     showCamera = true
                 } label: {
                     Label(String(localized: "Take Photo"), systemImage: "camera")
                 }
+                #endif
                 
                 Button {
                     showImagePlayground = true
@@ -203,6 +205,7 @@ struct NodeEditorView: View {
                 selection: $selectedItem,
                 matching: .images
             )
+            #if !os(visionOS)
             .fullScreenCover(isPresented: $showCamera) {
                 CameraPicker(
                     imageData: Binding(
@@ -214,6 +217,7 @@ struct NodeEditorView: View {
                     )
                 )
             }
+            #endif
             .imagePlaygroundSheet(isPresented: $showImagePlayground, concept: "", onCompletion: {
                 guard let data = try? Data(contentsOf: $0) else {
                     return
