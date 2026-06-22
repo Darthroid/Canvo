@@ -19,7 +19,7 @@ enum FocusMode: String, CaseIterable, Identifiable {
         case .selectedOnly:
             String(localized: "Selected")
         case .context:
-            String(localized: "Context")
+            String(localized: "Connected")
 //        case .branch:
 //            String(localized: "Branch")
         }
