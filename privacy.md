@@ -19,11 +19,11 @@ The app does not require an account and does not collect information such as:
 
 ## Device Permissions
 
-Canvo may request access to your photo library in order to allow you to select images as node covers.
+Canvo may request access to your photo library and camera in order to allow you to import images and use them as node covers or canvas content.
 
-- Photo access is used only for user-selected images.
+- Photo library and camera access are used only for user-selected images.
 - Images are processed locally on your device.
-- Canvo does not upload your photos or media to external servers.
+- Canvo does not upload your photos, camera captures, or media to external servers.
 
 If you choose to save exported images, Canvo may request permission to add images to your photo library. This access is used only for saving content you explicitly export.
 
@@ -35,9 +35,15 @@ Canvo does not upload your content to external servers.
 
 ## AI Features
 
-Canvo uses Apple's on-device Apple Intelligence and Foundation Models for AI-powered features.
+Canvo uses Apple’s on-device Apple Intelligence and Foundation Models for AI-powered features.
 
 AI processing occurs directly on your device. Your content is not sent to external servers for AI generation, analysis, summarization, or editing.
+
+Canvo supports Apple Image Playground for generating and inserting images into your canvas.
+
+- Image generation is performed using Apple’s on-device systems.
+- Prompts and generated images are processed locally on your device.
+- Canvo does not send prompts, context, or generated outputs to external servers.
 
 ## Analytics and Tracking
 
