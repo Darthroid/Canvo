@@ -1,7 +1,7 @@
 
 # Canvo
 
-<a href="https://apps.apple.com/us/app/canvo/id6761765531">
+<a href="https://apps.apple.com/app/apple-store/id6761765531?pt=128746542&ct=github&mt=8">
   <img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" height="40">
 </a>
 
