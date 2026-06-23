@@ -70,16 +70,14 @@ extension NodeMapView {
     func nodeDrag(_ node: Node) -> some Gesture {
         DragGesture(coordinateSpace: .named("canvas"))
             .onChanged { value in
-                // 1. Определяем, какие ноды будут перемещаться
-                let isDraggedNodeSelected = appModel.session.selectedNodeIds.contains(node.id)
-                let movingIds = isDraggedNodeSelected ? appModel.session.selectedNodeIds : [node.id]
-
-                // 2. Сбрасываем выделение, если тащим невыделенную ноду
-                if !isDraggedNodeSelected {
-                    appModel.session.selectedNodeIds = [node.id]
+                // ignore if node is not selected
+                guard appModel.session.selectedNodeIds.contains(node.id) else {
+                    return
                 }
 
-                // 3. Запоминаем стартовые позиции (один раз за жест)
+                let movingIds = appModel.session.selectedNodeIds
+
+                // remember start positions
                 for id in movingIds {
                     if dragStartPositions[id] == nil,
                        let n = appModel.node(forId: id) {
@@ -87,14 +85,14 @@ extension NodeMapView {
                     }
                 }
 
-                // 4. Добавляем все перемещаемые ноды в отслеживаемый набор
+                // ovserve all dragged nodes
                 draggedNodeIds.formUnion(movingIds)
 
-                // 5. Вычисляем общее смещение (в координатах canvas)
+                // calculate offset
                 let dx = Float(value.translation.width) / Float(scale)
                 let dy = Float(value.translation.height) / Float(scale)
 
-                // 6. Применяем смещение ко всем нодам (только визуально, без сохранения)
+                // apply offset to nodes (without saving)
                 for id in movingIds {
                     guard let start = dragStartPositions[id],
                           let n = appModel.node(forId: id) else { continue }
@@ -103,7 +101,7 @@ extension NodeMapView {
                 }
             }
             .onEnded { _ in
-                // 1. Собираем данные для batch-действия
+                // gather data for batch actions
                 var nodeIds: [String] = []
                 var oldPositions: [SIMD3<Float>] = []
                 var newPositions: [SIMD3<Float>] = []
@@ -119,7 +117,7 @@ extension NodeMapView {
                     }
                 }
 
-                // 2. Выполняем batch-действие, если есть изменения
+                // if there are changes, perform batch actions
                 if !nodeIds.isEmpty {
                     appModel.moveNodes(
                         ids: nodeIds,
@@ -128,7 +126,7 @@ extension NodeMapView {
                     )
                 }
 
-                // 3. Очищаем временные данные
+                // cleanup
                 for id in draggedNodeIds {
                     dragStartPositions.removeValue(forKey: id)
                 }

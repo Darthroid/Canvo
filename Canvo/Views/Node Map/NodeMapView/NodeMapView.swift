@@ -257,7 +257,7 @@ struct NodeMapView: View {
                     
                     // Nodes
                     ForEach(visibleNodes) { node in
-                        NodeView(
+                        let nodeView = NodeView(
                             node: node,
                             isSelected: appModel.session.selectedNodeIds.contains(node.id),
                             isExpanded: appModel.session.expandedNodeIds.contains(node.id),
@@ -273,7 +273,6 @@ struct NodeMapView: View {
                         .equatable()
                         .opacity(!isFocused ? 1 : (appModel.session.focusNodeIds.contains(node.id) ? 1 : 0.1))
                         .position(node.position.position2D)
-                        .gesture(nodeDrag(node))
                         .onTapGesture(count: 1) {
                             withAnimation {
                                 if appModel.session.selectedNodeIds.contains(node.id) {
@@ -282,7 +281,6 @@ struct NodeMapView: View {
                                     appModel.session.selectedNodeIds.insert(node.id)
                                 }
                             }
-                            
                         }
                         .onTapGesture(count: 2) {
                             withAnimation(.bouncy(duration: 0.2)) {
@@ -292,6 +290,12 @@ struct NodeMapView: View {
                                     appModel.session.expandedNodeIds.insert(node.id)
                                 }
                             }
+                        }
+
+                        if appModel.session.selectedNodeIds.contains(node.id) {
+                            nodeView.gesture(nodeDrag(node))
+                        } else {
+                            nodeView
                         }
                     }
                     
