@@ -334,7 +334,7 @@ extension AIEditCanvasView {
 
             do {
                 let stream = appModel.aiGenerationService
-                    .askQuestions(
+                    .askGraph(
                         scope: scope,
                         userInput: prompt,
                         in: canvas
