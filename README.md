@@ -26,7 +26,7 @@ Unlike traditional note-taking apps, Canvo combines mind mapping, visual organiz
 ## Screenshots
 
 ### iOS
-<img src="https://github.com/Darthroid/Canvo/blob/main/Screenshots/1.png" width="200"><img src="https://github.com/Darthroid/Canvo/blob/main/Screenshots/2.png" width="200"><img src="https://github.com/Darthroid/Canvo/blob/main/Screenshots/3.png" width="200"><img src="https://github.com/Darthroid/Canvo/blob/main/Screenshots/4.png" width="200">
+<img src="https://github.com/Darthroid/Canvo/blob/main/Screenshots/1.png" width="160"><img src="https://github.com/Darthroid/Canvo/blob/main/Screenshots/2.png" width="160"><img src="https://github.com/Darthroid/Canvo/blob/main/Screenshots/3.png" width="160"><img src="https://github.com/Darthroid/Canvo/blob/main/Screenshots/4.png" width="160"><img src="https://github.com/Darthroid/Canvo/blob/main/Screenshots/5.png" width="160">
 
 
 ### visionOS
