@@ -7,6 +7,7 @@
 
 
 import Foundation
+
 enum AIMode: String, CaseIterable, Identifiable {
     case extend
     case summarize
@@ -16,20 +17,23 @@ enum AIMode: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .extend: String(localized: "Expand")
-        case .summarize: String(localized: "Summarize")
-        case .explain: String(localized: "Explain")
+        case .extend:
+            String(localized: "Generate")
+        case .summarize:
+            String(localized: "Merge")
+        case .explain:
+            String(localized: "Analyze")
         }
     }
 
     var subtitle: String {
         switch self {
         case .extend:
-            String(localized: "Generate related ideas")
+            String(localized: "Add related ideas")
         case .summarize:
-            String(localized: "Compress selected content")
+            String(localized: "Combine into one concept")
         case .explain:
-            String(localized: "Explains concepts and key points")
+            String(localized: "Break down structure")
         }
     }
 
@@ -38,7 +42,7 @@ enum AIMode: String, CaseIterable, Identifiable {
         case .extend:
             "sparkles"
         case .summarize:
-            "text.redaction"
+            "square.stack.3d.down.right"
         case .explain:
             "text.bubble"
         }
@@ -49,42 +53,42 @@ enum AIMode: String, CaseIterable, Identifiable {
         case .extend:
             String(localized: "Generate Nodes")
         case .summarize:
-            String(localized: "Create Summary")
+            String(localized: "Merge Nodes")
         case .explain:
-            String(localized: "Explain Canvas")
+            String(localized: "Analyze Canvas")
         }
     }
 
     var loadingTitle: String {
         switch self {
         case .extend:
-            String(localized: "Generating Nodes")
+            String(localized: "Generating nodes")
         case .summarize:
-            String(localized: "Creating Summary")
+            String(localized: "Merging nodes")
         case .explain:
-            String(localized: "Generating Explanation")
+            String(localized: "Analyzing structure")
         }
     }
 
     var promptTitle: String {
         switch self {
         case .extend:
-            String(localized: "What should AI add?")
+            String(localized: "What should be generated?")
         case .summarize:
-            String(localized: "What should AI focus on?")
+            String(localized: "What should be merged?")
         case .explain:
-            String(localized: "What do you want explained?")
+            String(localized: "What should be analyzed?")
         }
     }
 
     var placeholder: String {
         switch self {
         case .extend:
-            String(localized: "Add onboarding flow and monetization ideas...")
+            String(localized: "Add onboarding flow, monetization ideas, edge cases...")
         case .summarize:
-            String(localized: "Summarize into concise product requirements...")
+            String(localized: "Combine into product requirements or core concept...")
         case .explain:
-            String(localized: "Explain how these systems interact...")
+            String(localized: "Explain relationships between systems, flows, or components...")
         }
     }
 }

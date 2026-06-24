@@ -7,9 +7,10 @@
 
 
 import Foundation
+
+
 enum AIScope: String, CaseIterable, Identifiable {
     case selection
-    case visible
     case canvas
 
     var id: String { rawValue }
@@ -18,10 +19,8 @@ enum AIScope: String, CaseIterable, Identifiable {
         switch self {
         case .selection:
             String(localized: "Selection")
-        case .visible:
-            String(localized:"Visible")
         case .canvas:
-            String(localized:"Entire Canvas")
+            String(localized: "Entire Canvas")
         }
     }
 
@@ -29,8 +28,6 @@ enum AIScope: String, CaseIterable, Identifiable {
         switch self {
         case .selection:
             "selection.pin.in.out"
-        case .visible:
-            "eye"
         case .canvas:
             "square.grid.3x3"
         }

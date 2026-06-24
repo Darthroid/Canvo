@@ -47,8 +47,6 @@ extension AppModel {
                 scope = session.selectedNodeIds.compactMap {
                     node(forId: $0)
                 }
-            case .visible:
-                break
             case .canvas:
                 scope = nodes
             }

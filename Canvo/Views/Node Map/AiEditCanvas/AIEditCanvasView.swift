@@ -5,6 +5,7 @@
 //  Created by Олег Комаристый on 10.01.2026.
 //
 
+
 import SwiftUI
 import FoundationModels
 
@@ -13,35 +14,26 @@ struct AIEditCanvasView: View {
 
     @Environment(AppModel.self) private var appModel
     @EnvironmentObject private var themeStore: ThemeStore
-    
+
     @Binding var showEditor: Bool
 
     @State private var aiResponse: String = ""
     @State private var showAiResponse: Bool = false
 
-    var visibleScopeIds: Set<String>
-
-    private var scopeNodesCount: Int {
-        switch selectedScope {
-        case .selection:
-            appModel.session.selectedNodeIds.count
-        case .visible:
-            0
-        case .canvas:
-            appModel.session.currentCanvas?.nodes?.count ?? 0
-        }
-    }
-
-    // MARK: - State
-
     @State private var selectedMode: AIMode = .extend
     @State private var selectedScope: AIScope = .selection
 
     @State private var prompt = ""
-
     @FocusState private var isPromptFocused: Bool
 
-    // MARK: - Body
+    private var scopeNodesCount: Int {
+        switch selectedScope {
+        case .selection:
+            return appModel.session.selectedNodeIds.count
+        case .canvas:
+            return appModel.session.currentCanvas?.nodes?.count ?? 0
+        }
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -50,9 +42,7 @@ struct AIEditCanvasView: View {
                 VStack(alignment: .leading, spacing: 28) {
 
                     modeSection
-
                     scopeSection
-
                     promptSection
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -80,9 +70,14 @@ struct AIEditCanvasView: View {
         .frame(maxWidth: contentWidth)
         .frame(maxWidth: .infinity)
         .background(backgroundView)
-        .onChange(of: selectedMode) { _, _ in
-            if selectedMode == .summarize {
+        .onChange(of: selectedMode) { _, mode in
+            switch mode {
+            case .summarize:
                 selectedScope = .selection
+            case .extend:
+                selectedScope = .selection
+            case .explain:
+                selectedScope = .canvas
             }
         }
         .onAppear {
@@ -103,7 +98,6 @@ struct AIEditCanvasView: View {
                 HStack(spacing: 14) {
 
                     ForEach(AIMode.allCases) { mode in
-
                         AIModeCard(
                             title: mode.title,
                             subtitle: mode.subtitle,
@@ -114,10 +108,7 @@ struct AIEditCanvasView: View {
                         }
                         #if os(visionOS)
                         .glassBackgroundEffect(
-                            in: .rect(
-                                cornerRadius: 22,
-                                style: .continuous
-                            )
+                            in: .rect(cornerRadius: 22, style: .continuous)
                         )
                         #endif
                     }
@@ -128,7 +119,7 @@ struct AIEditCanvasView: View {
         }
     }
 
-    // MARK: - Scope
+    // MARK: - Scope (binary)
 
     private var scopeSection: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -143,10 +134,16 @@ struct AIEditCanvasView: View {
                         selectedScope = scope
                     } label: {
 
-                        Label(scope.title, systemImage: scope.icon)
-                            .font(.subheadline.weight(.medium))
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 42)
+                        VStack(spacing: 4) {
+                            Label(scope.title, systemImage: scope.icon)
+                                .font(.subheadline.weight(.medium))
+
+                            Text("\(count(for: scope)) nodes")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 52)
                     }
                     .background {
                         RoundedRectangle(cornerRadius: 22)
@@ -161,17 +158,12 @@ struct AIEditCanvasView: View {
                                     )
                             }
                     }
-                    .disabled(selectedMode == .summarize && scope == .canvas)
                     .buttonStyle(.plain)
                     #if os(visionOS)
                     .glassBackgroundEffect()
                     #endif
                 }
             }
-            
-            Text("Nodes in scope: \(scopeNodesCount)")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
         }
     }
 
@@ -199,14 +191,6 @@ struct AIEditCanvasView: View {
                             .strokeBorder(borderColor)
                     }
             }
-            #if os(visionOS)
-            .glassBackgroundEffect(
-                in: .rect(
-                    cornerRadius: 22,
-                    style: .continuous
-                )
-            )
-            #endif
         }
     }
 
@@ -215,7 +199,7 @@ struct AIEditCanvasView: View {
     private var footer: some View {
 
         Button(action: runSelectedAction) {
-            Label(selectedMode.actionTitle, systemImage: "sparkles")
+            Label("\(selectedMode.actionTitle) • \(scopeNodesCount)", systemImage: "sparkles")
                 .font(.headline)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 8)
@@ -233,6 +217,15 @@ struct AIEditCanvasView: View {
     }
 
     // MARK: - Helpers
+
+    private func count(for scope: AIScope) -> Int {
+        switch scope {
+        case .selection:
+            return appModel.session.selectedNodeIds.count
+        case .canvas:
+            return appModel.session.currentCanvas?.nodes?.count ?? 0
+        }
+    }
 
     private func sectionTitle(_ text: String) -> some View {
         Text(text)
@@ -265,7 +258,7 @@ struct AIEditCanvasView: View {
 
     private var borderColor: Color {
         #if os(visionOS)
-        .white.opacity(0.15)
+        Color.white.opacity(0.15)
         #else
         Color.primary.opacity(0.08)
         #endif
@@ -312,42 +305,32 @@ extension AIEditCanvasView {
         Task {
             isPromptFocused = false
 
-            guard let canvas = appModel.session.currentCanvas else {
-                return
-            }
+            guard let canvas = appModel.session.currentCanvas else { return }
 
-            var scope: [Node] = []
-
-            switch selectedScope {
-
-            case .selection:
-                scope = appModel.session.selectedNodeIds.compactMap {
-                    appModel.node(forId: $0)
+            let scope: [Node] = {
+                switch selectedScope {
+                case .selection:
+                    return appModel.session.selectedNodeIds.compactMap {
+                        appModel.node(forId: $0)
+                    }
+                case .canvas:
+                    return appModel.nodes
                 }
-
-            case .visible:
-                break
-
-            case .canvas:
-                scope = appModel.nodes
-            }
+            }()
 
             do {
-                let stream = appModel.aiGenerationService
-                    .askGraph(
-                        scope: scope,
-                        userInput: prompt,
-                        in: canvas
-                    )
+                let stream = appModel.aiGenerationService.askGraph(
+                    scope: scope,
+                    userInput: prompt,
+                    in: canvas
+                )
 
                 for try await chunk in stream {
                     aiResponse = chunk
                 }
 
             } catch {
-                print(
-                    "error while generating canvas: \(error.localizedDescription)"
-                )
+                print("error while generating canvas: \(error.localizedDescription)")
             }
         }
     }

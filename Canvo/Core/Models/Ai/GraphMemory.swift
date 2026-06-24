@@ -16,7 +16,6 @@ struct GraphMemory {
 
         return """
         CURRENT TOPICS:
-
         \(names.map { "- \($0)" }.joined(separator: "\n"))
         """
     }
