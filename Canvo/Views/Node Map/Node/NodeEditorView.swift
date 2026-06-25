@@ -228,6 +228,7 @@ struct NodeEditorView: View {
                             if appModel.aiGenerationService.isAvailable {
                                 rewriteMenu
                                     .buttonStyle(.bordered)
+                                    .disabled(model.attributedDetail.characters.isEmpty)
                             }
                         }
 
