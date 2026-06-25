@@ -406,6 +406,8 @@ extension AppModel {
         connectionsActions.forEach { actionService.perform($0) }
         
         actionService.endBatch()
+        session.clearSelection()
+        session.selectedNodeIds.formUnion(nodeSnapshots.map(\.id))
     }
     
     func editNode(

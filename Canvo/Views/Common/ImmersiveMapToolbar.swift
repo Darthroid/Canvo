@@ -225,6 +225,7 @@ struct ImmersiveMapToolbar: View {
         }
         .sheet(item: $showDetailNode) { node in
             NodeDetailView(node: node)
+                .environment(appModel)
         }
         .sheet(item: $showLinkToNode) { node in
             NavigationStack {
