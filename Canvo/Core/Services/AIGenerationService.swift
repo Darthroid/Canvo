@@ -47,8 +47,6 @@ final class AIGenerationService: Sendable {
     }
 
     // MARK: - PUBLIC API
-    
-    // MARK: - Generate Canvas
 
     func generateCanvasStream(
         prompt: String,
@@ -65,18 +63,15 @@ final class AIGenerationService: Sendable {
 
                     let session = LanguageModelSession(
                         model: model,
-                        instructions: "You generate structured knowledge graphs."
+                        instructions: SessionInstructionPolicy.instructions(for: .graphGeneration)
                     )
-
-                    // MARK: - 1. Canvas title (LIGHT MODE)
 
                     self.runningStage = String(localized: "Creating canvas")
 
                     let titlePrompt = promptBuilder.build(
+                        sessionInstructions: SessionInstructionPolicy.instructions(for: .graphGeneration),
                         task: .canvasTitle,
-                        context: .init(
-                            userInput: prompt
-                        )
+                        context: .init(userInput: prompt)
                     )
 
                     let canvasName = try await session.respond(
@@ -94,11 +89,10 @@ final class AIGenerationService: Sendable {
 
                     continuation.yield(canvas)
 
-                    // MARK: - 2. Main node (LIGHT MODE)
-
                     self.runningStage = String(localized: "Creating main idea")
 
                     let mainPrompt = promptBuilder.build(
+                        sessionInstructions: SessionInstructionPolicy.instructions(for: .graphGeneration),
                         task: .mainNode,
                         context: .init(
                             canvasName: canvas.name,
@@ -115,21 +109,12 @@ final class AIGenerationService: Sendable {
                     mainNode.position = .init(x: 0, y: 0, z: 0)
 
                     canvas.nodes.append(mainNode)
-
                     continuation.yield(canvas)
 
                     try Task.checkCancellation()
 
-                    // MARK: - 3. Expand graph (ONLY HERE v2 intelligence is allowed)
-
                     self.runningStage = String(localized: "Expanding graph")
 
-                    let graphState = GraphStateBuilder.build(
-                        nodes: canvas.nodes,
-                        connections: canvas.connections
-                    )
-
-                    let graphMemory = GraphMemory.build(graphState)
                     let semanticGuard = SemanticGuard.build(canvas.nodes)
 
                     let generated = try await generateNodes(
@@ -138,7 +123,6 @@ final class AIGenerationService: Sendable {
                         prompt: prompt,
                         canvas: canvas,
                         mainNode: mainNode,
-                        graphMemory: graphMemory,
                         semanticGuard: semanticGuard
                     )
 
@@ -163,7 +147,7 @@ final class AIGenerationService: Sendable {
             }
         }
     }
-    
+
     // MARK: - EXTEND GRAPH
 
     func extendGraph(
@@ -181,11 +165,7 @@ final class AIGenerationService: Sendable {
 
                     let session = LanguageModelSession(
                         model: model,
-                        instructions: """
-                        You are an incremental graph expansion engine.
-                        Expand ONLY the given node. Do not drift to global context.
-                        Return coherent local structures.
-                        """
+                        instructions: SessionInstructionPolicy.instructions(for: .graphExpansion)
                     )
 
                     var allNewNodes: [NodeSchema] = []
@@ -197,21 +177,15 @@ final class AIGenerationService: Sendable {
 
                         self.runningStage = String(localized: "Extending \(node.name)")
 
-                        let state = GraphStateBuilder.build(
-                            nodes: (canvas.nodes ?? []).map { $0.toSchema() },
-                            connections: (canvas.connections ?? []).map { $0.toSchema() }
-                        )
-
-                        let memory = GraphMemory.build(state)
                         let guardText = SemanticGuard.build((canvas.nodes ?? []).map { $0.toSchema() })
 
                         let prompt = promptBuilder.build(
+                            sessionInstructions: SessionInstructionPolicy.instructions(for: .graphExpansion),
                             task: .extendNode,
                             context: .init(
                                 canvasName: canvas.name,
                                 parentNode: node.toSchema(),
                                 userInput: userInput,
-                                graphMemory: memory,
                                 semanticGuard: guardText
                             )
                         )
@@ -220,14 +194,13 @@ final class AIGenerationService: Sendable {
                             to: prompt,
                             generating: [NodeSchema].self
                         ).content.map(normalize)
-
-                        // layout per parent node
-                        layoutNodesInSemiCircle(
+                        
+                        layoutWithCollisionAvoidance(
                             nodes: &extended,
-                            center: node.toSchema().position
+                            center: node.toSchema().position,
+                            allNodes: (canvas.nodes ?? []).map { $0.toSchema() }
                         )
 
-                        // build connections for THIS node
                         let connections = extended.map {
                             NodeConnectionSchema(
                                 id: UUID().uuidString,
@@ -255,7 +228,7 @@ final class AIGenerationService: Sendable {
             }
         }
     }
-    
+
     // MARK: - SUMMARIZE GRAPH
 
     func summarizeGraph(
@@ -274,49 +247,25 @@ final class AIGenerationService: Sendable {
 
                     let session = LanguageModelSession(
                         model: model,
-                        instructions: """
-                        You compress multiple nodes into a single abstraction node.
-                        Focus on shared meaning, not enumeration.
-                        """
+                        instructions: SessionInstructionPolicy.instructions(for: .summarization)
                     )
 
                     self.runningStage = String(localized: "Summarizing")
 
-                    let state = GraphStateBuilder.build(
-                        nodes: (canvas.nodes ?? []).map { $0.toSchema() },
-                        connections: (canvas.connections ?? []).map { $0.toSchema() }
-                    )
-
-                    let memory = GraphMemory.build(state)
                     let guardText = SemanticGuard.build((canvas.nodes ?? []).map { $0.toSchema() })
 
-                    let scopeText = scope.map {
-                        "- \($0.name): \($0.detail)"
-                    }.joined(separator: "\n")
+                    let scopeText = scope.map { "- \($0.name): \($0.detail)" }.joined(separator: "\n")
 
-                    let excludeText = exclude.map {
-                        "- \($0.name): \($0.detail)"
-                    }.joined(separator: "\n")
-
-                    let prompt = """
-                    TASK:
-                    Create a single summary node.
-
-                    SCOPE:
-                    \(scopeText)
-
-                    EXCLUDE:
-                    \(excludeText)
-
-                    USER INPUT:
-                    \(userInput)
-
-                    GRAPH MEMORY:
-                    \(memory)
-
-                    SEMANTIC GUARD:
-                    \(guardText)
-                    """
+                    let prompt = promptBuilder.build(
+                        sessionInstructions: SessionInstructionPolicy.instructions(for: .summarization),
+                        task: .summarize,
+                        context: .init(
+                            canvasName: canvas.name,
+                            userInput: userInput,
+                            semanticGuard: guardText,
+                            nodeContent: scopeText
+                        )
+                    )
 
                     var summary = try await session.respond(
                         to: prompt,
@@ -324,6 +273,30 @@ final class AIGenerationService: Sendable {
                     ).content
 
                     summary.id = UUID().uuidString
+
+                    let allNodes = (canvas.nodes ?? []).map { $0.toSchema() }
+
+                    let scopePositions = scope.map {
+                        Position3DSchema(
+                            x: $0.position.x,
+                            y: $0.position.y,
+                            z: $0.position.z
+                        )
+                    }
+
+                    let centroid = computeCentroid(scopePositions)
+
+                    let direction = findBestExpansionDirection(
+                        from: centroid,
+                        occupied: allNodes
+                    )
+
+                    summary.position = findBestPositionInField(
+                        preferredDirection: direction,
+                        origin: centroid,
+                        allNodes: allNodes,
+                        radiusStart: 220
+                    )
 
                     continuation.yield(summary)
                     continuation.finish()
@@ -340,7 +313,7 @@ final class AIGenerationService: Sendable {
             }
         }
     }
-    
+
     // MARK: - ASK GRAPH
 
     func askGraph(
@@ -358,35 +331,22 @@ final class AIGenerationService: Sendable {
 
                     let session = LanguageModelSession(
                         model: model,
-                        instructions: """
-                        You explain graph structure.
-                        Focus on insights, not listing nodes.
-                        """
+                        instructions: SessionInstructionPolicy.instructions(for: .qa)
                     )
 
                     self.runningStage = String(localized: "Analyzing")
 
-                    let state = GraphStateBuilder.build(
-                        nodes: (canvas.nodes ?? []).map { $0.toSchema() },
-                        connections: (canvas.connections ?? []).map { $0.toSchema() }
+                    let list = scope.map { "- \($0.name): \($0.detail)" }.joined(separator: "\n")
+
+                    let prompt = promptBuilder.build(
+                        sessionInstructions: SessionInstructionPolicy.instructions(for: .qa),
+                        task: .askQuestions,
+                        context: .init(
+                            canvasName: canvas.name,
+                            userInput: userInput,
+                            nodeContent: list
+                        )
                     )
-
-                    let memory = GraphMemory.build(state)
-
-                    let list = scope.map {
-                        "- \($0.name): \($0.detail)"
-                    }.joined(separator: "\n")
-
-                    let prompt = """
-                    GRAPH:
-                    \(memory)
-
-                    NODES:
-                    \(list)
-
-                    QUESTION:
-                    \(userInput)
-                    """
 
                     let stream = session.streamResponse(to: prompt)
 
@@ -408,9 +368,8 @@ final class AIGenerationService: Sendable {
             }
         }
     }
-    
-    // MARK: - NODE EDITING
 
+    // MARK: - NODE EDITING
 
     func rewriteNodeContent(
         task: PromptFactory.Task,
@@ -420,13 +379,15 @@ final class AIGenerationService: Sendable {
 
         cancelCurrentTask()
 
-        let task = Task<String, Error> {
+        let job = Task<String, Error> {
 
             let session = LanguageModelSession(
-                model: model
+                model: model,
+                instructions: SessionInstructionPolicy.instructions(for: .rewriting)
             )
 
             let prompt = promptBuilder.build(
+                sessionInstructions: SessionInstructionPolicy.instructions(for: .rewriting),
                 task: task,
                 context: .init(
                     nodeTitle: title,
@@ -439,23 +400,16 @@ final class AIGenerationService: Sendable {
                 generating: String.self
             )
 
-            return result.content.trimmingCharacters(
-                in: .whitespacesAndNewlines
-            )
+            return result.content.trimmingCharacters(in: .whitespacesAndNewlines)
         }
 
         currentTask = Task {
-            do {
-                _ = try await task.value
-                self.currentTask = nil
-            } catch {
-                self.currentTask = nil
-            }
+            _ = try? await job.value
+            self.currentTask = nil
         }
 
-        return try await task.value
+        return try await job.value
     }
-
 
     // MARK: - TAG GENERATION
 
@@ -466,13 +420,15 @@ final class AIGenerationService: Sendable {
 
         cancelCurrentTask()
 
-        let task = Task<String, Error> {
+        let job = Task<String, Error> {
 
             let session = LanguageModelSession(
-                model: model
+                model: model,
+                instructions: SessionInstructionPolicy.instructions(for: .rewriting)
             )
 
             let prompt = promptBuilder.build(
+                sessionInstructions: SessionInstructionPolicy.instructions(for: .rewriting),
                 task: .generateTags,
                 context: .init(
                     userInput: """
@@ -489,21 +445,15 @@ final class AIGenerationService: Sendable {
                 generating: String.self
             )
 
-            return result.content.trimmingCharacters(
-                in: .whitespacesAndNewlines
-            )
+            return result.content.trimmingCharacters(in: .whitespacesAndNewlines)
         }
 
         currentTask = Task {
-            do {
-                _ = try await task.value
-                self.currentTask = nil
-            } catch {
-                self.currentTask = nil
-            }
+            _ = try? await job.value
+            self.currentTask = nil
         }
 
-        return try await task.value
+        return try await job.value
     }
 
     // MARK: - NODE GENERATION DISPATCH
@@ -514,7 +464,6 @@ final class AIGenerationService: Sendable {
         prompt: String,
         canvas: CanvasSchema,
         mainNode: NodeSchema,
-        graphMemory: String,
         semanticGuard: String
     ) async throws -> (
         nodes: [NodeSchema],
@@ -529,7 +478,6 @@ final class AIGenerationService: Sendable {
                 prompt: prompt,
                 canvas: canvas,
                 mainNode: mainNode,
-                graphMemory: graphMemory,
                 semanticGuard: semanticGuard
             )
 
@@ -539,7 +487,6 @@ final class AIGenerationService: Sendable {
                 prompt: prompt,
                 canvas: canvas,
                 mainNode: mainNode,
-                graphMemory: graphMemory,
                 semanticGuard: semanticGuard
             )
         }
@@ -552,19 +499,18 @@ final class AIGenerationService: Sendable {
         prompt: String,
         canvas: CanvasSchema,
         mainNode: NodeSchema,
-        graphMemory: String,
         semanticGuard: String
     ) async throws -> (nodes: [NodeSchema], connections: [NodeConnectionSchema]) {
 
         self.runningStage = String(localized: "Radial expansion")
 
         let promptText = promptBuilder.build(
+            sessionInstructions: SessionInstructionPolicy.instructions(for: .graphExpansion),
             task: .childNodes,
             context: .init(
                 canvasName: canvas.name,
                 mainNode: mainNode,
                 userInput: prompt,
-                graphMemory: graphMemory,
                 semanticGuard: semanticGuard
             )
         )
@@ -599,21 +545,18 @@ final class AIGenerationService: Sendable {
         prompt: String,
         canvas: CanvasSchema,
         mainNode: NodeSchema,
-        graphMemory: String,
         semanticGuard: String
     ) async throws -> (nodes: [NodeSchema], connections: [NodeConnectionSchema]) {
 
         self.runningStage = String(localized: "Branching")
 
-        // 1. Branches
-
         let branchPrompt = promptBuilder.build(
+            sessionInstructions: SessionInstructionPolicy.instructions(for: .graphGeneration),
             task: .branchNodes,
             context: .init(
                 canvasName: canvas.name,
                 mainNode: mainNode,
                 userInput: prompt,
-                graphMemory: graphMemory,
                 semanticGuard: semanticGuard
             )
         )
@@ -648,19 +591,17 @@ final class AIGenerationService: Sendable {
             )
         }
 
-        // 2. Leaves per branch
-
         for branch in branches {
 
             self.runningStage = String(localized: "Expanding \(branch.name)")
 
             let leafPrompt = promptBuilder.build(
+                sessionInstructions: SessionInstructionPolicy.instructions(for: .graphExpansion),
                 task: .leafNodes,
                 context: .init(
                     canvasName: canvas.name,
                     parentNode: branch,
                     userInput: prompt,
-                    graphMemory: graphMemory,
                     semanticGuard: semanticGuard
                 )
             )
@@ -676,7 +617,6 @@ final class AIGenerationService: Sendable {
             if leaves.indices.contains(0) {
                 leaves[0].id = UUID().uuidString
                 leaves[0].position = .init(x: childX, y: branch.position.y + 60, z: 0)
-
                 nodes.append(leaves[0])
 
                 connections.append(
@@ -691,7 +631,6 @@ final class AIGenerationService: Sendable {
             if leaves.indices.contains(1) {
                 leaves[1].id = UUID().uuidString
                 leaves[1].position = .init(x: childX, y: branch.position.y - 60, z: 0)
-
                 nodes.append(leaves[1])
 
                 connections.append(
@@ -717,6 +656,34 @@ final class AIGenerationService: Sendable {
 
     // MARK: - LAYOUT
 
+    private let nodeHalfSize: Float = 200
+
+    private func isOverlapping(
+        _ a: NodeSchema,
+        _ b: NodeSchema
+    ) -> Bool {
+
+        let dx = abs(a.position.x - b.position.x)
+        let dy = abs(a.position.y - b.position.y)
+
+        return dx < 420 && dy < 180
+    }
+
+    private func computeCentroid(_ positions: [Position3DSchema]) -> Position3DSchema {
+        guard !positions.isEmpty else { return .init(x: 0, y: 0, z: 0) }
+
+        let sum = positions.reduce((x: Float(0), y: Float(0), z: Float(0))) {
+            ($0.x + $1.x, $0.y + $1.y, $0.z + $1.z)
+        }
+
+        return .init(
+            x: sum.x / Float(positions.count),
+            y: sum.y / Float(positions.count),
+            z: sum.z / Float(positions.count)
+        )
+    }
+
+
     private func layoutNodesInCircle(
         nodes: inout [NodeSchema],
         centerNodeId: String,
@@ -741,29 +708,187 @@ final class AIGenerationService: Sendable {
         }
     }
     
-    private func layoutNodesInSemiCircle(
+    private func layoutWithCollisionAvoidance(
         nodes: inout [NodeSchema],
         center: Position3DSchema,
-        radius: Float = 300
+        allNodes: [NodeSchema],
+        radius: Float = 220
     ) {
-        let count = nodes.count
-        guard count > 0 else { return }
+        guard !nodes.isEmpty else { return }
 
-        let minAngle: Float = .pi / 6
-        let maxAngle: Float = 5 * .pi / 6
-        let step = count > 1 ? (maxAngle - minAngle) / Float(count - 1) : 0
+        let direction = findBestExpansionDirection(
+            from: center,
+            occupied: allNodes
+        )
 
-        for i in nodes.indices {
+        let clusterCenter = findBestPositionInField(
+            preferredDirection: direction,
+            origin: center,
+            allNodes: allNodes,
+            radiusStart: radius
+        )
 
-            let angle = count == 1
-                ? .pi / 2
-                : minAngle + step * Float(i)
+        let baseAngle = atan2(
+            direction.y,
+            direction.x
+        )
 
-            nodes[i].position = .init(
-                x: center.x + radius * cos(angle),
-                y: center.y + radius * sin(angle),
+        let spread: Float = .pi / 3
+
+        var occupied = allNodes
+
+        for index in nodes.indices {
+
+            let angleOffset: Float
+
+            if nodes.count == 1 {
+                angleOffset = 0
+            } else {
+                let t = Float(index) / Float(nodes.count - 1)
+                angleOffset = -spread / 2 + spread * t
+            }
+
+            let candidate = Position3DSchema(
+                x: clusterCenter.x + cos(baseAngle + angleOffset) * 90,
+                y: clusterCenter.y + sin(baseAngle + angleOffset) * 140,
                 z: center.z
             )
+
+            nodes[index].position = candidate
+            occupied.append(nodes[index])
         }
+    }
+
+    private func findBestExpansionDirection(
+        from center: Position3DSchema,
+        occupied: [NodeSchema]
+    ) -> SIMD2<Float> {
+
+        guard !occupied.isEmpty else {
+            return SIMD2<Float>(0, 1)
+        }
+
+        let nearbyNodes = occupied.filter {
+
+            let dx = $0.position.x - center.x
+            let dy = $0.position.y - center.y
+
+            let distanceSquared = dx * dx + dy * dy
+
+            return distanceSquared < 900 * 900
+        }
+
+        guard !nearbyNodes.isEmpty else {
+            return SIMD2<Float>(0, 1)
+        }
+
+        let sectors = 24
+
+        var bestDirection = SIMD2<Float>(0, 1)
+        var bestScore = -Float.infinity
+
+        for sector in 0..<sectors {
+
+            let angle =
+                (Float(sector) / Float(sectors))
+                * (.pi * 2)
+
+            let direction = SIMD2<Float>(
+                cos(angle),
+                sin(angle)
+            )
+
+            var score: Float = 0
+
+            for node in nearbyNodes {
+
+                let dx = node.position.x - center.x
+                let dy = node.position.y - center.y
+
+                let distance = sqrt(dx * dx + dy * dy)
+
+                guard distance > 1 else {
+                    continue
+                }
+
+                let normalized = SIMD2<Float>(
+                    dx / distance,
+                    dy / distance
+                )
+
+                let alignment =
+                    normalized.x * direction.x +
+                    normalized.y * direction.y
+
+                if alignment > 0 {
+
+                    score -= alignment *
+                    (1_000 / max(distance, 100))
+                }
+            }
+
+            if score > bestScore {
+                bestScore = score
+                bestDirection = direction
+            }
+        }
+
+        return bestDirection
+    }
+
+    private func findBestPositionInField(
+        preferredDirection: SIMD2<Float>,
+        origin: Position3DSchema,
+        allNodes: [NodeSchema],
+        radiusStart: Float = 220
+    ) -> Position3DSchema {
+
+        let baseAngle = atan2(
+            preferredDirection.y,
+            preferredDirection.x
+        )
+
+        for radius in stride(
+            from: radiusStart,
+            through: radiusStart + 1200,
+            by: 25
+        ) {
+
+            for offset in stride(
+                from: -Float.pi / 2,
+                through: Float.pi / 2,
+                by: Float.pi / 24
+            ) {
+
+                let angle = baseAngle + offset
+
+                let candidate = Position3DSchema(
+                    x: origin.x + cos(angle) * radius,
+                    y: origin.y + sin(angle) * radius,
+                    z: origin.z
+                )
+
+                let testNode = NodeSchema(
+                    id: UUID().uuidString,
+                    name: "",
+                    detail: "",
+                    position: candidate
+                )
+
+                let collision = allNodes.contains {
+                    isOverlapping(testNode, $0)
+                }
+
+                if !collision {
+                    return candidate
+                }
+            }
+        }
+
+        return .init(
+            x: origin.x + preferredDirection.x * radiusStart,
+            y: origin.y + preferredDirection.y * radiusStart,
+            z: origin.z
+        )
     }
 }

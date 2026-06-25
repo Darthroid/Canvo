@@ -26,19 +26,32 @@ struct PromptFactory {
         var parentNode: NodeSchema?
         var userInput: String?
 
-        var graphMemory: String?
         var semanticGuard: String?
 
         var nodeTitle: String?
         var nodeContent: String?
     }
 
-    func build(task: Task, context: Context) -> String {
+    func instructions(for task: Task) -> String {
         [
             role(task),
+            rules(task),
+        ]
+        .compactMap { $0 }
+        .joined(separator: "\n\n")
+    }
+    
+    func build(
+        sessionInstructions: String,
+        task: Task,
+        context: Context
+    ) -> String {
+
+        [
+            sessionInstructions,
+            instructions(for: task),
             intent(task),
-            contextBlock(context),
-            rules(task)
+            contextBlock(context)
         ]
         .compactMap { $0 }
         .joined(separator: "\n\n")
@@ -65,7 +78,7 @@ struct PromptFactory {
             return "You identify common themes between ideas."
 
         case .askQuestions:
-            return "You explain ideas and answer questions about them."
+            return "You explain ideas and answer questions about theme."
 
         case .improveWriting:
             return "You improve written content while preserving meaning."
@@ -114,54 +127,61 @@ struct PromptFactory {
             return "TASK: Generate 10 related ideas connected to the main topic."
 
         case .extendNode:
-            return "TASK: Generate 2-3 new nodes that expand the parent node."
+            return "TASK: Generate EXACTLY 2-4 new nodes that expand the parent node."
 
         case .summarize:
             return "TASK: Create one node summarizing the provided nodes."
 
         case .askQuestions:
-            return "TASK: Explain the provided information."
+            return "TASK: Explain the provided information by breaking down the structure."
 
         case .improveWriting:
             return """
             TASK: Improve NODE CONTENT.
             Use NODE TITLE only as context.
+            DO NOT include NODE TITLE in your response.
             """
 
         case .makeShorter:
             return """
             TASK: Shorten NODE CONTENT.
             Use NODE TITLE only as context.
+            DO NOT include NODE TITLE in your response.
             """
 
         case .makeLonger:
             return """
             TASK: Expand NODE CONTENT.
             Use NODE TITLE only as context.
+            DO NOT include NODE TITLE in your response.
             """
 
         case .explainBetter:
             return """
             TASK: Clarify NODE CONTENT.
             Use NODE TITLE only as context.
+            DO NOT include NODE TITLE in your response.
             """
 
         case .simplify:
             return """
             TASK: Simplify NODE CONTENT.
             Use NODE TITLE only as context.
+            DO NOT include NODE TITLE in your response.
             """
 
         case .professionalTone:
             return """
             TASK: Make NODE CONTENT professional.
             Use NODE TITLE only as context.
+            DO NOT include NODE TITLE in your response.
             """
 
         case .customRewrite:
             return """
             TASK: Rewrite NODE CONTENT according to instruction.
             Use NODE TITLE only as context.
+            DO NOT include NODE TITLE in your response.
             """
 
         case .generateTags:
@@ -181,19 +201,29 @@ struct PromptFactory {
         }
 
         if let mainNode = c.mainNode {
-            blocks.append("MAIN NODE:\n\(mainNode.name)\n\(mainNode.detail)")
+//            blocks.append("MAIN NODE:\n\(mainNode.name)\n\(mainNode.detail)")
+            blocks.append(
+                """
+                MAIN NODE:
+                - Title: \(mainNode.name)
+                - Detail: \(mainNode.detail)
+                """
+            )
         }
 
         if let parent = c.parentNode {
-            blocks.append("PARENT NODE:\n\(parent.name)\n\(parent.detail)")
+//            blocks.append("PARENT NODE:\n\(parent.name)\n\(parent.detail)")
+            blocks.append(
+                """
+                PARENT NODE:
+                - Title: \(parent.name)
+                - Detail: \(parent.detail)
+                """
+            )
         }
 
         if let userInput = c.userInput, !userInput.isEmpty {
             blocks.append("INPUT:\n\(userInput)")
-        }
-
-        if let memory = c.graphMemory {
-            blocks.append(memory)
         }
 
         if let guardText = c.semanticGuard {
@@ -255,8 +285,10 @@ struct PromptFactory {
         case .extendNode:
             return """
             RULES:
-            - 2-3 nodes
-            - No repetition
+            - EXACTLY 2-4 nodes
+            - AVOID DUPLICATING PARENT NODE (INCLUDING TITLE AND DETAIL)
+            - Each node should extend concepts of PARENT NODE (read PARENT NODE field)
+            - Each one must be unique and not repeating any of presented concepts
             """
 
         case .summarize:
@@ -264,6 +296,8 @@ struct PromptFactory {
             RULES:
             - Exactly 1 node
             - Common theme only
+            - Title should reflect common theme
+            - Detail should provide brief description of common theme
             """
 
         case .askQuestions:
@@ -283,7 +317,7 @@ struct PromptFactory {
             return """
             RULES:
             - Rewrite only NODE CONTENT
-            - Do not repeat NODE TITLE
+            - Do not repeat or include NODE TITLE in your response
             - No labels, headers, markdown
             - Preserve language
             - Return raw text only

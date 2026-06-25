@@ -133,6 +133,7 @@ extension AppModel {
                 
                 actionService.endBatch()
                 session.clearSelection()
+                session.selectedNodeIds.insert(summary.id)
 
             } catch {
                 print("error while generating canvas: \(error.localizedDescription)")
