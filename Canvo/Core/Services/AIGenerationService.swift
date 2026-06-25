@@ -16,7 +16,11 @@ final class AIGenerationService: Sendable {
     private let model = SystemLanguageModel.default
     private let promptBuilder = PromptFactory()
 
-    private var currentTask: Task<Void, Never>?
+    private var currentTask: Task<Void, Never>? {
+        didSet {
+            isRunning = currentTask != nil
+        }
+    }
 
     public var runningStage: String?
     private(set) public var error: String?
@@ -25,9 +29,7 @@ final class AIGenerationService: Sendable {
         model.isAvailable
     }
 
-    public var isRunning: Bool {
-        currentTask != nil
-    }
+    private(set) public var isRunning: Bool = false
 
     public init() {}
 
@@ -45,6 +47,8 @@ final class AIGenerationService: Sendable {
     }
 
     // MARK: - PUBLIC API
+    
+    // MARK: - Generate Canvas
 
     func generateCanvasStream(
         prompt: String,
@@ -403,6 +407,103 @@ final class AIGenerationService: Sendable {
                 }
             }
         }
+    }
+    
+    // MARK: - NODE EDITING
+
+
+    func rewriteNodeContent(
+        task: PromptFactory.Task,
+        title: String,
+        content: String
+    ) async throws -> String {
+
+        cancelCurrentTask()
+
+        let task = Task<String, Error> {
+
+            let session = LanguageModelSession(
+                model: model
+            )
+
+            let prompt = promptBuilder.build(
+                task: task,
+                context: .init(
+                    nodeTitle: title,
+                    nodeContent: content
+                )
+            )
+
+            let result = try await session.respond(
+                to: prompt,
+                generating: String.self
+            )
+
+            return result.content.trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+        }
+
+        currentTask = Task {
+            do {
+                _ = try await task.value
+                self.currentTask = nil
+            } catch {
+                self.currentTask = nil
+            }
+        }
+
+        return try await task.value
+    }
+
+
+    // MARK: - TAG GENERATION
+
+    func generateTags(
+        title: String,
+        content: String
+    ) async throws -> String {
+
+        cancelCurrentTask()
+
+        let task = Task<String, Error> {
+
+            let session = LanguageModelSession(
+                model: model
+            )
+
+            let prompt = promptBuilder.build(
+                task: .generateTags,
+                context: .init(
+                    userInput: """
+                    Title: \(title)
+
+                    Content:
+                    \(content)
+                    """
+                )
+            )
+
+            let result = try await session.respond(
+                to: prompt,
+                generating: String.self
+            )
+
+            return result.content.trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+        }
+
+        currentTask = Task {
+            do {
+                _ = try await task.value
+                self.currentTask = nil
+            } catch {
+                self.currentTask = nil
+            }
+        }
+
+        return try await task.value
     }
 
     // MARK: - NODE GENERATION DISPATCH

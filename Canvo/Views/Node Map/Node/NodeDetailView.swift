@@ -129,6 +129,7 @@ struct NodeDetailView: View {
             }
             .sheet(item: $editingNode) { node in
                 NodeEditorView(node: node)
+                    .environment(appModel)
                     .interactiveDismissDisabled()
             }
             .sheet(item: $linkNode) { node in

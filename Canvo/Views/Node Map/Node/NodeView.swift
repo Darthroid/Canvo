@@ -150,7 +150,6 @@ struct NodeView: View {
         .frame(maxWidth: 400, maxHeight: 600)
         .transition(.scale.combined(with: .opacity))
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
-        .zIndex(isSelected || isExpanded ? 1 : 0)
     }
 
     private var floatingToolbar: some View {

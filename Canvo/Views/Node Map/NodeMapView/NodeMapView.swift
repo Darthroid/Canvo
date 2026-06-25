@@ -257,10 +257,12 @@ struct NodeMapView: View {
                     
                     // Nodes
                     ForEach(visibleNodes) { node in
+                        let isSelected = appModel.session.selectedNodeIds.contains(node.id)
+                        let isExpanded = appModel.session.expandedNodeIds.contains(node.id)
                         let nodeView = NodeView(
                             node: node,
-                            isSelected: appModel.session.selectedNodeIds.contains(node.id),
-                            isExpanded: appModel.session.expandedNodeIds.contains(node.id),
+                            isSelected: isSelected,
+                            isExpanded: isExpanded,
                             isMatchingSearch: searchResults.contains(where: { $0.id == node.id }),
                             toolbarEnabled: true,
                             onSizeChange: { size in
@@ -273,6 +275,7 @@ struct NodeMapView: View {
                         .equatable()
                         .opacity(!isFocused ? 1 : (appModel.session.focusNodeIds.contains(node.id) ? 1 : 0.1))
                         .position(node.position.position2D)
+                        .zIndex(isSelected || isExpanded ? 100 : 0)
                         .onTapGesture(count: 1) {
                             withAnimation {
                                 if appModel.session.selectedNodeIds.contains(node.id) {

@@ -199,7 +199,7 @@ struct AIEditCanvasView: View {
     private var footer: some View {
 
         Button(action: runSelectedAction) {
-            Label("\(selectedMode.actionTitle) • \(scopeNodesCount)", systemImage: "sparkles")
+            Label(selectedMode.actionTitle, systemImage: "sparkles")
                 .font(.headline)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 8)
