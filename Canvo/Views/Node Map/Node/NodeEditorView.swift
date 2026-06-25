@@ -133,6 +133,57 @@ struct NodeEditorView: View {
             )
         )
     }
+    
+    var rewriteMenu: some View {
+        Menu {
+            Button {
+                improveWriting()
+            } label: {
+                Label("Improve Writing", systemImage: "wand.and.stars")
+            }
+
+            Button {
+                makeShorter()
+            } label: {
+                Label("Make Shorter", systemImage: "arrow.down.to.line")
+            }
+
+            Button {
+                makeLonger()
+            } label: {
+                Label("Make Longer", systemImage: "arrow.up.to.line")
+            }
+
+            Button {
+                explainBetter()
+            } label: {
+                Label("Explain Better", systemImage: "text.alignleft")
+            }
+
+            Button {
+                simplify()
+            } label: {
+                Label("Simplify", systemImage: "textformat.size.smaller")
+            }
+
+            Button {
+                professionalTone()
+            } label: {
+                Label("Professional Tone", systemImage: "briefcase")
+            }
+
+            Divider()
+
+            Button {
+                showCustomInstruction = true
+            } label: {
+                Label("Custom Instruction", systemImage: "square.and.pencil")
+            }
+
+        } label: {
+            Label("Rewrite", systemImage: "sparkles")
+        }
+    }
 
     var body: some View {
         NavigationStack {
@@ -173,6 +224,11 @@ struct NodeEditorView: View {
                                 .background(Color.clear)
                                 .foregroundColor(.primary)
                                 .frame(minHeight: 160)
+                        } actions: {
+                            if appModel.aiGenerationService.isAvailable {
+                                rewriteMenu
+                                    .buttonStyle(.bordered)
+                            }
                         }
 
                         aiHighlightOverlay(for: .detail)
@@ -188,6 +244,15 @@ struct NodeEditorView: View {
                             )
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
+                        } actions: {
+                            if appModel.aiGenerationService.isAvailable {
+                                Button {
+                                    generateTags()
+                                } label: {
+                                    Label("Generate", systemImage: "sparkles")
+                                }
+                                .buttonStyle(.bordered)
+                            }
                         }
 
                         aiHighlightOverlay(for: .tags)
@@ -217,69 +282,6 @@ struct NodeEditorView: View {
                             .trimmingCharacters(in: .whitespacesAndNewlines)
                             .isEmpty
                     )
-                }
-                
-                if appModel.aiGenerationService.isAvailable {
-                    ToolbarItem(placement: .primaryAction) {
-                        Menu {
-                            Button {
-                                improveWriting()
-                            } label: {
-                                Label("Improve Writing", systemImage: "wand.and.stars")
-                            }
-
-                            Button {
-                                makeShorter()
-                            } label: {
-                                Label("Make Shorter", systemImage: "arrow.down.to.line")
-                            }
-
-                            Button {
-                                makeLonger()
-                            } label: {
-                                Label("Make Longer", systemImage: "arrow.up.to.line")
-                            }
-
-                            Button {
-                                explainBetter()
-                            } label: {
-                                Label("Explain Better", systemImage: "text.alignleft")
-                            }
-
-                            Button {
-                                simplify()
-                            } label: {
-                                Label("Simplify", systemImage: "textformat.size.smaller")
-                            }
-
-                            Button {
-                                professionalTone()
-                            } label: {
-                                Label("Professional Tone", systemImage: "briefcase")
-                            }
-
-                            Divider()
-
-                            Button {
-                                generateTags()
-                            } label: {
-                                Label("Generate Tags", systemImage: "tag")
-                            }
-
-                            Divider()
-
-                            Button {
-                                showCustomInstruction = true
-                            } label: {
-                                Label("Custom Instruction", systemImage: "square.and.pencil")
-                            }
-
-                        } label: {
-                            Image(systemName: "sparkles")
-                        }
-                        .labelsHidden()
-                        .disabled(appModel.aiGenerationService.isRunning)
-                    }
                 }
             }
             .confirmationDialog(
@@ -580,26 +582,6 @@ private extension NodeEditorView {
                     lineWidth: 1.5
                 )
                 .padding(-2)
-                .allowsHitTesting(false)
-
-
-                Text(
-                    aiStatus ?? String(localized: "AI")
-                )
-                .font(.caption)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(.regularMaterial)
-                .clipShape(Capsule())
-                .offset(
-                    x: -12,
-                    y: 12
-                )
-                .frame(
-                    maxWidth: .infinity,
-                    maxHeight: .infinity,
-                    alignment: .topTrailing
-                )
                 .allowsHitTesting(false)
             }
         }
