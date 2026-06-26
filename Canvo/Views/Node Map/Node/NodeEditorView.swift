@@ -139,25 +139,25 @@ struct NodeEditorView: View {
             Button {
                 improveWriting()
             } label: {
-                Label("Improve Writing", systemImage: "wand.and.stars")
+                Label("Improve", systemImage: "wand.and.stars")
             }
 
             Button {
                 makeShorter()
             } label: {
-                Label("Make Shorter", systemImage: "arrow.down.to.line")
+                Label("Shorten", systemImage: "arrow.down.to.line")
             }
 
             Button {
                 makeLonger()
             } label: {
-                Label("Make Longer", systemImage: "arrow.up.to.line")
+                Label("Expand", systemImage: "arrow.up.to.line")
             }
 
             Button {
                 explainBetter()
             } label: {
-                Label("Explain Better", systemImage: "text.alignleft")
+                Label("Explain", systemImage: "text.alignleft")
             }
 
             Button {
@@ -169,7 +169,7 @@ struct NodeEditorView: View {
             Button {
                 professionalTone()
             } label: {
-                Label("Professional Tone", systemImage: "briefcase")
+                Label("Professional", systemImage: "briefcase")
             }
 
             Divider()
@@ -177,7 +177,7 @@ struct NodeEditorView: View {
             Button {
                 showCustomInstruction = true
             } label: {
-                Label("Custom Instruction", systemImage: "square.and.pencil")
+                Label("Custom", systemImage: "square.and.pencil")
             }
 
         } label: {
@@ -629,7 +629,7 @@ private extension NodeEditorView {
 
     func improveWriting() {
         rewrite(
-            task: .improveWriting,
+            task: .improveStyle,
             status: String(localized: "Improving...")
         )
     }
@@ -650,7 +650,7 @@ private extension NodeEditorView {
 
     func explainBetter() {
         rewrite(
-            task: .explainBetter,
+            task: .explain,
             status: String(localized: "Explaining...")
         )
     }

@@ -483,7 +483,11 @@ struct NodeMapView: View {
                 NavigationStack {
                     LinkEditorView(fromNode: node)
                         .interactiveDismissDisabled()
-                        .presentationDetents([.medium, .large]) 
+                        .presentationDetents(
+                            UIDevice.current.userInterfaceIdiom == .pad
+                            ? [.large]
+                            : [.medium, .large]
+                        )
                 }
             }
             .sheet(isPresented: Binding(
@@ -503,6 +507,11 @@ struct NodeMapView: View {
                         .environment(appModel)
                         .presentationBackground(Color(.secondarySystemBackground))
                     }
+                    .presentationDetents(
+                        UIDevice.current.userInterfaceIdiom == .pad
+                        ? [.large]
+                        : [.medium, .large]
+                    )
                 }
             }
             .sheet(isPresented: Binding(get: {

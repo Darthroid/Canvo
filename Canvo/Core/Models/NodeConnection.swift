@@ -51,7 +51,6 @@ public class NodeConnection: Identifiable, Equatable, Codable {
 }
 
 extension NodeConnection {
-    @available(iOS 26.0, macOS 26.0, visionOS 26.0, *)
     func toSchema() -> NodeConnectionSchema {
         .init(
             id: id,
@@ -60,7 +59,6 @@ extension NodeConnection {
         )
     }
     
-    @available(iOS 26.0, macOS 26.0, visionOS 26.0, *)
     convenience init(from schema: NodeConnectionSchema, canvas: Canvas? = nil) {
         self.init(
             id: schema.id,

@@ -37,7 +37,7 @@ struct AIResponseView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(20)
-        .navigationTitle("AI Explanation")
+        .navigationTitle("Canvas Analysis")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {

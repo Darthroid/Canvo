@@ -7,9 +7,6 @@
 
 import SwiftUI
 
-// MARK: - Mode Card
-
-@available(iOS 26.0, macOS 26.0, visionOS 26.0, *)
 struct AIModeCard: View {
     
     @EnvironmentObject private var themeStore: ThemeStore
@@ -27,27 +24,27 @@ struct AIModeCard: View {
 
             VStack(alignment: .leading, spacing: 10) {
 
-                Image(systemName: icon)
-                    .font(.title3)
-                    .symbolRenderingMode(.hierarchical)
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
 
-                VStack(alignment: .leading, spacing: 3) {
+                    Image(systemName: icon)
+                        .font(.headline)
+                        .symbolRenderingMode(.hierarchical)
 
                     Text(title)
                         .font(.headline)
                         .lineLimit(1)
-
-                    Text(subtitle)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(2)
-                        .fixedSize(horizontal: false, vertical: true)
                 }
+
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 Spacer(minLength: 0)
             }
-            .padding(16)
-            .frame(width: 160, height: 118, alignment: .topLeading)
+            .padding(14)
+            .frame(width: 160, height: 90, alignment: .topLeading)
             .background {
                 RoundedRectangle(cornerRadius: 22)
                     .fill(Color(.tertiarySystemBackground))

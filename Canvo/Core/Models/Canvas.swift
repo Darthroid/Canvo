@@ -44,10 +44,10 @@ public class Canvas: Identifiable, Codable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(String.self, forKey: .id)
         name = try container.decode(String.self, forKey: .name)
-        createdAt = try container.decode(Date.self, forKey: .createdAt)
-        updatedAt = try container.decode(Date.self, forKey: .updatedAt)
-        isPined = try container.decode(Bool.self, forKey: .isPined)
-        isSecured = try container.decode(Bool.self, forKey: .isSecured)
+        createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt) ?? .now
+        updatedAt = try container.decodeIfPresent(Date.self, forKey: .updatedAt) ?? .now
+        isPined = try container.decodeIfPresent(Bool.self, forKey: .isPined) ?? false
+        isSecured = try container.decodeIfPresent(Bool.self, forKey: .isSecured) ?? false
         nodes = try container.decode([Node].self, forKey: .nodes)
         connections = try container.decode([NodeConnection].self, forKey: .connections)
     }
@@ -65,12 +65,12 @@ public class Canvas: Identifiable, Codable {
     }
     
     private enum CodingKeys: String, CodingKey {
-        case id, name, createdAt, updatedAt, isPined, isSecured, connections, nodes
+        case id, name, createdAt, updatedAt, isPined, isSecured, connections, nodes, tags
     }
 }
 
 extension Canvas {
-    @available(iOS 26.0, *)
+    
     func toSchema() -> CanvasSchema {
         CanvasSchema(
             id: id,
@@ -80,7 +80,6 @@ extension Canvas {
         )
     }
     
-    @available(iOS 26.0, macOS 26.0, visionOS 26.0, *)
     convenience init(from schema: CanvasSchema) {
         self.init(
             id: schema.id,

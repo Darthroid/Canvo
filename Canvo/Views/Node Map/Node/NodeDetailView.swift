@@ -135,7 +135,11 @@ struct NodeDetailView: View {
             .sheet(item: $linkNode) { node in
                 LinkEditorView(fromNode: node)
                     .interactiveDismissDisabled()
-                    .presentationDetents([.medium, .large])
+                    .presentationDetents(
+                        UIDevice.current.userInterfaceIdiom == .pad
+                        ? [.large]
+                        : [.medium, .large]
+                    )
             }
             .alert("Delete Node", isPresented: $showDeleteConfirmation) {
                 Button("Delete", role: .destructive) {
