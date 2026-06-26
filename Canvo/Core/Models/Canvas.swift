@@ -70,7 +70,7 @@ public class Canvas: Identifiable, Codable {
 }
 
 extension Canvas {
-    @available(iOS 26.0, *)
+    
     func toSchema() -> CanvasSchema {
         CanvasSchema(
             id: id,
@@ -80,7 +80,6 @@ extension Canvas {
         )
     }
     
-    @available(iOS 26.0, macOS 26.0, visionOS 26.0, *)
     convenience init(from schema: CanvasSchema) {
         self.init(
             id: schema.id,

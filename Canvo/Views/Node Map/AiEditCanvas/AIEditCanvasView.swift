@@ -2,14 +2,10 @@
 //  AIEditCanvasView.swift
 //  nodes-demo
 //
-//  Created by Олег Комаристый on 10.01.2026.
-//
-
 
 import SwiftUI
 import FoundationModels
 
-@available(iOS 26.0, macOS 26.0, visionOS 26.0, *)
 struct AIEditCanvasView: View {
 
     @Environment(AppModel.self) private var appModel
@@ -39,7 +35,7 @@ struct AIEditCanvasView: View {
         VStack(spacing: 0) {
 
             ScrollView {
-                VStack(alignment: .leading, spacing: 28) {
+                VStack(alignment: .leading, spacing: 18) {
 
                     modeSection
                     scopeSection
@@ -47,14 +43,14 @@ struct AIEditCanvasView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, horizontalPadding)
-                .padding(.top, 24)
-                .padding(.bottom, 24)
+                .padding(.top, 16)
+                .padding(.bottom, 12)
             }
 
             footer
                 .padding(.horizontal, horizontalPadding)
-                .padding(.bottom, 20)
-                .padding(.top, 12)
+                .padding(.bottom, 14)
+                .padding(.top, 8)
         }
         .navigationTitle("Edit Canvas with AI")
         .navigationBarTitleDisplayMode(.inline)
@@ -81,7 +77,7 @@ struct AIEditCanvasView: View {
             }
         }
         .onAppear {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 isPromptFocused = true
             }
         }
@@ -90,12 +86,10 @@ struct AIEditCanvasView: View {
     // MARK: - Mode
 
     private var modeSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-
-            sectionTitle(String(localized: "Mode"))
+        VStack(alignment: .leading, spacing: 10) {
 
             ScrollView(.horizontal) {
-                HStack(spacing: 14) {
+                HStack(spacing: 10) {
 
                     ForEach(AIMode.allCases) { mode in
                         AIModeCard(
@@ -119,38 +113,37 @@ struct AIEditCanvasView: View {
         }
     }
 
-    // MARK: - Scope (binary)
+    // MARK: - Scope
 
     private var scopeSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 8) {
 
-            sectionTitle(String(localized: "Scope"))
+            sectionTitle("Scope")
 
             HStack(spacing: 10) {
-
                 ForEach([AIScope.selection, AIScope.canvas]) { scope in
 
                     Button {
                         selectedScope = scope
                     } label: {
 
-                        VStack(spacing: 4) {
+                        VStack(spacing: 2) {
                             Label(scope.title, systemImage: scope.icon)
                                 .font(.subheadline.weight(.medium))
 
                             Text("\(count(for: scope)) nodes")
-                                .font(.caption)
+                                .font(.caption2)
                                 .foregroundStyle(.secondary)
                         }
                         .frame(maxWidth: .infinity)
-                        .frame(height: 52)
+                        .frame(height: 44)
                     }
                     .disabled(selectedMode == .summarize && scope == .canvas)
                     .background {
-                        RoundedRectangle(cornerRadius: 22)
+                        RoundedRectangle(cornerRadius: 18)
                             .fill(Color(.tertiarySystemBackground))
                             .overlay {
-                                RoundedRectangle(cornerRadius: 22)
+                                RoundedRectangle(cornerRadius: 18)
                                     .strokeBorder(
                                         selectedScope == scope
                                         ? themeStore.theme.canvasTheme.selection
@@ -160,9 +153,6 @@ struct AIEditCanvasView: View {
                             }
                     }
                     .buttonStyle(.plain)
-                    #if os(visionOS)
-                    .glassBackgroundEffect()
-                    #endif
                 }
             }
         }
@@ -171,7 +161,7 @@ struct AIEditCanvasView: View {
     // MARK: - Prompt
 
     private var promptSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 10) {
 
             sectionTitle(selectedMode.promptTitle)
 
@@ -181,14 +171,14 @@ struct AIEditCanvasView: View {
                 axis: .vertical
             )
             .focused($isPromptFocused)
-            .lineLimit(6...10)
+            .lineLimit(4...7)
             .textInputAutocapitalization(.sentences)
-            .padding(16)
+            .padding(12)
             .background {
-                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
                     .fill(cardBackground)
                     .overlay {
-                        RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
                             .strokeBorder(borderColor)
                     }
             }
@@ -198,7 +188,6 @@ struct AIEditCanvasView: View {
     // MARK: - Footer
 
     private var footer: some View {
-
         Button(action: runSelectedAction) {
             Label(selectedMode.actionTitle, systemImage: "sparkles")
                 .font(.headline)
@@ -230,14 +219,14 @@ struct AIEditCanvasView: View {
 
     private func sectionTitle(_ text: String) -> some View {
         Text(text)
-            .font(.title3.weight(.semibold))
+            .font(.headline.weight(.semibold))
     }
 
     private var horizontalPadding: CGFloat {
         #if os(visionOS)
-        32
+        28
         #else
-        20
+        16
         #endif
     }
 

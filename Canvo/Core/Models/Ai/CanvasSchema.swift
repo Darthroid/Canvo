@@ -8,7 +8,7 @@
 import Foundation
 import FoundationModels
 
-@available(iOS 26.0, macOS 26.0, visionOS 26.0, *)
+
 //@Generable
 struct CanvasSchema: Codable, Sendable, Identifiable {
 //    @Guide(description: "UUID string")
