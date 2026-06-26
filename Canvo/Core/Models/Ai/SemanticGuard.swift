@@ -21,7 +21,11 @@ struct SemanticGuard {
 
         \(topics.map { "- \($0)" }.joined(separator: "\n"))
 
-        Avoid generating the same topics again.
+        Do not generate:
+        - identical topics
+        - near-duplicates
+        - synonyms
+        - minor rewordings of existing topics
         """
     }
 }

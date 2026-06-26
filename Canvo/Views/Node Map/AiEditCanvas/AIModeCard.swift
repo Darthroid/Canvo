@@ -47,7 +47,7 @@ struct AIModeCard: View {
                 Spacer(minLength: 0)
             }
             .padding(16)
-            .frame(width: 160, height: 118, alignment: .topLeading)
+            .frame(width: 160, height: 140, alignment: .topLeading)
             .background {
                 RoundedRectangle(cornerRadius: 22)
                     .fill(Color(.tertiarySystemBackground))

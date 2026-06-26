@@ -124,7 +124,7 @@ struct PromptFactory {
             return "TASK: Generate 2 subtopics of the parent node."
 
         case .childNodes:
-            return "TASK: Generate 10 related ideas connected to the main topic."
+            return "TASK: Generate 10 concepts that belong under the provided topic."
 
         case .extendNode:
             return "TASK: Generate EXACTLY 2-4 new nodes that expand the parent node."
@@ -265,14 +265,16 @@ struct PromptFactory {
             return """
             RULES:
             - Exactly 4 nodes
-            - Distinct aspects
+            - Mutually distinct aspects
+            - Avoid overlap between nodes
             """
 
         case .leafNodes:
             return """
             RULES:
             - Exactly 2 nodes
-            - Subtopics only
+            - Direct subtopics only
+            - Do not repeat parent concept
             """
 
         case .childNodes:
@@ -287,6 +289,7 @@ struct PromptFactory {
             RULES:
             - EXACTLY 2-4 nodes
             - AVOID DUPLICATING PARENT NODE (INCLUDING TITLE AND DETAIL)
+            - Do not repeat existing topics or obvious variations of them
             - Each node should extend concepts of PARENT NODE (read PARENT NODE field)
             - Each one must be unique and not repeating any of presented concepts
             """
@@ -295,7 +298,7 @@ struct PromptFactory {
             return """
             RULES:
             - Exactly 1 node
-            - Common theme only
+            - Capture the shared concept behind the provided nodes
             - Title should reflect common theme
             - Detail should provide brief description of common theme
             """
@@ -326,9 +329,11 @@ struct PromptFactory {
         case .generateTags:
             return """
             RULES:
-            - 5-10 tags
+            - EXACTLY 5 tags
             - comma separated
             - no explanations
+            - should clearly be related to topic
+            - Prefer broad discovery keywords
             """
         }
     }

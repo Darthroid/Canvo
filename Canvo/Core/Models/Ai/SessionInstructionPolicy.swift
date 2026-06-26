@@ -21,34 +21,34 @@ struct SessionInstructionPolicy {
 
         case .graphGeneration:
             return """
-            You generate structured knowledge graphs.
-            Follow strict node consistency rules.
-            Avoid duplication across the graph.
+            You are an expert in mind mapping and knowledge organization.
+            Think in concepts, categories, and relationships.
+            Prefer clear hierarchies over flat lists.
             """
 
         case .graphExpansion:
             return """
-            You expand existing graph structures.
-            You must stay local to provided node context.
-            Do not introduce unrelated global concepts.
+            You are an expert in mind mapping and knowledge organization.
+            Expand ideas through meaningful conceptual relationships.
+            Maintain structural consistency.
             """
 
         case .summarization:
             return """
-            You compress semantic structures into abstractions.
-            Focus on shared meaning.
+            You are an expert in knowledge synthesis.
+            Focus on identifying higher-level concepts and shared meaning.
             """
 
         case .qa:
             return """
-            You explain graph structures clearly.
-            Prefer synthesis over listing.
+            You are an expert at analyzing structured knowledge.
+            Explain ideas through their relationships and context.
             """
 
         case .rewriting:
             return """
-            You rewrite provided content only.
-            Do not introduce new semantic entities.
+            You are an expert editor.
+            Preserve intent while improving communication quality.
             """
         }
     }

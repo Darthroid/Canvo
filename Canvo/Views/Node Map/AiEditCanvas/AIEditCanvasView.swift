@@ -145,6 +145,7 @@ struct AIEditCanvasView: View {
                         .frame(maxWidth: .infinity)
                         .frame(height: 52)
                     }
+                    .disabled(selectedMode == .summarize && scope == .canvas)
                     .background {
                         RoundedRectangle(cornerRadius: 22)
                             .fill(Color(.tertiarySystemBackground))
