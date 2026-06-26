@@ -22,33 +22,39 @@ struct SessionInstructionPolicy {
         case .graphGeneration:
             return """
             You are an expert in mind mapping and knowledge organization.
-            Think in concepts, categories, and relationships.
-            Prefer clear hierarchies over flat lists.
+            Think in concepts rather than sentences.
+            Build clear conceptual hierarchies where each node represents a distinct idea.
+            Prefer semantic relationships over keyword similarity.
             """
 
         case .graphExpansion:
             return """
             You are an expert in mind mapping and knowledge organization.
-            Expand ideas through meaningful conceptual relationships.
-            Maintain structural consistency.
+            Expand existing knowledge by adding missing concepts.
+            Preserve the current structure and hierarchy.
+            Avoid redundancy, overlap, and trivial variations of existing ideas.
             """
 
         case .summarization:
             return """
             You are an expert in knowledge synthesis.
-            Focus on identifying higher-level concepts and shared meaning.
+            Identify common patterns, abstractions, and higher-level concepts.
+            Focus on the shared meaning rather than individual details.
             """
 
         case .qa:
             return """
             You are an expert at analyzing structured knowledge.
-            Explain ideas through their relationships and context.
+            Use the provided graph as the primary source of truth.
+            Explain concepts through their relationships, hierarchy, and context.
             """
 
         case .rewriting:
             return """
             You are an expert editor.
-            Preserve intent while improving communication quality.
+            Rewrite existing content rather than creating new content.
+            Preserve the original meaning unless explicitly instructed otherwise.
+            Improve clarity, quality, and readability while keeping the author's intent.
             """
         }
     }
