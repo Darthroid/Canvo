@@ -249,9 +249,9 @@ struct ImmersiveMapToolbar: View {
                         set: { newValue in
                             appModel.aiEditorOpen = newValue
                         }
-                    ), visibleScopeIds: [])
-                        .environment(appModel)
-                        .presentationBackground(Color(.secondarySystemBackground))
+                    ))
+                    .environment(appModel)
+                    .presentationBackground(Color(.secondarySystemBackground))
                 }
             }
         }
