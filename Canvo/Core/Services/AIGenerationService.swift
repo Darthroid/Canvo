@@ -501,7 +501,7 @@ final class AIGenerationService: Sendable {
         semanticGuard: String
     ) async throws -> (nodes: [NodeSchema], connections: [NodeConnectionSchema]) {
 
-        self.runningStage = String(localized: "Radial expansion")
+        self.runningStage = String(localized: "Creating related topics")
 
         let promptText = promptBuilder.build(
             sessionInstructions: SessionInstructionPolicy.instructions(for: .graphExpansion),
@@ -550,7 +550,7 @@ final class AIGenerationService: Sendable {
         semanticGuard: String
     ) async throws -> (nodes: [NodeSchema], connections: [NodeConnectionSchema]) {
 
-        self.runningStage = String(localized: "Branching")
+        self.runningStage = String(localized: "Creating related topics")
 
         let branchPrompt = promptBuilder.build(
             sessionInstructions: SessionInstructionPolicy.instructions(for: .graphGeneration),

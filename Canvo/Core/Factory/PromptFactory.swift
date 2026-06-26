@@ -384,10 +384,11 @@ struct PromptFactory {
             return """
             RULES:
             - EXACTLY 5 tags
-            - comma separated
-            - no explanations
-            - should clearly be related to topic
-            - Prefer broad discovery keywords
+            - each tag MUST be ONE word only (no spaces allowed)
+            - output format: tag1, tag2, tag3, tag4, tag5
+            - no explanations, no punctuation except commas
+            - tags must represent key concepts of the topic
+            - avoid multi-word phrases under any circumstances
             """
         }
     }

@@ -43,7 +43,7 @@ public class Node: Identifiable, Codable {
     }
     
     var position: SIMD3<Float> { .init(x, y, z) }
-    var positionDescription: String { "(\(x), \(y), \(z))" }
+    var positionDescription: String { "(x:\(x), y:\(y), z:\(z))" }
     
     var tagsRaw: String? = ""
     
@@ -87,6 +87,7 @@ public class Node: Identifiable, Codable {
         y = try values.decode(Float.self, forKey: .y)
         z = try values.decode(Float.self, forKey: .z)
         colorRaw = try values.decodeIfPresent(String.self, forKey: .colorRaw)
+        tagsRaw = try values.decodeIfPresent(String.self, forKey: .tags)
     }
     
     init(id: String = UUID().uuidString, name: String, detail: String,
@@ -112,6 +113,7 @@ public class Node: Identifiable, Codable {
         try values.encode(y, forKey: .y)
         try values.encode(z, forKey: .z)
         try values.encodeIfPresent(colorRaw, forKey: .colorRaw)
+        try values.encodeIfPresent(tagsRaw, forKey: .tags)
     }
 }
 
