@@ -12,9 +12,19 @@ import FoundationModels
 @Observable
 final class AIGenerationService: Sendable {
 
-    private let model = SystemLanguageModel.default
-    private let promptBuilder = PromptFactory()
-    private let layout = CanvasLayoutService()
+    @available(iOS 26.0, *)
+    private var model: SystemLanguageModel {
+        .default
+    }
+    
+    @available(iOS 26.0, *)
+    private var promptBuilder: PromptFactory {
+        PromptFactory()
+    }
+    @available(iOS 26.0, *)
+    private var layout: CanvasLayoutService {
+        CanvasLayoutService()
+    }
 
     private var currentTask: Task<Void, Never>? {
         didSet {
@@ -26,7 +36,11 @@ final class AIGenerationService: Sendable {
     private(set) public var error: String?
 
     public var isAvailable: Bool {
-        model.isAvailable
+        if #available(iOS 26.0, *) {
+            model.isAvailable
+        } else {
+           false
+        }
     }
 
     private(set) public var isRunning: Bool = false
@@ -47,7 +61,7 @@ final class AIGenerationService: Sendable {
     }
 
     // MARK: - PUBLIC API
-
+    @available(iOS 26.0, *)
     func generateCanvasStream(
         prompt: String,
         style: CanvasGenerationStyle = .tree
@@ -149,7 +163,7 @@ final class AIGenerationService: Sendable {
     }
 
     // MARK: - EXTEND GRAPH
-
+    @available(iOS 26.0, *)
     func extendGraph(
         nodes: [Node],
         in canvas: Canvas,
@@ -230,7 +244,7 @@ final class AIGenerationService: Sendable {
     }
 
     // MARK: - SUMMARIZE GRAPH
-
+    @available(iOS 26.0, *)
     func summarizeGraph(
         scope: [Node],
         exclude: [Node] = [],
@@ -314,7 +328,7 @@ final class AIGenerationService: Sendable {
     }
 
     // MARK: - ASK GRAPH
-
+    @available(iOS 26.0, *)
     func askGraph(
         scope: [Node],
         userInput: String,
@@ -369,7 +383,7 @@ final class AIGenerationService: Sendable {
     }
 
     // MARK: - NODE EDITING
-
+    @available(iOS 26.0, *)
     func rewriteNodeContent(
         task: PromptFactory.Task,
         title: String,
@@ -411,7 +425,7 @@ final class AIGenerationService: Sendable {
     }
 
     // MARK: - TAG GENERATION
-
+    @available(iOS 26.0, *)
     func generateTags(
         title: String,
         content: String
@@ -456,7 +470,7 @@ final class AIGenerationService: Sendable {
     }
 
     // MARK: - NODE GENERATION DISPATCH
-
+    @available(iOS 26.0, *)
     private func generateNodes(
         style: CanvasGenerationStyle,
         session: LanguageModelSession,
@@ -492,7 +506,7 @@ final class AIGenerationService: Sendable {
     }
 
     // MARK: - RADIAL
-
+    @available(iOS 26.0, *)
     private func generateRadial(
         session: LanguageModelSession,
         prompt: String,
@@ -541,7 +555,7 @@ final class AIGenerationService: Sendable {
     }
 
     // MARK: - TREE
-
+    @available(iOS 26.0, *)
     private func generateTree(
         session: LanguageModelSession,
         prompt: String,
@@ -649,7 +663,7 @@ final class AIGenerationService: Sendable {
     }
 
     // MARK: - NORMALIZATION
-
+    @available(iOS 26.0, *)
     private func normalize(_ node: NodeSchema) -> NodeSchema {
         var copy = node
         copy.id = UUID().uuidString

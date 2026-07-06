@@ -114,8 +114,14 @@ struct SettingsView: View {
         }
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
-                Button(role: .close) {
-                    dismiss()
+                if #available(iOS 26.0, *) {
+                    Button(role: .close) {
+                        dismiss()
+                    }
+                } else {
+                    Button("Cancel") {
+                        dismiss()
+                    }
                 }
             }
         }

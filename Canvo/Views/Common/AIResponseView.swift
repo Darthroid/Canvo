@@ -8,6 +8,7 @@
 import SwiftUI
 import MarkdownUI
 
+@available(iOS 26.0, *)
 struct AIResponseView: View {
     @Environment(AppModel.self) private var appModel
     @Environment(\.dismiss) private var dismiss

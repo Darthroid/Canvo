@@ -1,3 +1,4 @@
+@available(iOS 26.0, *)
 struct PromptFactory {
 
     enum Task {

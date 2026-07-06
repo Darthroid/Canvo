@@ -134,7 +134,9 @@ struct NodeEditorView: View {
         )
     }
     
-    var rewriteMenu: some View {
+    @available(iOS 26.0, *)
+    @ViewBuilder
+    func rewriteMenu() -> some View {
         Menu {
             Button {
                 improveWriting()
@@ -179,9 +181,105 @@ struct NodeEditorView: View {
             } label: {
                 Label("Custom", systemImage: "square.and.pencil")
             }
+            
 
         } label: {
             Label("Rewrite", systemImage: "sparkles")
+        }
+    }
+    
+    var heroBlock: some View {
+        HStack {
+
+            EditorBlock(title: String(localized: "Name")) {
+                TextField(String(localized: "Untitled node"), text: $model.name)
+                    .font(.system(size: 20, weight: .medium))
+                    .focused($isNameFocused)
+            }
+
+            EditorBlock(title: String(localized: "Color")) {
+                ColorPicker(
+                    "",
+                    selection: Binding(
+                        get: {
+                            model.color ?? themeStore.theme.canvasTheme.nodeBackground
+                        },
+                        set: { newValue in
+                            model.color = newValue
+                        }
+                    )
+                )
+                .labelsHidden()
+            }
+            .frame(maxWidth: 80)
+        }
+    }
+    
+    var detailBlock: some View {
+        ZStack {
+            EditorBlock(title: String(localized: "Detail")) {
+                if #available(iOS 26.0, *) {
+                    TextEditor(text: $model.attributedDetail)
+                        .scrollContentBackground(.hidden)
+                        .background(Color.clear)
+                        .foregroundColor(.primary)
+                        .frame(minHeight: 160)
+                } else {
+                    TextEditor(
+                        text: Binding(
+                            get: {
+                                String(model.attributedDetail.characters)
+                            },
+                            set: {
+                                model.attributedDetail = AttributedString($0)
+                            }
+                        )
+                    )
+                    .scrollContentBackground(.hidden)
+                    .background(Color.clear)
+                    .foregroundColor(.primary)
+                    .frame(minHeight: 160)
+                }
+            } actions: {
+                if #available(iOS 26.0, *),
+                   appModel.aiGenerationService.isAvailable {
+                    rewriteMenu()
+                        .buttonStyle(.bordered)
+                        .disabled(model.attributedDetail.characters.isEmpty)
+                }
+            }
+            if #available(iOS 26.0, *) {
+                aiHighlightOverlay(for: .detail)
+            }
+        }
+    }
+    
+    var tagsBlock: some View {
+        ZStack {
+
+            EditorBlock(title: String(localized: "Tags")) {
+
+                TextField(
+                    String(localized: "Add tags separated by commas"),
+                    text: $model.tagsRaw
+                )
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+            } actions: {
+                if #available(iOS 26.0, *) {
+                    if appModel.aiGenerationService.isAvailable {
+                        Button {
+                            generateTags()
+                        } label: {
+                            Label("Generate", systemImage: "sparkles")
+                        }
+                        .buttonStyle(.bordered)
+                    }
+                }
+            }
+            if #available(iOS 26.0, *) {
+                aiHighlightOverlay(for: .tags)
+            }
         }
     }
 
@@ -189,76 +287,10 @@ struct NodeEditorView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
-
                     cover
-
-                    HStack {
-
-                        EditorBlock(title: String(localized: "Name")) {
-                            TextField(String(localized: "Untitled node"), text: $model.name)
-                                .font(.system(size: 20, weight: .medium))
-                                .focused($isNameFocused)
-                        }
-
-                        EditorBlock(title: String(localized: "Color")) {
-                            ColorPicker(
-                                "",
-                                selection: Binding(
-                                    get: {
-                                        model.color ?? themeStore.theme.canvasTheme.nodeBackground
-                                    },
-                                    set: { newValue in
-                                        model.color = newValue
-                                    }
-                                )
-                            )
-                            .labelsHidden()
-                        }
-                        .frame(maxWidth: 80)
-                    }
-                    
-                    ZStack {
-                        EditorBlock(title: String(localized: "Detail")) {
-                            TextEditor(text: $model.attributedDetail)
-                                .scrollContentBackground(.hidden)
-                                .background(Color.clear)
-                                .foregroundColor(.primary)
-                                .frame(minHeight: 160)
-                        } actions: {
-                            if appModel.aiGenerationService.isAvailable {
-                                rewriteMenu
-                                    .buttonStyle(.bordered)
-                                    .disabled(model.attributedDetail.characters.isEmpty)
-                            }
-                        }
-
-                        aiHighlightOverlay(for: .detail)
-                    }
-
-                    ZStack {
-
-                        EditorBlock(title: String(localized: "Tags")) {
-
-                            TextField(
-                                String(localized: "Add tags separated by commas"),
-                                text: $model.tagsRaw
-                            )
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled()
-                        } actions: {
-                            if appModel.aiGenerationService.isAvailable {
-                                Button {
-                                    generateTags()
-                                } label: {
-                                    Label("Generate", systemImage: "sparkles")
-                                }
-                                .buttonStyle(.bordered)
-                            }
-                        }
-
-                        aiHighlightOverlay(for: .tags)
-                    }
-
+                    heroBlock
+                    detailBlock
+                    tagsBlock
                 }
                 .padding(.horizontal)
                 .padding(.top, 16)
@@ -267,22 +299,40 @@ struct NodeEditorView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(role: .cancel) {
-                        dismiss()
+                    if #available(iOS 26.0, *) {
+                        Button(role: .cancel) {
+                            dismiss()
+                        }
+                    } else {
+                        Button("Cancel") {
+                            dismiss()
+                        }
                     }
                 }
 
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(role: .confirm) {
-                        submit()
-                        dismiss()
+                    if #available(iOS 26.0, *) {
+                        Button(role: .confirm) {
+                            submit()
+                            dismiss()
+                        }
+                        .disabled(
+                            appModel.aiGenerationService.isRunning ||
+                            model.name
+                                .trimmingCharacters(in: .whitespacesAndNewlines)
+                                .isEmpty
+                        )
+                    } else {
+                        Button("Done") {
+                            submit()
+                            dismiss()
+                        }
+                        .disabled(
+                            model.name
+                                .trimmingCharacters(in: .whitespacesAndNewlines)
+                                .isEmpty
+                        )
                     }
-                    .disabled(
-                        appModel.aiGenerationService.isRunning ||
-                        model.name
-                            .trimmingCharacters(in: .whitespacesAndNewlines)
-                            .isEmpty
-                    )
                 }
             }
             .confirmationDialog(
@@ -337,21 +387,25 @@ struct NodeEditorView: View {
                     text: $customInstruction
                 )
 
-                Button(role: .cancel) {
-                    customInstruction = ""
+                if #available(iOS 26.0, *) {
+                    Button(role: .cancel) {
+                        customInstruction = ""
+                    }
                 }
 
-                Button(role: .confirm) {
-                    let instruction = customInstruction
-                    customInstruction = ""
-
-                    applyCustomInstruction(instruction)
+                if #available(iOS 26.0, *) {
+                    Button(role: .confirm) {
+                        let instruction = customInstruction
+                        customInstruction = ""
+                        
+                        applyCustomInstruction(instruction)
+                    }
+                    .disabled(
+                        customInstruction
+                            .trimmingCharacters(in: .whitespacesAndNewlines)
+                            .isEmpty
+                    )
                 }
-                .disabled(
-                    customInstruction
-                        .trimmingCharacters(in: .whitespacesAndNewlines)
-                        .isEmpty
-                )
 
             } message: {
 
@@ -375,11 +429,17 @@ struct NodeEditorView: View {
                 )
             }
             #endif
-            .imagePlaygroundSheet(isPresented: $showImagePlayground, concept: "", onCompletion: {
-                guard let data = try? Data(contentsOf: $0) else {
-                    return
+            .ifAvailableIOS26(new: {
+                if #available(iOS 26.0, *) {
+                    $0.imagePlaygroundSheet(isPresented: $showImagePlayground, concept: "", onCompletion: {
+                        guard let data = try? Data(contentsOf: $0) else {
+                            return
+                        }
+                        model.images = [data]
+                    })
                 }
-                model.images = [data]
+            }, fallback: {
+                $0
             })
             .onChange(of: selectedItem) { _, newValue in
                 loadImage(from: newValue)
@@ -625,6 +685,7 @@ private extension NodeEditorView {
 
 // MARK: - AI Actions
 
+@available(iOS 26.0, *)
 private extension NodeEditorView {
 
     func improveWriting() {
@@ -723,6 +784,7 @@ private extension NodeEditorView {
     }
 
 
+    @available(iOS 26.0, *)
     func rewrite(
         task: PromptFactory.Task,
         instruction: String? = nil,

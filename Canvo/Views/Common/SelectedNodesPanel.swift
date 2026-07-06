@@ -33,10 +33,12 @@ struct SelectedNodesPanel: View {
                 onDelete()
             }
 
-            panelButton(systemImage: "sparkles") {
-                onAiEdit()
+            if #available(iOS 26.0, *) {
+                panelButton(systemImage: "sparkles") {
+                    onAiEdit()
+                }
+                .disabled(!appModel.aiGenerationService.isAvailable)
             }
-            .disabled(!appModel.aiGenerationService.isAvailable)
 
             panelButton(systemImage: "plus.square.on.square") {
                 onDuplicate()
@@ -110,7 +112,7 @@ struct SelectedNodesPanel: View {
         .padding(.horizontal, 20)
         .padding(.vertical)
         #if !os(visionOS)
-        .glassEffect()
+        .adaptiveGlass()
         #else
         .glassBackgroundEffect()
         #endif

@@ -10,6 +10,7 @@ import Foundation
 
 // MARK: - Generate Canvas from AI
 extension AppModel {
+    @available(iOS 26.0, *)
     func generateCanvasStream(prompt: String, style: CanvasGenerationStyle = .tree) {
         Task {
             do {
@@ -35,7 +36,7 @@ extension AppModel {
 // MARK: - Edit Canvas with AI
 
 extension AppModel {
-    
+    @available(iOS 26.0, *)
     func generateNodes(selectedScope: AIScope, userPrompt: String) {
         Task {
             guard let canvas = session.currentCanvas else { return }
@@ -72,7 +73,8 @@ extension AppModel {
             }
         }
     }
-
+    
+    @available(iOS 26.0, *)
     func summarizeNodes(userPrompt: String) {
         Task {
             guard let canvas = session.currentCanvas else { return }

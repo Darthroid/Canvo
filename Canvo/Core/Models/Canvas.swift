@@ -69,6 +69,7 @@ public class Canvas: Identifiable, Codable {
     }
 }
 
+@available(iOS 26.0, *)
 extension Canvas {
     
     func toSchema() -> CanvasSchema {

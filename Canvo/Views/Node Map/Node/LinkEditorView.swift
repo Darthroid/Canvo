@@ -59,17 +59,31 @@ struct LinkEditorView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(role: .cancel) {
-                        dismiss()
+                    if #available(iOS 26.0, *) {
+                        Button(role: .cancel) {
+                            dismiss()
+                        }
+                    } else {
+                        Button("Cancel") {
+                            dismiss()
+                        }
                     }
                 }
 
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(role: .confirm) {
-                        createLink()
-                        dismiss()
+                    if #available(iOS 26.0, *) {
+                        Button(role: .confirm) {
+                            createLink()
+                            dismiss()
+                        }
+                        .disabled(selectedNodeIds.isEmpty)
+                    } else {
+                        Button("Add") {
+                            createLink()
+                            dismiss()
+                        }
+                        .disabled(selectedNodeIds.isEmpty)
                     }
-                    .disabled(selectedNodeIds.isEmpty)
                 }
             }
             .onAppear {

@@ -93,7 +93,16 @@ struct CanvasCollectionView: View {
                 .searchable(
                     text: $searchQuery,
                 )
-                .searchToolbarBehavior(.minimize)
+                .ifAvailableIOS26(
+                    new: {
+                        if #available(iOS 26.0, *) {
+                            $0.searchToolbarBehavior(.minimize)
+                        }
+                    },
+                    fallback: {
+                        $0
+                    }
+                )
                 .navigationDestination(item: $navigationCanvas) { canvas in
                     NodeMapView()
                         .environment(appModel)
@@ -109,23 +118,27 @@ struct CanvasCollectionView: View {
                 }
                 .toolbar {
                     #if !os(visionOS)
-                    DefaultToolbarItem(kind: .search, placement: .bottomBar)
-                    
-                    ToolbarSpacer(.flexible, placement: .bottomBar)
-                    ToolbarItem(placement: .bottomBar) {
-                        Button {
-                            showCreateCanvas = true
-                        } label: {
-                            Image(systemName: "plus")
+                    if #available(iOS 26.0, *) {
+                        DefaultToolbarItem(kind: .search, placement: .bottomBar)
+                        
+                        ToolbarSpacer(.flexible, placement: .bottomBar)
+                        ToolbarItem(placement: .bottomBar) {
+                            Button {
+                                showCreateCanvas = true
+                            } label: {
+                                Image(systemName: "plus")
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .controlSize(.large)
+                            .clipShape(Capsule())
+                            .tint(themeStore.theme.canvasTheme.selection)
+                            .id(themeStore.theme)
                         }
-                        .buttonStyle(.borderedProminent)
-                        .controlSize(.large)
-                        .clipShape(Capsule())
-                        .tint(themeStore.theme.canvasTheme.selection)
-                        .id(themeStore.theme)
                     }
                     #else
-                    DefaultToolbarItem(kind: .search, placement: .topBarTrailing)
+                    if #available(iOS 26.0, *) {
+                        DefaultToolbarItem(kind: .search, placement: .topBarTrailing)
+                    }
                     #endif
 
                     
@@ -151,6 +164,21 @@ struct CanvasCollectionView: View {
                         .menuStyle(.button)
                         .labelStyle(.iconOnly)
                         .tint(themeStore.theme.canvasTheme.selection)
+                    }
+                }
+                .overlay(alignment: .bottomTrailing) {
+                    if #unavailable(iOS 26.0) {
+                        Button {
+                            showCreateCanvas = true
+                        } label: {
+                            Image(systemName: "plus")
+                                .font(.title2.weight(.semibold))
+                                .frame(width: 40, height: 40)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .clipShape(Circle())
+                        .tint(themeStore.theme.canvasTheme.selection)
+                        .padding()
                     }
                 }
         }
@@ -229,7 +257,9 @@ struct CanvasCollectionView: View {
             navigationCanvas = newValue
         }
         .onDisappear {
-            appModel.aiGenerationService.cancelCurrentTask()
+            if #available(iOS 26.0, *) {
+                appModel.aiGenerationService.cancelCurrentTask()
+            }
         }
         .environment(
             \.canvasTheme,

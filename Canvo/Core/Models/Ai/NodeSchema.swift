@@ -8,7 +8,7 @@
 import Foundation
 import FoundationModels
 
-
+@available(iOS 26.0, *)
 @Generable
 struct NodeSchema: Codable, Sendable, Identifiable {
 //    @Guide(description: "An unique identifier (UUID string) of node")

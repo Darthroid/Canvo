@@ -69,9 +69,10 @@ struct OutlineView: View {
         )
         .padding(.horizontal, isSheet ? 0 : 20)
         #if !os(visionOS)
-        .glassEffect(isSheet ? .identity : .regular, in: isSheet
-                     ? AnyShape(Rectangle())
-                     : AnyShape(RoundedRectangle(cornerRadius: 20)))
+        .adaptiveGlass(isSheet: isSheet, in: isSheet
+                       ? AnyShape(Rectangle())
+                       : AnyShape(RoundedRectangle(cornerRadius: 20))
+        )
         #else
         .glassBackgroundEffect()
         .onChange(of: scenePhase, initial: true) {

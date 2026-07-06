@@ -125,17 +125,17 @@ struct NodeView: View {
                     }
                 }
         )
-        .background {
-            GeometryReader { proxy in
-                Color.clear
-                    .onAppear {
-                        onSizeChange?(proxy.size)
-                    }
-                    .onChange(of: proxy.size) { _, newSize in
-                        onSizeChange?(newSize)
-                    }
-            }
-        }
+//        .background {
+//            GeometryReader { proxy in
+//                Color.clear
+//                    .onAppear {
+//                        onSizeChange?(proxy.size)
+//                    }
+//                    .onChange(of: proxy.size) { _, newSize in
+//                        onSizeChange?(newSize)
+//                    }
+//            }
+//        }
         .overlay(alignment: .bottom) {
             if isExpanded, toolbarEnabled {
                 floatingToolbar

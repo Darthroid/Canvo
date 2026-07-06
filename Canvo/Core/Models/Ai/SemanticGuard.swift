@@ -5,7 +5,7 @@
 //  Created by Олег Комаристый on 24.06.2026.
 //
 
-
+@available(iOS 26.0, *)
 struct SemanticGuard {
 
     static func build(_ nodes: [NodeSchema]) -> String {
