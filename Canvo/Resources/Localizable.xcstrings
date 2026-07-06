@@ -1216,7 +1216,6 @@
       }
     },
     "Immersive Mode" : {
-      "extractionState" : "stale",
       "localizations" : {
         "ru" : {
           "stringUnit" : {
