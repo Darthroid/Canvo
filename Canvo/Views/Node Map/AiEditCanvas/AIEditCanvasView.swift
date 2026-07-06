@@ -6,6 +6,7 @@
 import SwiftUI
 import FoundationModels
 
+@available(iOS 26.0, *)
 struct AIEditCanvasView: View {
 
     @Environment(AppModel.self) private var appModel
@@ -56,9 +57,17 @@ struct AIEditCanvasView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
-                Button(role: .close) {
-                    withAnimation(.snappy) {
-                        showEditor = false
+                if #available(iOS 26.0, *) {
+                    Button(role: .close) {
+                        withAnimation(.snappy) {
+                            showEditor = false
+                        }
+                    }
+                } else {
+                    Button("Cancel") {
+                        withAnimation(.snappy) {
+                            showEditor = false
+                        }
                     }
                 }
             }
@@ -289,6 +298,7 @@ struct AIEditCanvasView: View {
 
 // MARK: - AI Action Handlers
 
+@available(iOS 26.0, *)
 extension AIEditCanvasView {
 
     private func explainCanvas() {

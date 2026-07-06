@@ -119,6 +119,7 @@ public class Node: Identifiable, Codable {
 
 extension Node {
     
+    @available(iOS 26.0, *)
     func toSchema() -> NodeSchema {
         NodeSchema(
             id: id,
@@ -129,6 +130,7 @@ extension Node {
         )
     }
     
+    @available(iOS 26.0, *)
     convenience init(from schema: NodeSchema, canvas: Canvas? = nil) {
         self.init(
             id: schema.id,

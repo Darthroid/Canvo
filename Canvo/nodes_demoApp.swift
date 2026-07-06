@@ -16,47 +16,53 @@ struct nodes_demoApp: App {
     
     @ViewBuilder var mainContent: some View {
         if hasSeenOnboarding {
-            CanvasCollectionView()
-                .environment(appModel)
-                .environmentObject(themeStore)
-                .alert(
-                    "Generation failed",
-                    isPresented: Binding(
-                        get: {
-                            appModel.aiGenerationService.error != nil && !appModel.immersiveMapToolbarOpen
-                        },
-                        set: { newValue in
-                            if !newValue {
-                                appModel.aiGenerationService.clearErrors()
-                            }
-                        }
-                    ),
-                    presenting: appModel.aiGenerationService.error
-                ) { detail in
-                    Button("OK", role: .cancel) {
-                        appModel.aiGenerationService.clearErrors()
-                    }
-                } message: { detail in
-                    Text(detail)
-                }
-                .overlay(alignment: .bottom) {
-                    if appModel.aiGenerationService.isRunning {
-                        AIGenerationSnackbar(
-                            title: appModel.aiGenerationService.runningStage ?? "Generating",
-                            onCancel: {
-                                withAnimation(.spring(response: 0.45, dampingFraction: 0.9)) {
-                                    appModel.aiGenerationService.cancelCurrentTask()
+            if #available(iOS 26.0, *) {
+                CanvasCollectionView()
+                    .environment(appModel)
+                    .environmentObject(themeStore)
+                    .alert(
+                        "Generation failed",
+                        isPresented: Binding(
+                            get: {
+                                appModel.aiGenerationService.error != nil && !appModel.immersiveMapToolbarOpen
+                            },
+                            set: { newValue in
+                                if !newValue {
+                                    appModel.aiGenerationService.clearErrors()
                                 }
                             }
-                        )
-                        .padding(.horizontal, 16)
-                        .padding(.bottom, 24)
-                        .transition(
-                            .move(edge: .bottom)
-                            .combined(with: .opacity)
-                        )
+                        ),
+                        presenting: appModel.aiGenerationService.error
+                    ) { detail in
+                        Button("OK", role: .cancel) {
+                            appModel.aiGenerationService.clearErrors()
+                        }
+                    } message: { detail in
+                        Text(detail)
                     }
-                }
+                    .overlay(alignment: .bottom) {
+                        if appModel.aiGenerationService.isRunning {
+                            AIGenerationSnackbar(
+                                title: appModel.aiGenerationService.runningStage ?? "Generating",
+                                onCancel: {
+                                    withAnimation(.spring(response: 0.45, dampingFraction: 0.9)) {
+                                        appModel.aiGenerationService.cancelCurrentTask()
+                                    }
+                                }
+                            )
+                            .padding(.horizontal, 16)
+                            .padding(.bottom, 24)
+                            .transition(
+                                .move(edge: .bottom)
+                                .combined(with: .opacity)
+                            )
+                        }
+                    }
+            } else {
+                CanvasCollectionView()
+                    .environment(appModel)
+                    .environmentObject(themeStore)
+            }
         } else {
             OnboardingView(onFinish: {
                 hasSeenOnboarding = true

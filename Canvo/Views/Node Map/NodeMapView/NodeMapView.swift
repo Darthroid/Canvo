@@ -40,9 +40,6 @@ struct NodeMapView: View {
         
     @State private var nodeSizes: [String: CGSize] = [:]
     
-    @State var dragStartPositions: [String: SIMD3<Float>] = [:]
-    @State var draggedNodeIds: Set<String> = []
-    
     @State var scale: CGFloat = 1.0
     @State var baseScale: CGFloat = 1.0
     @State var offset: CGSize = .zero
@@ -56,6 +53,7 @@ struct NodeMapView: View {
     
     @State private var containerSize: CGSize = .zero
     
+    @State private var searchPresented = false
     @State private var searchText = ""
     @State private var searchResults: [Node] = []
     @State private var selectedSearchResultIndex = 0
@@ -209,131 +207,77 @@ struct NodeMapView: View {
         .padding(.horizontal)
         .padding(.vertical, 8)
         #if !os(visionOS)
-        .glassEffect()
+        .adaptiveGlass()
         #else
         .glassBackgroundEffect()
         #endif
 
     }
     
-    var canvas: some View {
-        ZStack {
+    private var oldSearchBar: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(.secondary)
+
+            TextField("Search nodes", text: $searchText)
+                .focused($isSearchFieldFocused)
             
-            ZStack {
-                let isFocused = appModel.session.focusMode != nil
-                
-                // Canvas grid
-                if showGrid {
-                    GridLayer(offset: offset, scale: scale)
+            Button {
+                withAnimation(.snappy) {
+                    searchPresented = false
+                    searchText = ""
+                    searchResults = []
                 }
-                
-                let visibleNodes = appModel.visibleNodes
-                let nodeMap = Dictionary(
-                    uniqueKeysWithValues: visibleNodes.map { ($0.id, $0) }
-                )
-
-                let visibleConnections = appModel.visibleConnections
-                
-                ZStack {
-                    // Connections
-                    ForEach(visibleConnections) { c in
-                        if let a = nodeMap[c.fromNodeId],
-                           let b = nodeMap[c.toNodeId]  {
-                            let shouldFocus = appModel.session.focusNodeIds.contains(c.fromNodeId) && appModel.session.focusNodeIds.contains(c.toNodeId)
-                            ConnectionView(
-                                fromCenter: a.position.position2D,
-                                fromSize: nodeSizes[a.id] ?? .zero,
-                                toCenter: b.position.position2D,
-                                toSize: nodeSizes[b.id] ?? .zero
-                            )
-                            .stroke(
-                                themeStore.theme.canvasTheme.connector,
-                                lineWidth: 2
-                            )
-                            .opacity(!isFocused ? 1 : (shouldFocus ? 1 : 0.1))
-                        }
-
-                    }
-                    
-                    // Nodes
-                    ForEach(visibleNodes) { node in
-                        let isSelected = appModel.session.selectedNodeIds.contains(node.id)
-                        let isExpanded = appModel.session.expandedNodeIds.contains(node.id)
-                        let nodeView = NodeView(
-                            node: node,
-                            isSelected: isSelected,
-                            isExpanded: isExpanded,
-                            isMatchingSearch: searchResults.contains(where: { $0.id == node.id }),
-                            toolbarEnabled: true,
-                            onSizeChange: { size in
-                                nodeSizes[node.id] = size
-                            },
-                            onDetail: { showDetailNode = node },
-                            onLink: { showLinkToNode = node },
-                            onDelete: { showDeleteNode = node }
-                        )
-                        .equatable()
-                        .opacity(!isFocused ? 1 : (appModel.session.focusNodeIds.contains(node.id) ? 1 : 0.1))
-                        .position(node.position.position2D)
-                        .zIndex(isSelected || isExpanded ? 100 : 0)
-                        .onTapGesture(count: 1) {
-                            withAnimation {
-                                if appModel.session.selectedNodeIds.contains(node.id) {
-                                    appModel.session.selectedNodeIds.remove(node.id)
-                                } else {
-                                    appModel.session.selectedNodeIds.insert(node.id)
-                                }
-                            }
-                        }
-                        .onTapGesture(count: 2) {
-                            withAnimation(.bouncy(duration: 0.2)) {
-                                if appModel.session.expandedNodeIds.contains(node.id) {
-                                    appModel.session.expandedNodeIds.remove(node.id)
-                                } else {
-                                    appModel.session.expandedNodeIds.insert(node.id)
-                                }
-                            }
-                        }
-
-                        if appModel.session.selectedNodeIds.contains(node.id) {
-                            nodeView.gesture(nodeDrag(node))
-                        } else {
-                            nodeView
-                        }
-                    }
-                    
-                    // Debug marker for node creation (DO NOT REMOVE!)
-                    Circle()
-                        .fill(Color.clear)
-                        .frame(width: 12, height: 12)
-                        .position(
-                            x: CGFloat(appModel.session.pendingNodePosition?.x ?? 0),
-                            y: CGFloat(appModel.session.pendingNodePosition?.y ?? 0)
-                        )
-                        .opacity(appModel.session.pendingNodePosition == nil ? 0 : 0.7)
-                }
-                .scaleEffect(scale)
-                .offset(offset)
-                .coordinateSpace(name: "canvas")
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .foregroundStyle(.secondary)
             }
         }
-        .coordinateSpace(name: "canvas")
-//        .background(Color(uiColor: .secondarySystemFill))
-        .background(
-            themeStore.theme.canvasTheme.background
-                .ignoresSafeArea()
-        )
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(.regularMaterial)
     }
     
     var body: some View {
         GeometryReader { geo in
             ZStack {
                 // CANVAS
-                canvas
+                CanvasView(
+                    scale: $scale,
+                    offset: $offset,
+                    nodeSizes: $nodeSizes,
+                    searchResults: searchResults,
+                    showGrid: showGrid,
+                    onDetail: { showDetailNode = $0 },
+                    onLink: { showLinkToNode = $0 },
+                    onDelete: { showDeleteNode = $0 }
+                )
                     .ignoresSafeArea()
                 
                 // UI LAYER
                 VStack(spacing: 0) {
+                    if #unavailable(iOS 26.0) {
+                        VStack(spacing: 0) {
+                            if searchPresented {
+                                
+                                oldSearchBar
+                                
+                                if !searchText.isEmpty && !searchResults.isEmpty {
+                                    SearchResultsBar(
+                                        index: selectedSearchResultIndex,
+                                        total: searchResults.count,
+                                        onNext: goToNextSearchResult,
+                                        onPrev: goToPreviousSearchResult
+                                    )
+                                    .padding(.top, 8)
+                                    .transition(.move(edge: .top).combined(with: .opacity))
+                                }
+                            }
+
+                            Spacer()
+                        }
+                        .padding(.bottom, 20)
+                    }
                     
                     if showZoomLevel {
                         Text(String(format: "%.0f %%", scale * 100))
@@ -341,7 +285,7 @@ struct NodeMapView: View {
                             .padding(.horizontal)
                             .padding(.vertical, 8)
                             #if !os(visionOS)
-                            .glassEffect()
+                            .adaptiveGlass()
                             #else
                             .glassBackgroundEffect()
                             #endif
@@ -405,6 +349,49 @@ struct NodeMapView: View {
                         .tint(themeStore.theme.canvasTheme.selection)
                     }
                     .safeAreaPadding()
+                    #endif
+                    #if !os(visionOS)
+                    if #unavailable(iOS 26.0) {
+                        
+                        HStack {
+                            Button {
+                                withAnimation(.snappy) {
+                                    searchPresented = true
+                                }
+
+                                DispatchQueue.main.async {
+                                    isSearchFieldFocused = true
+                                }
+                            } label: {
+                                Image(systemName: "magnifyingglass")
+                                    .font(.title2.weight(.semibold))
+                                    .frame(width: 40, height: 40)
+                            }
+                            .buttonStyle(.bordered)
+                            .tint(Color.primary)
+                            .adaptiveGlass()
+                            .clipShape(Circle())
+                            .padding(.leading, 20)
+                            .padding(.bottom, 20)
+                            
+                            Spacer()
+                            
+                            Button {
+                                appModel.session.pendingNodePosition = visibleCenterPosition()
+                                showNodeForm = true
+                            } label: {
+                                Image(systemName: "plus")
+                                    .font(.title2.weight(.semibold))
+                                    .frame(width: 40, height: 40)
+                            }
+                            .keyboardShortcut("n", modifiers: [.command])
+                            .buttonStyle(.borderedProminent)
+                            .clipShape(Circle())
+                            .tint(themeStore.theme.canvasTheme.selection)
+                            .padding(.trailing, 20)
+                            .padding(.bottom, 20)
+                        }
+                    }
                     #endif
                 }
             }
@@ -541,28 +528,34 @@ struct NodeMapView: View {
                 Button("Delete", role: .destructive) {
                     appModel.removeNode(node)
                 }
-                Button(role: .cancel) {}
+                Button("Cancel") {}
             } message: { _ in
                 Text("Are you sure you want to delete this node?")
             }
             .navigationBarTitleDisplayMode(.inline)
-            .searchable(
-                text: $searchText,
-                prompt: "Search nodes"
-            )
-            .searchToolbarBehavior(.minimize)
-            .overlay(alignment: .top) {
-                if !searchText.isEmpty && !searchResults.isEmpty {
-                    SearchResultsBar(
-                        index: selectedSearchResultIndex,
-                        total: searchResults.count,
-                        onNext: goToNextSearchResult,
-                        onPrev: goToPreviousSearchResult
+            .ifAvailableIOS26(new: {
+                if #available(iOS 26.0, *) {
+                    $0.searchable(
+                        text: $searchText,
+                        prompt: "Search nodes"
                     )
-                    .padding(.top, 8)
-                    .transition(.move(edge: .top).combined(with: .opacity))
+                    .searchToolbarBehavior(.minimize)
+                    .overlay(alignment: .top) {
+                        if !searchText.isEmpty && !searchResults.isEmpty {
+                            SearchResultsBar(
+                                index: selectedSearchResultIndex,
+                                total: searchResults.count,
+                                onNext: goToNextSearchResult,
+                                onPrev: goToPreviousSearchResult
+                            )
+                            .padding(.top, 8)
+                            .transition(.move(edge: .top).combined(with: .opacity))
+                        }
+                    }
                 }
-            }
+            }, fallback: {
+                $0
+            })
             .toolbar {
                 ToolbarItemGroup(placement: .topBarLeading) {
                     Button {
@@ -581,7 +574,9 @@ struct NodeMapView: View {
                     
                 }
 
-                DefaultToolbarItem(kind: .search, placement: .bottomBar)
+                if #available(iOS 26.0, *) {
+                    DefaultToolbarItem(kind: .search, placement: .bottomBar)
+                }
                 
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     
@@ -718,22 +713,25 @@ struct NodeMapView: View {
                     .labelStyle(.iconOnly)
                 }
                 
+                
                 #if !os(visionOS)
-                ToolbarSpacer(.flexible, placement: .bottomBar)
                 
-                
-                ToolbarItem(placement: .bottomBar) {
-                    Button {
-                        appModel.session.pendingNodePosition = visibleCenterPosition()
-                        showNodeForm = true
-                    } label: {
-                        Image(systemName: "plus")
+                if #available(iOS 26.0, *) {
+                    ToolbarSpacer(.flexible, placement: .bottomBar)
+                    
+                    ToolbarItem(placement: .bottomBar) {
+                        Button {
+                            appModel.session.pendingNodePosition = visibleCenterPosition()
+                            showNodeForm = true
+                        } label: {
+                            Image(systemName: "plus")
+                        }
+                        .keyboardShortcut("n", modifiers: [.command])
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.large)
+                        .clipShape(Capsule())
+                        .tint(themeStore.theme.canvasTheme.selection)
                     }
-                    .keyboardShortcut("n", modifiers: [.command])
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
-                    .clipShape(Capsule())
-                    .tint(themeStore.theme.canvasTheme.selection)
                 }
                 #endif
             }

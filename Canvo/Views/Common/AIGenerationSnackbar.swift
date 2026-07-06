@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+@available(iOS 26.0, *)
 struct AIGenerationSnackbar: View {
     let title: String
     let onCancel: () -> Void
@@ -104,17 +105,21 @@ struct AIGenerationSnackbar: View {
     }
     .frame(maxWidth: .infinity)
     .overlay(alignment: .bottom) {
-        AIGenerationSnackbar(
-            title: String(localized: "Generating Canvas"),
-            onCancel: {
-                //
-            }
-        )
-        .padding(.horizontal, 16)
-        .padding(.bottom, 24)
-        .transition(
-            .move(edge: .bottom)
-            .combined(with: .opacity)
-        )
+        if #available(iOS 26.0, *) {
+            AIGenerationSnackbar(
+                title: String(localized: "Generating Canvas"),
+                onCancel: {
+                    //
+                }
+            )
+            .padding(.horizontal, 16)
+            .padding(.bottom, 24)
+            .transition(
+                .move(edge: .bottom)
+                .combined(with: .opacity)
+            )
+        } else {
+            EmptyView()
+        }
     }
 }

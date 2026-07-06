@@ -74,15 +74,18 @@ struct EditCanvasView: View {
                                     current: .create
                                 )
 
-                                modeCard(
-                                    title: String(localized: "Generate with AI"),
-                                    subtitle: appModel.aiGenerationService.isAvailable
-                                        ? String(localized: "Describe a topic and AI will build a canvas")
-                                        : String(localized: "Currently not available"),
-                                    icon: "sparkles",
-                                    current: .aiCreate
-                                )
-                                .disabled(!appModel.aiGenerationService.isAvailable)
+                                if #available(iOS 26.0, *) {
+                                    modeCard(
+                                        title: String(localized: "Generate with AI"),
+                                        subtitle: appModel.aiGenerationService.isAvailable
+                                            ? String(localized: "Describe a topic and AI will build a canvas")
+                                            : String(localized: "Currently not available"),
+                                        icon: "sparkles",
+                                        current: .aiCreate
+                                    )
+                                    .disabled(!appModel.aiGenerationService.isAvailable)
+                                }
+                                
                             }
                             .padding(.top, 8)
                         }
@@ -149,15 +152,27 @@ struct EditCanvasView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(role: .cancel) {
-                        appModel.aiGenerationService.cancelCurrentTask()
-                        dismiss()
+                    if #available(iOS 26.0, *) {
+                        Button(role: .cancel) {
+                            appModel.aiGenerationService.cancelCurrentTask()
+                            dismiss()
+                        }
+                    } else {
+                        Button("Cancel") {
+                            dismiss()
+                        }
                     }
                 }
                 
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(role: .confirm, action: submit)
-                        .disabled(!canSubmit)
+                    if #available(iOS 26.0, *) {
+                        Button(role: .confirm, action: submit)
+                            .disabled(!canSubmit)
+                    } else {
+                        Button("Done", action: submit)
+                            .disabled(!canSubmit)
+                    }
+                    
                 }
             }
             .onAppear {
@@ -183,10 +198,14 @@ private extension EditCanvasView {
             appModel.createCanvas(name: name)
             
         case .aiCreate:
-            appModel.generateCanvasStream(
-                prompt: ideas,
-                style: generationStyle
-            )
+            if #available(iOS 26.0, *) {
+                appModel.generateCanvasStream(
+                    prompt: ideas,
+                    style: generationStyle
+                )
+            } else {
+                break
+            }
             
         case .edit:
             guard let editCanvas else { return }

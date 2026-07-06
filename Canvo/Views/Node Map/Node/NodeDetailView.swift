@@ -110,8 +110,14 @@ struct NodeDetailView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(role: .close) {
-                        dismiss()
+                    if #available(iOS 26.0, *) {
+                        Button(role: .close) {
+                            dismiss()
+                        }
+                    } else {
+                        Button("Cancel") {
+                            dismiss()
+                        }
                     }
                 }
 
@@ -119,7 +125,11 @@ struct NodeDetailView: View {
                     Button {
                         editingNode = node
                     } label: {
-                        Label("Edit", systemImage: "pencil")
+                        if #unavailable(iOS 26.0) {
+                            Text("Edit")
+                        } else {
+                            Label("Edit", systemImage: "pencil")
+                        }
                     }
                 }
             }
@@ -192,8 +202,14 @@ private extension NodeDetailView {
             }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(role: .close) {
-                        showImageViewer = false
+                    if #available(iOS 26.0, *) {
+                        Button(role: .close) {
+                            showImageViewer = false
+                        }
+                    } else {
+                        Button("Cancel") {
+                            showImageViewer = false
+                        }
                     }
                 }
             }

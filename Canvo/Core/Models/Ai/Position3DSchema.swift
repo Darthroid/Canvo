@@ -8,7 +8,7 @@
 import Foundation
 import FoundationModels
 
-
+@available(iOS 26.0, *)
 @Generable
 struct Position3DSchema: Codable, Sendable {
 //    @Guide(description: "X position of node")
@@ -20,7 +20,7 @@ struct Position3DSchema: Codable, Sendable {
 //    @Guide(description: "Z position of node")
     var z: Float
 }
-
+@available(iOS 26.0, *)
 extension Position3DSchema {
     func toSIMD3() -> SIMD3<Float> {
         SIMD3(x, y, z)

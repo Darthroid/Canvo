@@ -7,6 +7,7 @@
 
 import Foundation
 
+@available(iOS 26.0, *)
 struct CanvasLayoutService {
 
     func computeCentroid(_ positions: [Position3DSchema]) -> Position3DSchema {
