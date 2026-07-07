@@ -507,6 +507,7 @@ struct NodeMapView: View {
                 hasSeenCanvasOnboarding = !val
             })) {
                 CanvasOnboardingView()
+                    .environmentObject(themeStore)
                     .onDisappear {
                         hasSeenCanvasOnboarding = true
                     }

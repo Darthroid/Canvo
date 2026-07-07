@@ -54,7 +54,7 @@ struct CanvasOnboardingView: View {
                     .padding(.vertical, 8)
             }
             .buttonStyle(.borderedProminent)
-            .tint(themeStore.theme.canvasTheme.selection)
+            .tint(.accent)
             .padding(.horizontal, 20)
             .padding(.bottom, 20)
             .padding(.top, 12)
@@ -128,21 +128,28 @@ private struct SelectNodeSlide: View {
         }
     }
 
+    @MainActor
     private func reset() {
         isSelected = false
         showTouch = false
         touchPulse = false
     }
 
+    @MainActor
     private func stop() {
         task?.cancel()
         task = nil
     }
 
+    @MainActor
     private func start() {
         stop()
 
         task = Task {
+            defer {
+                reset()
+            }
+            
             while !Task.isCancelled {
                 reset()
 
@@ -158,6 +165,10 @@ private struct SelectNodeSlide: View {
 
                 touchPulse = false
                 try? await Task.sleep(for: .milliseconds(200))
+                
+                await MainActor.run {
+                    showTouch = false
+                }
 
                 isSelected = true
 
@@ -231,21 +242,28 @@ private struct OpenNodeSlide: View {
         }
     }
 
+    @MainActor
     private func reset() {
         isExpanded = false
         showTouch = false
         touchPulse = false
     }
 
+    @MainActor
     private func stop() {
         task?.cancel()
         task = nil
     }
 
+    @MainActor
     private func start() {
         stop()
 
         task = Task {
+            defer {
+                reset()
+            }
+            
             while !Task.isCancelled {
                 reset()
 
@@ -268,7 +286,11 @@ private struct OpenNodeSlide: View {
                 try? await Task.sleep(for: .milliseconds(180))
                 touchPulse = false
 
-                try? await Task.sleep(for: .milliseconds(200))
+                try? await Task.sleep(for: .milliseconds(120))
+                
+                await MainActor.run {
+                    showTouch = false
+                }
 
                 isExpanded = true
 
@@ -322,7 +344,7 @@ private struct MultiSelectSlide: View {
 
                         if showAITap {
                             AIHintTap()
-                                .offset(x: 35, y: 0)
+                                .offset(x: -35, y: 0)
                                 .zIndex(1)
                         }
                     }
@@ -355,21 +377,28 @@ private struct MultiSelectSlide: View {
         }
     }
 
+    @MainActor
     private func reset() {
         selectedCount = 0
         showPanel = false
         showAITap = false
     }
 
+    @MainActor
     private func stop() {
         task?.cancel()
         task = nil
     }
 
+    @MainActor
     private func start() {
         stop()
 
         task = Task {
+            defer {
+                reset()
+            }
+            
             while !Task.isCancelled {
                 reset()
 
