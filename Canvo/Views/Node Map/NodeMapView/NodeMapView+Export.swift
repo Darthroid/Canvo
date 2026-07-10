@@ -51,6 +51,37 @@ extension NodeMapView {
     }
     
     @MainActor
+    func exportMarkdown() {
+        guard let canvas = appModel.session.currentCanvas else { return }
+        
+        do {
+            let data = try appModel.exportService.exportMarkdownCanvas(canvas)
+            self.generatedMarkdown = data
+            self.selectedFormat = .markdown
+            
+            showShareSheet.toggle()
+        } catch {
+            print("error encoding json on export: \(error)")
+        }
+    }
+    
+    @MainActor
+    func exportMarkdownPackage() {
+        guard let canvas = appModel.session.currentCanvas else { return }
+        
+        do {
+            let url = try appModel.exportService.exportMarkdownPackage(canvas)
+            self.generatedMarkdownPackage = url
+            self.selectedFormat = .markdown
+            
+            showShareSheet.toggle()
+        } catch {
+            print("error encoding json on export: \(error)")
+        }
+    }
+    
+    
+    @MainActor
     func printCanvas() {
         guard let canvas = appModel.session.currentCanvas else { return }
         

@@ -10,7 +10,7 @@ import SwiftUI
 import LinkPresentation
 
 enum ExportFormat: String {
-    case jpeg, png, json
+    case jpeg, png, json, markdown
 }
 
 final class ShareImageItem: NSObject, UIActivityItemSource {

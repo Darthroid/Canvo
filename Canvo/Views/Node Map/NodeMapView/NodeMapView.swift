@@ -69,6 +69,8 @@ struct NodeMapView: View {
     
     @State var generatedPreview: UIImage?
     @State var generatedJSON: Data?
+    @State var generatedMarkdown: Data?
+    @State var generatedMarkdownPackage: URL?
     @State var showShareSheet = false
     @State var selectedFormat: ExportFormat = .png
 
@@ -417,12 +419,13 @@ struct NodeMapView: View {
                 centerOnNode(node, animated: true)
             })
             .sheet(isPresented: Binding(
-                get: { showShareSheet && (generatedPreview != nil || generatedJSON != nil) },
+                get: { showShareSheet && (generatedPreview != nil || generatedJSON != nil || generatedMarkdown != nil || generatedMarkdownPackage != nil) },
                 set: { newValue in
                     if !newValue {
                         showShareSheet = false
                         generatedPreview = nil
                         generatedJSON = nil
+                        generatedMarkdown = nil
                     }
                 }
             )) {
@@ -438,6 +441,20 @@ struct NodeMapView: View {
                     ShareSheet(
                         item: ShareJSONItem(
                             jsonData: generatedJSON,
+                            filename: appModel.session.currentCanvas?.name ?? String(localized: "Canvas Export")
+                        )
+                    )
+                } else if let generatedMarkdown {
+                    ShareSheet(
+                        item: ShareMarkdownItem(
+                            markdownData: generatedMarkdown,
+                            filename: appModel.session.currentCanvas?.name ?? String(localized: "Canvas Export")
+                        )
+                    )
+                } else if let generatedMarkdownPackage {
+                    ShareSheet(
+                        item: ShareMarkdownPackageItem(
+                            archiveURL: generatedMarkdownPackage,
                             filename: appModel.session.currentCanvas?.name ?? String(localized: "Canvas Export")
                         )
                     )
@@ -590,22 +607,38 @@ struct NodeMapView: View {
                             Button {
                                 exportAsImage(format: .jpeg)
                             } label: {
-                                Text("JPEG image")
+                                Text("JPEG")
                             }
                             
                             Button {
                                 exportAsImage(format: .png)
                             } label: {
-                                Text("PNG image")
+                                Text("PNG")
                             }
                             
                             Button {
                                 exportJSON()
                             } label: {
-                                Text("JSON")
+                                Text("Canvas JSON")
                             }
                             
-                            
+                            Menu {
+                                Button {
+                                    exportMarkdown()
+                                } label: {
+                                    Text("Markdown (.md)")
+                                }
+                                
+                                Button {
+                                    exportMarkdownPackage()
+                                } label: {
+                                    Text("Markdown + Images (.zip)")
+                                }
+                                
+                            } label: {
+                                Text("Markdown")
+                            }
+
                         } label: {
                             Label("Export As", systemImage: "square.and.arrow.up")
                         }
