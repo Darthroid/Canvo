@@ -6,7 +6,7 @@
 </a>
 
 <p align="left">
-  <img alt="iOS 26+" src="https://img.shields.io/badge/iOS-26%2B-000000?logo=apple&logoColor=white">
+  <img alt="iOS 18+" src="https://img.shields.io/badge/iOS-18%2B-000000?logo=apple&logoColor=white">
   <img alt="visionOS 26+" src="https://img.shields.io/badge/visionOS-26%2B-000000?logo=apple&logoColor=white">
   <img alt="Xcode 26.3+" src="https://img.shields.io/badge/Xcode-26.3%2B-147EFB?logo=xcode&logoColor=white">
   <img alt="SwiftUI" src="https://img.shields.io/badge/SwiftUI-interface-0A84FF">
