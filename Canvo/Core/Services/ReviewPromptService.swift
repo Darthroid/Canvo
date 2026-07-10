@@ -21,8 +21,15 @@ final class ReviewPromptStore {
 
     private let defaults = UserDefaults.standard
 
+    private let launchCountKey = "review.launchCount"
     private let lastPromptDateKey = "review.lastPromptDate"
     private let promptCountKey = "review.promptCount"
+    private let engagementScoreKey = "review.engagementScore"
+
+    var launchCount: Int {
+        get { defaults.integer(forKey: launchCountKey) }
+        set { defaults.set(newValue, forKey: launchCountKey) }
+    }
 
     var lastPromptDate: Date? {
         get { defaults.object(forKey: lastPromptDateKey) as? Date }
@@ -34,7 +41,20 @@ final class ReviewPromptStore {
         set { defaults.set(newValue, forKey: promptCountKey) }
     }
 
-    func increment() {
+    var engagementScore: Int {
+        get { defaults.integer(forKey: engagementScoreKey) }
+        set { defaults.set(newValue, forKey: engagementScoreKey) }
+    }
+
+    func registerLaunch() {
+        launchCount += 1
+    }
+
+    func addEngagement(points: Int) {
+        engagementScore += points
+    }
+
+    func markPromptRequested() {
         promptCount += 1
         lastPromptDate = Date()
     }
@@ -42,18 +62,29 @@ final class ReviewPromptStore {
 
 struct ReviewPolicy {
 
-    let minimumSessions: Int = 2
-    let cooldownDays: Int = 3
+    let minimumLaunches = 1
+    let minimumEngagementScore = 5
+    let cooldownDays = 14
+    let maximumPromptAttempts = 3
 
-    func canRequestReview(store: ReviewPromptStore, sessionCount: Int) -> Bool {
+    func canRequestReview(store: ReviewPromptStore) -> Bool {
 
-        if sessionCount < minimumSessions {
+        guard store.launchCount >= minimumLaunches else {
             return false
         }
 
-        if let last = store.lastPromptDate {
-            let days = Calendar.current.dateComponents([.day], from: last, to: Date()).day ?? 0
-            if days < cooldownDays {
+        guard store.engagementScore >= minimumEngagementScore else {
+            return false
+        }
+
+        guard store.promptCount < maximumPromptAttempts else {
+            return false
+        }
+
+        if let lastPromptDate = store.lastPromptDate {
+            let days = Calendar.current.dateComponents([.day], from: lastPromptDate, to: Date()).day ?? 0
+
+            guard days >= cooldownDays else {
                 return false
             }
         }
@@ -68,52 +99,69 @@ final class ReviewPromptService {
     private let store: ReviewPromptStore
     private let policy: ReviewPolicy
 
-    private var sessionCount: Int = 0
+    private var requestTask: Task<Void, Never>?
 
-    init(store: ReviewPromptStore = .init(),
-         policy: ReviewPolicy = .init()) {
+    init(
+        store: ReviewPromptStore = .init(),
+        policy: ReviewPolicy = .init()
+    ) {
         self.store = store
         self.policy = policy
     }
 
     func registerAppLaunch() {
-        sessionCount += 1
+        store.registerLaunch()
     }
 
     func handle(event: ReviewEvent) {
-        guard policy.canRequestReview(store: store,
-                                      sessionCount: sessionCount) else {
+
+        switch event {
+        case .canvasCreated:
+            store.addEngagement(points: 1)
+
+        case .canvasFirstNodeAdded:
+            store.addEngagement(points: 1)
+
+        case .canvasCompleted:
+            store.addEngagement(points: 2)
+
+        case .aiGenerationAccepted:
+            store.addEngagement(points: 2)
+
+        case .canvasExported:
+            store.addEngagement(points: 3)
+        }
+
+        guard policy.canRequestReview(store: store) else {
             return
         }
 
-        switch event {
-
-        case .canvasCompleted,
-             .canvasExported,
-             .aiGenerationAccepted:
-
-            scheduleReviewRequest()
-
-        default:
-            break
-        }
+        scheduleReviewRequest()
     }
 
     private func scheduleReviewRequest() {
-        // даём UI “успокоиться”
-        Task {
-            try? await Task.sleep(nanoseconds: 2_000_000_000)
+        requestTask?.cancel()
+
+        requestTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(2))
+
+            guard !Task.isCancelled else {
+                return
+            }
+
             requestReview()
         }
     }
 
     private func requestReview() {
-        guard let scene = UIApplication.shared.connectedScenes
-            .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene else {
+        guard
+            let scene = UIApplication.shared.connectedScenes
+                .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene
+        else {
             return
         }
 
-        store.increment()
+        store.markPromptRequested()
         AppStore.requestReview(in: scene)
     }
 }
