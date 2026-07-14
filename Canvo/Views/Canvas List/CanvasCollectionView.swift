@@ -6,7 +6,7 @@
 //
 
 import SwiftUI
-internal import UniformTypeIdentifiers
+import UniformTypeIdentifiers
 #if os(visionOS)
 import RealityKit
 import RealityKitContent
@@ -185,7 +185,7 @@ struct CanvasCollectionView: View {
         .id(themeStore.theme)
         .fileImporter(
             isPresented: $isShowingPicker,
-            allowedContentTypes: [.json],
+            allowedContentTypes: ImportService.supportedFormats,
             allowsMultipleSelection: false
         ) { result in
             switch result {

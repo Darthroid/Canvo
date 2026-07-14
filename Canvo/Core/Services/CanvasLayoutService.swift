@@ -7,9 +7,69 @@
 
 import Foundation
 
-@available(iOS 26.0, *)
 struct CanvasLayoutService {
+    func layoutTree(
+        nodes: inout [Node],
+        connections: [NodeConnection]
+    ) {
+        guard !nodes.isEmpty else {
+            return
+        }
 
+        let horizontalSpacing: Float = 420
+        let verticalSpacing: Float = 180
+
+        let nodeMap = Dictionary(uniqueKeysWithValues: nodes.map { ($0.id, $0) })
+
+        var childrenMap: [String: [String]] = [:]
+        var incoming = Set<String>()
+
+        for connection in connections {
+            childrenMap[connection.fromNodeId, default: []].append(connection.toNodeId)
+            incoming.insert(connection.toNodeId)
+        }
+
+        let roots = nodes.filter { !incoming.contains($0.id) }
+
+        var nextY: Float = 0
+
+        func layout(nodeId: String, depth: Int) {
+            guard
+                let node = nodeMap[nodeId]
+            else {
+                return
+            }
+
+            let children = childrenMap[nodeId] ?? []
+
+            if children.isEmpty {
+                node.x = Float(depth) * horizontalSpacing
+                node.y = nextY
+                node.z = 0
+
+                nextY += verticalSpacing
+                return
+            }
+
+            let startY = nextY
+
+            for child in children {
+                layout(nodeId: child, depth: depth + 1)
+            }
+
+            let endY = nextY - verticalSpacing
+
+            node.x = Float(depth) * horizontalSpacing
+            node.y = (startY + endY) * 0.5
+            node.z = 0
+        }
+
+        for root in roots {
+            layout(nodeId: root.id, depth: 0)
+        }
+    }
+
+    @available(iOS 26.0, *)
     func computeCentroid(_ positions: [Position3DSchema]) -> Position3DSchema {
         guard !positions.isEmpty else {
             return .init(x: 0, y: 0, z: 0)
@@ -26,6 +86,7 @@ struct CanvasLayoutService {
         )
     }
 
+    @available(iOS 26.0, *)
     func layoutNodesInCircle(
         nodes: inout [NodeSchema],
         centerNodeId: String,
@@ -55,6 +116,7 @@ struct CanvasLayoutService {
         }
     }
 
+    @available(iOS 26.0, *)
     func layoutWithCollisionAvoidance(
         nodes: inout [NodeSchema],
         center: Position3DSchema,
@@ -104,6 +166,7 @@ struct CanvasLayoutService {
         }
     }
 
+    @available(iOS 26.0, *)
     func findBestExpansionDirection(
         from center: Position3DSchema,
         occupied: [NodeSchema]
@@ -177,6 +240,7 @@ struct CanvasLayoutService {
         return bestDirection
     }
 
+    @available(iOS 26.0, *)
     func findBestPositionInField(
         preferredDirection: SIMD2<Float>,
         origin: Position3DSchema,
@@ -233,6 +297,7 @@ struct CanvasLayoutService {
         )
     }
 
+    @available(iOS 26.0, *)
     private func isOverlapping(
         _ a: NodeSchema,
         _ b: NodeSchema
