@@ -1,6 +1,6 @@
 //
 //  FeatureRow.swift
-//  nodes-demo
+//  Canvo
 //
 //  Created by Олег Комаристый on 30.04.2026.
 //

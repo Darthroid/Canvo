@@ -1,6 +1,6 @@
 //
 //  OutlineView.swift
-//  nodes-demo
+//  Canvo
 //
 //  Created by Олег Комаристый on 16.04.2026.
 //

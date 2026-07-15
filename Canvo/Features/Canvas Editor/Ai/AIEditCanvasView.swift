@@ -1,6 +1,6 @@
 //
 //  AIEditCanvasView.swift
-//  nodes-demo
+//  Canvo
 //
 
 import SwiftUI

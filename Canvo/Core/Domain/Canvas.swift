@@ -1,6 +1,6 @@
 //
 //  Canvas.swift
-//  nodes-demo
+//  Canvo
 //
 //  Created by Олег Комаристый on 15.12.2025.
 //

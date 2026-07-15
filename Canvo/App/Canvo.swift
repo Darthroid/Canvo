@@ -1,6 +1,6 @@
 //
-//  nodes_demoApp.swift
-//  nodes-demo
+//  Canvo.swift
+//  Canvo
 //
 //  Created by Oleg Komaristy on 17.11.2025.
 //
@@ -8,7 +8,7 @@
 import SwiftUI
 
 @main
-struct nodes_demoApp: App {
+struct Canvo: App {
     @State private var appModel: AppModel = AppModel()
     @StateObject private var themeStore = ThemeStore()
 

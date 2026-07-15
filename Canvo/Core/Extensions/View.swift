@@ -1,6 +1,6 @@
 //
 //  View.swift
-//  nodes-demo
+//  Canvo
 //
 //  Created by Олег Комаристый on 24.12.2025.
 //

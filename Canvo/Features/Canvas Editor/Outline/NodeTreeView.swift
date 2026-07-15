@@ -1,6 +1,6 @@
 //
 //  NodeTreeView.swift
-//  nodes-demo
+//  Canvo
 //
 //  Created by Олег Комаристый on 15.04.2026.
 //

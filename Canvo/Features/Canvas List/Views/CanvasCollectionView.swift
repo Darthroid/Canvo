@@ -1,6 +1,6 @@
 //
 //  CanvasGridView.swift
-//  nodes-demo
+//  Canvo
 //
 //  Created by Oleg Komaristy on 17.11.2025.
 //

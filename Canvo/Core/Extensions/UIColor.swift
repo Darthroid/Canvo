@@ -1,6 +1,6 @@
 //
 //  UIColor.swift
-//  nodes-demo
+//  Canvo
 //
 //  Created by Олег Комаристый on 17.11.2025.
 //
