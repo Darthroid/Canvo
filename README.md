@@ -1,136 +1,144 @@
-
 # Canvo
 
-<a href="https://apps.apple.com/us/app/canvo/id6761765531">
+<a href="https://apps.apple.com/app/apple-store/id6761765531?pt=128746542&ct=github&mt=8">
   <img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" height="40">
 </a>
 
 <p align="left">
   <img alt="iOS 18+" src="https://img.shields.io/badge/iOS-18%2B-000000?logo=apple&logoColor=white">
   <img alt="visionOS 26+" src="https://img.shields.io/badge/visionOS-26%2B-000000?logo=apple&logoColor=white">
-  <img alt="Xcode 26.3+" src="https://img.shields.io/badge/Xcode-26.3%2B-147EFB?logo=xcode&logoColor=white">
+  <img alt="Swift 6" src="https://img.shields.io/badge/Swift-6-orange?logo=swift">
   <img alt="SwiftUI" src="https://img.shields.io/badge/SwiftUI-interface-0A84FF">
   <img alt="SwiftData" src="https://img.shields.io/badge/SwiftData-persistence-5E5CE6">
   <img alt="Apple Foundation Models" src="https://img.shields.io/badge/Apple%20Foundation%20Models-iOS%2026%2B-000000?logo=apple&logoColor=white">
-
 </p>
 
-## Canvo – AI Mind Mapping & Visual Thinking
+Canvo is an AI-powered visual thinking application for building connected knowledge, brainstorming ideas, planning projects, and organizing information on a flexible canvas.
 
-Canvo is an AI-powered mind mapping app designed for visual thinking, brainstorming, knowledge management, project planning, and idea organization.
+Built entirely with **SwiftUI**, **SwiftData**, and **Apple Foundation Models**, Canvo demonstrates a modern Apple-platform architecture with native AI integration, command-based editing, and support for both **iOS** and **visionOS**.
 
-Create interactive mind maps, connect ideas, organize research, and build your personal knowledge system on an infinite canvas. Whether you're planning a project, studying complex topics, taking visual notes, or developing creative ideas, Canvo helps you structure information and see relationships clearly.
+---
 
-Unlike traditional note-taking apps, Canvo combines mind mapping, visual organization, and AI-powered assistance to help you think faster and build connected knowledge.
+# Screenshots
 
-## Screenshots
+## iOS
 
-### iOS
 <img src="https://github.com/Darthroid/Canvo/blob/main/Screenshots/1.png" width="160"><img src="https://github.com/Darthroid/Canvo/blob/main/Screenshots/2.png" width="160"><img src="https://github.com/Darthroid/Canvo/blob/main/Screenshots/3.png" width="160"><img src="https://github.com/Darthroid/Canvo/blob/main/Screenshots/4.png" width="160"><img src="https://github.com/Darthroid/Canvo/blob/main/Screenshots/5.png" width="160">
 
+## visionOS
 
-
-### visionOS
 <img src="https://github.com/Darthroid/Canvo/blob/main/Screenshots/vision1.png" width="400"><img src="https://github.com/Darthroid/Canvo/blob/main/Screenshots/vision2.png" width="400">
+
 <img src="https://github.com/Darthroid/Canvo/blob/main/Screenshots/vision3.png" width="400"><img src="https://github.com/Darthroid/Canvo/blob/main/Screenshots/vision4.png" width="400">
 
-## AI-Powered Mind Mapping
+---
 
-Turn a simple topic into a structured mind map in seconds.
+# Features
 
-Use AI to generate connected ideas, discover related concepts, and create an initial visual structure for brainstorming, research, learning, and planning.
+### Visual Canvas
 
-## AI Features
+- Interactive node-based canvas
+- Unlimited node connections
+- Rich text notes
+- Image attachments
+- Tag system
+- Search and filtering
 
-• Generate mind maps from a topic or idea
+### AI
 
-• Expand nodes with related concepts and suggestions
+Powered by Apple Foundation Models.
 
-• Summarize sections of large mind maps
+- Generate complete canvases from prompts
+- Expand existing nodes
+- Summarize branches
+- Simplify complex structures
+- Explain concepts
+- Continue idea generation
 
-• Simplify and compress complex structures
+### Import & Export
 
-• Get explanations for concepts and topics
+- JSON
+- Markdown
+- Markdown Package
 
-• Build knowledge networks faster with AI assistance
+### Productivity
 
-## Powerful Visual Organization
+- Undo / Redo
+- Canvas previews
+- Spotlight indexing
+- Multiple themes
+- Focus mode
+- Secure canvases
 
-Canvo gives you a flexible canvas for organizing information visually.
+### visionOS
 
-Create nodes, add descriptions, apply tags, and connect ideas using visual relationships that mirror how you naturally think.
+- Native immersive canvas
+- Spatial interaction
+- 3D node visualization
 
-## Perfect for:
+---
 
-• Mind mapping
+# Architecture
 
-• Brainstorming sessions
+Canvo follows a feature-oriented architecture with a clear separation between UI, business logic and persistence.
 
-• Project planning
+```
+                App
+                 │
+        ┌────────┴────────┐
+        │                 │
+    Features           Core
+        │                 │
+        │          Services
+        │          Repository
+        │          Actions
+        │          AI
+        │          Domain
+        │
+    SwiftUI Views
+```
 
-• Knowledge management
+More details are available in **ARCHITECTURE.md**.
 
-• Research organization
+---
 
-• Study notes and learning
+# Project Structure
 
-• Personal knowledge bases
+```
+Canvo
+├── App
+├── Core
+│   ├── Actions
+│   ├── AI
+│   ├── Domain
+│   ├── Repository
+│   ├── Services
+│   ├── Theme
+│   └── State
+├── Features
+└── Resources
+```
 
-• Second brain systems
+---
 
-• Creative thinking
+# Building
 
-• Concept mapping
+## Requirements
 
-• Workflow design
+- Xcode 26.3+
+- Swift 6
+- iOS 18+
+- visionOS 26+
 
-• Strategic planning
+## Clone
 
-## Key Features
-• **Infinite Mind Map Canvas**
+```bash
+git clone https://github.com/Darthroid/Canvo.git
+```
 
-Build small idea maps or large interconnected knowledge structures without limitations.
+Open `Canvo.xcodeproj` and run the project.
 
-• **Flexible Nodes**
-
-Create nodes with titles, descriptions, tags, and connections to organize information exactly the way you want.
-
-• **Fast Navigation**
-
-Search across your canvas, filter by tags, and quickly find important information.
-
-• **Visual Knowledge Management**
-
-Connect related ideas and create a personal knowledge graph that grows over time.
-
-• **Built for Productivity**
-
-Designed to help students, professionals, researchers, creators, founders, and lifelong learners organize thoughts and make better decisions.
-
-## Use Canvo To
-
-• Brainstorm new ideas
-
-• Create AI-generated mind maps
-
-• Organize research and references
-
-• Plan projects and workflows
-
-• Study complex subjects
-
-• Build a personal knowledge management system
-
-• Create concept maps and knowledge graphs
-
-• Visualize relationships between ideas
-
-• Develop creative projects
-
-• Structure notes and information
-
-Canvo helps you transform scattered thoughts into connected knowledge through AI-powered mind mapping, visual thinking, brainstorming, and knowledge organization.
-
+---
 
 <br>
 <a href="https://raw.githubusercontent.com/Darthroid/Canvo-documentation/refs/heads/main/privacy.md">
