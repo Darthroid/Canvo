@@ -74,13 +74,13 @@ struct SettingsView: View {
 
             Section("About & Support") {
                 Link(
-                    destination: URL(string: "https://raw.githubusercontent.com/Darthroid/Canvo-documentation/refs/heads/main/privacy.md")!
+                    destination: URL(string: "https://raw.githubusercontent.com/Darthroid/Canvo/refs/heads/main/PRIVACY.md")!
                 ) {
                     Label("Privacy Policy", systemImage: "hand.raised")
                 }
 
                 Link(
-                    destination: URL(string: "https://github.com/Darthroid/Canvo-documentation/issues/new")!
+                    destination: URL(string: "https://github.com/Darthroid/Canvo/issues/new")!
                 ) {
                     Label("Report an Issue", systemImage: "exclamationmark.bubble")
                 }
