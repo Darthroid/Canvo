@@ -24,7 +24,7 @@
 				Resources/Info.plist,
 			);
 			platformFiltersByRelativePath = {
-				"Views/Node Map/ImmersiveNodeMapView.swift" = (xros, );
+				"Features/Canvas Editor/Views/NodeMapView/ImmersiveNodeMapView.swift" = (xros, );
 			};
 			target = D1ACB3212ECB560000411AD6 /* Canvo */;
 		};
@@ -176,7 +176,7 @@
 				"ASSETCATALOG_COMPILER_APPICON_NAME[sdk=xros*]" = "Icon (visionOS)";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
-				CODE_SIGN_ENTITLEMENTS = Canvo/Canvo.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Canvo/Resources/Canvo.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 97A6BHXBQU;
@@ -222,7 +222,7 @@
 				"ASSETCATALOG_COMPILER_APPICON_NAME[sdk=xros*]" = "Icon (visionOS)";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
-				CODE_SIGN_ENTITLEMENTS = Canvo/Canvo.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Canvo/Resources/Canvo.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 97A6BHXBQU;
