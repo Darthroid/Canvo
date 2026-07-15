@@ -78,70 +78,9 @@ Powered by Apple Foundation Models.
 
 ---
 
-# Architecture
+## Open Source
 
-Canvo follows a feature-oriented architecture with a clear separation between UI, business logic and persistence.
-
-```
-                App
-                 │
-        ┌────────┴────────┐
-        │                 │
-    Features           Core
-        │                 │
-        │          Services
-        │          Repository
-        │          Actions
-        │          AI
-        │          Domain
-        │
-    SwiftUI Views
-```
-
-More details are available in **ARCHITECTURE.md**.
-
----
-
-# Project Structure
-
-```
-Canvo
-├── App
-├── Core
-│   ├── Actions
-│   ├── AI
-│   ├── Domain
-│   ├── Repository
-│   ├── Services
-│   ├── Theme
-│   └── State
-├── Features
-└── Resources
-```
-
----
-
-# Building
-
-## Requirements
-
-- Xcode 26.3+
-- Swift 6
-- iOS 18+
-- visionOS 26+
-
-## Clone
-
-```bash
-git clone https://github.com/Darthroid/Canvo.git
-```
-
-Open `Canvo.xcodeproj` and run the project.
-
----
-
-<br>
-<a href="https://raw.githubusercontent.com/Darthroid/Canvo-documentation/refs/heads/main/privacy.md">
-  Privacy Policy
-</a>
-<br><br>
+- [Contributions](CONTRIBUTING.md)
+- [Code of conduct](CODE_OF_CONDUCT.md)
+- [Privacy policy](PRIVACY.md)
+- [License](LICENSE)
